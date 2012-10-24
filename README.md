@@ -1,4 +1,4 @@
-Python Email Ahoy
+Cloudy
 ====================
 
 **A Python utility that simplifies cloud configuration**
