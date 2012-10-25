@@ -114,10 +114,14 @@ def psql_create_cluster(version='', cluster='main', encoding='UTF-8', data_dir='
     data_dir = psql_make_data_dir(version, data_dir)
     sudo('chown -R postgres {0}'.format(data_dir))
     sudo('pg_createcluster --start -e {0} {1} {2} -d {3}'.format(encoding, version, cluster, data_dir))
+    sudo('service postgresql start')
     etc_git_commit('Created new postgres cluster ({0} {1})'.format(version, cluster))
 
 
 def psql_configure(version='', cluster='main', port='5432', listen='*'):
+    if not version:
+        version = psql_default_installed_version()
+
     """ Configures posgresql configuration files """
     conf_dir = '/etc/postgresql/{0}/{1}'.format(version, cluster)
     postgresql_conf = os.path.abspath(os.path.join(conf_dir, 'postgresql.conf'))
@@ -126,6 +130,13 @@ def psql_configure(version='', cluster='main', port='5432', listen='*'):
     total_mem = sudo("free -m | head -2 | grep Mem | awk '{print $2}'")
     shared_buffers = eval(total_mem) / 4    
     sudo('sed -i "s/shared_buffers\s\+=\s\+[0-9]\+MB/shared_buffers = {0}MB/g" {1}'.format(shared_buffers, postgresql_conf))
+    
+    pg_hba_conf = os.path.abspath(os.path.join(conf_dir, 'pg_hba.conf'))
+    sudo('echo \"host all all 0.0.0.0/0 md5\" >> {0}'.format(pg_hba_conf))
+    
+    etc_git_commit('Configured postgres cluster ({0} {1})'.format(version, cluster))
+    
+    sudo('service postgresql start')
 
 
 def psql_postgres_password(password):

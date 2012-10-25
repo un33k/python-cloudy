@@ -39,6 +39,7 @@ def pgis_install(version=''):
     
     # install requirements
     sudo('apt-get -y install {0}'.format(requirements))
+    sudo('service postgresql start')
     etc_git_commit('Installed postgis for pqsl ({0})'.format(version))
 
 

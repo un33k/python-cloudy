@@ -13,7 +13,6 @@ from fabric.api import hide
 from fabric.api import cd
 
 
-
 def etc_git_init():
     """ Track changes in /etc/ """
     etc_git = "/etc/.git"
