@@ -10,6 +10,7 @@ from fabric.api import put
 from fabric.api import env
 from fabric.api import settings
 from fabric.api import hide
+from fabric.contrib.files import sed
 
 from cloudy.sys.etc import etc_git_commit
 
@@ -77,13 +78,13 @@ def psql_make_data_dir(version='', data_dir='/var/lib/postgresql'):
     if not version:
         version = psql_latest_version()
 
-    data_dir = os.path.abspath(os.path.join(data_dir, '{0}'.format(version), 'main'))
+    data_dir = os.path.abspath(os.path.join(data_dir, '{0}'.format(version)))
     cmd = 'mkdir -p '
     sudo('{0} {1}'.format(cmd, data_dir))
     return data_dir
 
 
-def psql_remove_cluster(version=''):
+def psql_remove_cluster(version='', cluster='main'):
     """ Remove a clauster if exists """
 
     if not version:
@@ -91,14 +92,14 @@ def psql_remove_cluster(version=''):
     if not version:
         version = psql_latest_version()
         
-    cmd = 'pg_dropcluster --stop {0} main'.format(version)
+    cmd = 'pg_dropcluster --stop {0} {1}'.format(version, cluster)
     with settings(warn_only=True):
         sudo(cmd)
 
-    etc_git_commit('Removed postgres cluster ({0} main)'.format(version))
+    etc_git_commit('Removed postgres cluster ({0} {1})'.format(version, cluster))
 
 
-def psql_create_cluster(version='', encoding='UTF-8', data_dir='/var/lib/postgresql'):
+def psql_create_cluster(version='', cluster='main', encoding='UTF-8', data_dir='/var/lib/postgresql'):
     """ Make a new clauster """
 
     if not version:
@@ -106,17 +107,25 @@ def psql_create_cluster(version='', encoding='UTF-8', data_dir='/var/lib/postgre
     if not version:
         version = psql_latest_version()
 
-    psql_remove_cluster(version)
+    psql_remove_cluster(version, cluster)
     
     data_dir = psql_make_data_dir(version, data_dir)
     cmd = 'chown -R postgres {0}'.format(data_dir)
     sudo(cmd)
     
-    sudo('pg_createcluster --start -e {0} {1} main -d {2}'.format(encoding, version, data_dir))
-    etc_git_commit('Removed postgres cluster ({0} main)'.format(version))
+    sudo('pg_createcluster --start -e {0} {1} {2} -d {3}'.format(encoding, version, cluster, data_dir))
+    etc_git_commit('Created new postgres cluster ({0} {1})'.format(version, cluster))
 
 
+def psql_configure(version='', cluster='main', port='5432', listen='*'):
+    """ Configures posgresql configuration files """
+    conf_dir = '/etc/postgresql/{0}/{1}'.format(version, cluster)
+    postgresql_conf = os.path.abspath(os.path.join(conf_dir, 'postgresql.conf'))
+    sudo('sed -i "s/#listen_addresses\s\+=\s\+\'localhost\'/listen_addresses = \'*\'/g" {0}'.format(postgresql_conf))
 
+    total_mem = sudo("free -m | head -2 | grep Mem | awk '{print $2}'")
+    shared_buffers = eval(total_mem) / 4    
+    sudo('sed -i "s/shared_buffers\s\+=\s\+[0-9]\+MB/shared_buffers = {0}MB/g" {1}'.format(shared_buffers, postgresql_conf))
 
 
 
