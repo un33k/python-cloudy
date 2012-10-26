@@ -27,9 +27,11 @@ def etc_git_commit(msg):
     
     etc_git_init()
     with cd('/etc'):
-        sudo('git add .')
-        with settings(warn_only=True):
-            sudo('git commit -a -m "{0}"'.format(msg))
+        ret = sudo('git status')
+        if 'nothing to commit' not in ret:
+            sudo('git add .')
+            with settings(warn_only=True):
+                sudo('git commit -a -m "{0}"'.format(msg))
 
 
 
