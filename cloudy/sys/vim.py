@@ -12,8 +12,14 @@ from fabric.api import hide
 
 from cloudy.sys.etc import sys_etc_git_commit
 
-def sys_vim_set_default_editor():
-    """ Set VIM basic as the default editor """
+def sys_set_default_editor(default=3):
+    """ Set the default editor - Ex: (cmd:[editor])"""
     sudo('echo 3 | sudo update-alternatives --config editor')
-    sys_etc_git_commit('Set Vim to default editor')
+    sys_etc_git_commit('Set to default editor to ({0})'.format(default))
+
+
+
+
+
+
 

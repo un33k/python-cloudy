@@ -14,7 +14,7 @@ from fabric.contrib import files
 
 
 def sys_install_postfix():
-    """ Install postfix for outgoing email (loopback)"""
+    """ Install postfix for outgoing email (loopback) - Ex: (cmd)"""
     sudo('echo \"postfix postfix/main_mailer_type select Internet Site\" | debconf-set-selections')
     sudo('echo \"postfix postfix/mailname string localhost\" | debconf-set-selections')
     sudo('echo \"postfix postfix/destinations string localhost.localdomain, localhost\" | debconf-set-selections')

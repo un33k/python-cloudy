@@ -17,7 +17,7 @@ from cloudy.sys.etc import sys_etc_git_commit
 
 
 def pgis_install(version=''):
-    """ Install postgis of a given postgres version """
+    """ Install postgis of a given postgres version - Ex: (cmd:[pgversion])"""
     if not version:
         version = psql_default_installed_version()
         
@@ -45,7 +45,7 @@ def pgis_install(version=''):
 
 
 def pgis_get_latest_version(pg_version=''):
-    """ Returns the path of the installed postgis given a postgres version """
+    """ Returns the path of the installed postgis given a postgres version - Ex: (cmd:[pgversion])"""
     
     if not pg_version:
         pg_version = psql_default_installed_version()
@@ -74,7 +74,7 @@ def pgis_get_latest_version(pg_version=''):
 
 
 def pgis_configure(pg_version='', pgis_version=''):
-    """ Configure postgis template """
+    """ Configure postgis template - Ex: (cmd:[pgversion],[gisversion]) """
     
     if not pg_version:
         pg_version = psql_default_installed_version()
@@ -102,7 +102,7 @@ def pgis_configure(pg_version='', pgis_version=''):
 
 
 def pgis_get_database_gis_info(dbname):
-    """ Returns the postgis verion of a postgis dababase """
+    """ Returns the postgis verion of a postgis dababase - Ex: (cmd:<dbname>)"""
     return sudo('sudo -u postgres  psql -d {0} -c \"SELECT postgis_full_version();\"'.format(dbname))
 
 

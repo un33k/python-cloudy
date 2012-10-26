@@ -11,14 +11,13 @@ from fabric.api import put
 from fabric.api import env
 from fabric.api import settings
 from fabric.api import hide
-from fabric.contrib.files import sed
 from fabric.contrib import files
 
 from cloudy.sys.etc import sys_etc_git_commit
 
 
 def psql_latest_version():
-    """ Get the latest available postgres version """
+    """ Get the latest available postgres version - Ex: (cmd)"""
     
     latest_version = ''
     with settings(
@@ -44,7 +43,7 @@ def psql_latest_version():
 
 
 def psql_default_installed_version():
-    """ Get the default installed postgres version """
+    """ Get the default installed postgres version - Ex: (cmd) """
 
     default_version = ''
     with settings(
@@ -60,7 +59,7 @@ def psql_default_installed_version():
     return default_version
         
 def psql_install(version=''):
-    """ Install postgres of a given version or the latest version """
+    """ Install postgres of a given version or the latest version - Ex: (cmd:[9.1])"""
 
     if not version:
         version = psql_latest_version()
@@ -80,7 +79,7 @@ def psql_install(version=''):
 
 
 def psql_make_data_dir(version='', data_dir='/var/lib/postgresql'):
-    """ Make data directory for the postgres cluster """
+    """ Make data directory for the postgres cluster - Ex: (cmd:[pgversion],[datadir])"""
     
     if not version:
         version = psql_latest_version()
@@ -90,14 +89,9 @@ def psql_make_data_dir(version='', data_dir='/var/lib/postgresql'):
     return data_dir
 
 
-def psql_remove_cluster(version='', cluster='main'):
-    """ Remove a clauster if exists """
+def psql_remove_cluster(version, cluster):
+    """ Remove a clauster if exists - Ex: (cmd:<pgversion><cluster>)"""
 
-    if not version:
-        version = psql_default_installed_version()
-    if not version:
-        version = psql_latest_version()
-        
     with settings(warn_only=True):
         sudo('pg_dropcluster --stop {0} {1}'.format(version, cluster))
 
@@ -105,7 +99,7 @@ def psql_remove_cluster(version='', cluster='main'):
 
 
 def psql_create_cluster(version='', cluster='main', encoding='UTF-8', data_dir='/var/lib/postgresql'):
-    """ Make a new postgresql clauster """
+    """ Make a new postgresql clauster - Ex: (cmd:[pgversion],[cluster],[encoding],[datadir])"""
 
     if not version:
         version = psql_default_installed_version()
@@ -121,15 +115,15 @@ def psql_create_cluster(version='', cluster='main', encoding='UTF-8', data_dir='
     sys_etc_git_commit('Created new postgres cluster ({0} {1})'.format(version, cluster))
 
 
-def psql_configure(version='', cluster='main', port='5432', listen='*'):
-    """ Configure postgres """
+def psql_configure(version='', cluster='main', port='5432', interface='*'):
+    """ Configure postgres - Ex: (cmd:[pgversion],[cluster],[port],[interface])"""
     if not version:
         version = psql_default_installed_version()
 
     """ Configures posgresql configuration files """
     conf_dir = '/etc/postgresql/{0}/{1}'.format(version, cluster)
     postgresql_conf = os.path.abspath(os.path.join(conf_dir, 'postgresql.conf'))
-    sudo('sed -i "s/#listen_addresses\s\+=\s\+\'localhost\'/listen_addresses = \'*\'/g" {0}'.format(postgresql_conf))
+    sudo('sed -i "s/#listen_addresses\s\+=\s\+\'localhost\'/listen_addresses = \'{0}\'/g" {0}'.format(interface, postgresql_conf))
 
     # total_mem = sudo("free -m | head -2 | grep Mem | awk '{print $2}'")
     # shared_buffers = eval(total_mem) / 4    
@@ -145,17 +139,17 @@ def psql_configure(version='', cluster='main', port='5432', listen='*'):
 
 
 def psql_postgres_password(password):
-    """ Change password for user: postgres """
+    """ Change password for user: postgres - Ex: (cmd:<password>)"""
     sudo('echo "ALTER USER postgres WITH ENCRYPTED PASSWORD \'{0}\';" | sudo -u postgres psql'.format(password))
 
 
 def psql_create_user(username, password):
-    """ Create postgresql user """
+    """ Create postgresql user - Ex: (cmd:<dbuser>,<dbname>)"""
     sudo('echo "CREATE ROLE {0} WITH LOGIN ENCRYPTED PASSWORD \'{1}\';" | sudo -u postgres psql'.format(username, password))
 
 
 def psql_delete_user(username):
-    """ Delete postgresql user """
+    """ Delete postgresql user - Ex: (cmd:<dbuser>)"""
     if username != 'postgres':
         sudo('echo "DROP ROLE {0};" | sudo -u postgres psql'.format(username))
     else:
@@ -163,31 +157,31 @@ def psql_delete_user(username):
 
 
 def psql_list_users():
-    """ List postgresql users """
+    """ List postgresql users - Ex: (cmd)"""
     sudo('sudo -u postgres psql -d template1 -c \"SELECT * from pg_user;\"')
 
 
 def psql_list_databases():
-    """ List postgresql databases """
+    """ List postgresql databases - Ex: (cmd)"""
     sudo('sudo -u postgres psql -l')
 
 
 def psql_create_database(dbname, dbowner):
-    """ Create a postgres database for and existing user """
+    """ Create a postgres database for and existing user - Ex: (cmd:<dbname>,<dbowner>)"""
     sudo('sudo -u postgres createdb -O {0} {1}'.format(dbowner, dbname))
 
 
 def psql_create_gis_database(dbname, dbowner):
-    """ Create a postgres GIS database for and existing user """
+    """ Create a postgres GIS database for and existing user - Ex: (cmd:<dbname>,<dbowner>)"""
     sudo('sudo -u postgres createdb -T template_postgis -O {0} {1}'.format(dbowner, dbname))
         
 
 def psql_delete_database(dbname):
-    """ Delete (drop) a database """
+    """ Delete (drop) a database - Ex: (cmd:<dbname>) """
     sudo('echo "DROP DATABASE {0};" | sudo -u postgres psql'.format(dbname))
 
 def psql_dump_database(dump_dir, db_name, dump_name=''):
-    """ Backup (dump) a database and save into a given directory """
+    """ Backup (dump) a database and save into a given directory - Ex: (cmd:<dumpdir>,<dbname>,[dumpname]) """
     if not files.exists(dump_dir):
         sudo('mkdir -p {0}'.format(dump_dir))
     if not dump_name:

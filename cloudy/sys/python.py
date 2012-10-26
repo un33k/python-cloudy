@@ -13,7 +13,7 @@ from fabric.api import hide
 from cloudy.sys.etc import sys_etc_git_commit
 
 def sys_python_install_common():
-    """ Install common python application """
+    """ Install common python application - Ex: (cmd) """
 
     requirements = '%s' % ' '.join([
         'python-psycopg2',
