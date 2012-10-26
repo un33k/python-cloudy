@@ -11,6 +11,7 @@ from fabric.api import env
 from fabric.api import settings
 from fabric.api import hide
 from fabric.contrib.files import sed
+from fabric.contrib import files
 
 from cloudy.sys.etc import etc_git_commit
 
@@ -102,7 +103,7 @@ def psql_remove_cluster(version='', cluster='main'):
 
 
 def psql_create_cluster(version='', cluster='main', encoding='UTF-8', data_dir='/var/lib/postgresql'):
-    """ Make a new clauster """
+    """ Make a new postgresql clauster """
 
     if not version:
         version = psql_default_installed_version()

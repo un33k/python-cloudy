@@ -26,7 +26,7 @@ def sys_install_core():
 def sys_set_timezone(zone='Canada/Eastern'):
     """ Sets system time zone, given a zone location """
     zone = os.path.abspath(os.path.join('/usr/share/zoneinfo', zone))
-    if os.path.exists(zone):
+    if files.exists(zone):
         sudo('ln -sf {0} /etc/localtime'.format(zone))
         etc_git_commit('Updated system timezone to ({0})'.format(zone))
     else:
@@ -37,7 +37,7 @@ def sys_make_swap_partition(size='512'):
     """ Ceates and install a swap file, given file size in MB """
     swap_file = '/swap/{0}MiB.swap'.format(size)
     sudo('mkdir -p /swap')
-    if not os.path.exists(swap_file):
+    if not files.exists(swap_file):
         sudo('fallocate -l {0}m {1}'.format(size, swap_file))
         sudo('chmod 600 {0}'.format(swap_file))
         sudo('mkswap {0}'.format(swap_file))
@@ -52,7 +52,7 @@ def sys_mount_device(device='', filesystem='xfs', mount_point=''):
     """ Mounts a device given a mount point and filesystem type """
     if not mount_point:
         print >> sys.stderr, 'Mount point missing'
-    if not device or not os.path.exists(device):
+    if not device or not files.exists(device):
         print >> sys.stderr, 'Device missing or not attached'
 
     if filesystem == 'xfs':

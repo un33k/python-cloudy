@@ -10,6 +10,7 @@ from fabric.api import put
 from fabric.api import env
 from fabric.api import settings
 from fabric.api import hide
+from fabric.contrib import files
 
 from cloudy.db.psql import psql_default_installed_version
 from cloudy.sys.etc import etc_git_commit
