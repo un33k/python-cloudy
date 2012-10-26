@@ -13,7 +13,7 @@ from fabric.api import hide
 from fabric.api import cd
 from fabric.contrib import files
 
-def etc_git_init():
+def sys_etc_git_init():
     """ Track changes in /etc/ """
 
     if not files.exists('/etc/.git', use_sudo=True):
@@ -22,10 +22,10 @@ def etc_git_init():
             sudo('git add .')
             sudo('git commit -a -m "Initial Submission"')
 
-def etc_git_commit(msg):
+def sys_etc_git_commit(msg):
     """ Add/Remove files from git and commit changes """
     
-    etc_git_init()
+    sys_etc_git_init()
     with cd('/etc'):
         ret = sudo('git status')
         if 'nothing to commit' not in ret:

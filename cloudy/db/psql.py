@@ -13,7 +13,7 @@ from fabric.api import hide
 from fabric.contrib.files import sed
 from fabric.contrib import files
 
-from cloudy.sys.etc import etc_git_commit
+from cloudy.sys.etc import sys_etc_git_commit
 
 
 def psql_latest_version():
@@ -60,6 +60,7 @@ def psql_default_installed_version():
         
 def psql_install(version=''):
     """ Install postgres of a given version or the latest version """
+
     if not version:
         version = psql_latest_version()
         
@@ -74,7 +75,7 @@ def psql_install(version=''):
     
     # install requirements
     sudo('apt-get -y install{0}'.format(requirements))
-    etc_git_commit('Installed postgres ({0})'.format(version))
+    sys_etc_git_commit('Installed postgres ({0})'.format(version))
 
 
 def psql_make_data_dir(version='', data_dir='/var/lib/postgresql'):
@@ -99,7 +100,7 @@ def psql_remove_cluster(version='', cluster='main'):
     with settings(warn_only=True):
         sudo('pg_dropcluster --stop {0} {1}'.format(version, cluster))
 
-    etc_git_commit('Removed postgres cluster ({0} {1})'.format(version, cluster))
+    sys_etc_git_commit('Removed postgres cluster ({0} {1})'.format(version, cluster))
 
 
 def psql_create_cluster(version='', cluster='main', encoding='UTF-8', data_dir='/var/lib/postgresql'):
@@ -116,10 +117,11 @@ def psql_create_cluster(version='', cluster='main', encoding='UTF-8', data_dir='
     sudo('chown -R postgres {0}'.format(data_dir))
     sudo('pg_createcluster --start -e {0} {1} {2} -d {3}'.format(encoding, version, cluster, data_dir))
     sudo('service postgresql start')
-    etc_git_commit('Created new postgres cluster ({0} {1})'.format(version, cluster))
+    sys_etc_git_commit('Created new postgres cluster ({0} {1})'.format(version, cluster))
 
 
 def psql_configure(version='', cluster='main', port='5432', listen='*'):
+    """ Configure postgres """
     if not version:
         version = psql_default_installed_version()
 
@@ -135,12 +137,13 @@ def psql_configure(version='', cluster='main', port='5432', listen='*'):
     pg_hba_conf = os.path.abspath(os.path.join(conf_dir, 'pg_hba.conf'))
     sudo('echo \"host all all 0.0.0.0/0 md5\" >> {0}'.format(pg_hba_conf))
     
-    etc_git_commit('Configured postgres cluster ({0} {1})'.format(version, cluster))
+    sys_etc_git_commit('Configured postgres cluster ({0} {1})'.format(version, cluster))
     
     sudo('service postgresql start')
 
 
 def psql_postgres_password(password):
+    """ Change password the user: postgres """
     sudo('echo "ALTER USER postgres WITH ENCRYPTED PASSWORD \'{0}\';" | sudo -u postgres psql'.format(password))
 
 

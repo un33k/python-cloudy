@@ -13,7 +13,7 @@ from fabric.api import hide
 from fabric.contrib import files
 
 from cloudy.db.psql import psql_default_installed_version
-from cloudy.sys.etc import etc_git_commit
+from cloudy.sys.etc import sys_etc_git_commit
 
 
 def pgis_install(version=''):
@@ -41,7 +41,7 @@ def pgis_install(version=''):
     # install requirements
     sudo('apt-get -y install {0}'.format(requirements))
     sudo('service postgresql start')
-    etc_git_commit('Installed postgis for pqsl ({0})'.format(version))
+    sys_etc_git_commit('Installed postgis for pqsl ({0})'.format(version))
 
 
 def pgis_get_latest_version(pg_version=''):
@@ -98,7 +98,7 @@ def pgis_configure(pg_version='', pgis_version=''):
     sudo('sudo -u postgres psql -d template_postgis -c \"GRANT ALL ON geometry_columns TO PUBLIC;\"')
     sudo('sudo -u postgres psql -d template_postgis -c \"GRANT ALL ON spatial_ref_sys TO PUBLIC;\"')
     sudo('sudo -u postgres psql -d template_postgis -c \"GRANT ALL ON geography_columns TO PUBLIC;\"')
-    etc_git_commit('Configured postgis ({0}) for pqsl ({1})'.format(pg_version, pgis_version))
+    sys_etc_git_commit('Configured postgis ({0}) for pqsl ({1})'.format(pg_version, pgis_version))
 
 
 

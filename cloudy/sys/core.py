@@ -10,10 +10,10 @@ from fabric.api import env
 from fabric.api import settings
 from fabric.api import hide
 
-from cloudy.sys.etc import etc_git_commit
+from cloudy.sys.etc import sys_etc_git_commit
 
-def sys_install_core():
-    # core
+def sys_install_common():
+    """ Install common application """
     requirements = '%s' % ' '.join([
         'git',
         'subversion',
@@ -28,7 +28,7 @@ def sys_set_timezone(zone='Canada/Eastern'):
     zone = os.path.abspath(os.path.join('/usr/share/zoneinfo', zone))
     if files.exists(zone):
         sudo('ln -sf {0} /etc/localtime'.format(zone))
-        etc_git_commit('Updated system timezone to ({0})'.format(zone))
+        sys_etc_git_commit('Updated system timezone to ({0})'.format(zone))
     else:
         print >> sys.stderr, 'Zone not found {0}'.format(zone)
 
@@ -43,7 +43,7 @@ def sys_make_swap_partition(size='512'):
         sudo('mkswap {0}'.format(swap_file))
         sudo('swapon {0}'.format(swap_file))
         sudo('echo "{0} swap  swap  defaults  0 0" | sudo tee -a /etc/fstab'.format(swap_file))
-        etc_git_commit('Added swap file ({0})'.format(swap_file))
+        sys_etc_git_commit('Added swap file ({0})'.format(swap_file))
     else:
         print >> sys.stderr, 'Swap file ({0}) Exists'.format(swap_file)
 
@@ -62,7 +62,7 @@ def sys_mount_device(device='', filesystem='xfs', mount_point=''):
     sudo('echo "{0}  {1}   {2} noatime 0 0" | sudo tee -a /etc/fstab'.format(device, mount_point, filesystem))
     sudo('mkdir -p {0}'.format(mount_point))
     sudo('mount -t {0} {1} {2}'.format(filesystem, device, mount_point))
-    etc_git_commit('Mounted {0} on {1} using {2}'.format(device, mount_point, filesystem))
+    sys_etc_git_commit('Mounted {0} on {1} using {2}'.format(device, mount_point, filesystem))
 
 
 
