@@ -101,6 +101,11 @@ def pgis_configure(pg_version='', pgis_version=''):
     sys_etc_git_commit('Configured postgis ({0}) for pqsl ({1})'.format(pg_version, pgis_version))
 
 
+def pgis_get_database_gis_info(dbname):
+    """ Returns the postgis verion of a postgis dababase """
+    return sudo('sudo -u postgres  psql -d {0} -c \"SELECT postgis_full_version();\"'.format(dbname))
+
+
 
 
 

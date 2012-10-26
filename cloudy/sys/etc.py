@@ -1,7 +1,6 @@
 import os
 import re
 import sys
-from operator import itemgetter
 
 from fabric.api import run
 from fabric.api import task

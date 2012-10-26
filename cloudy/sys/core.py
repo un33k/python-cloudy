@@ -15,6 +15,8 @@ from cloudy.sys.etc import sys_etc_git_commit
 def sys_install_common():
     """ Install common application """
     requirements = '%s' % ' '.join([
+        'build-essential',
+        'gcc',
         'git',
         'subversion',
         'mercurial',
@@ -22,6 +24,7 @@ def sys_install_common():
     
     # install requirements
     sudo('apt-get -y install {0}'.format(requirements))
+    sys_etc_git_commit('Installed common system packages')
     
 def sys_set_timezone(zone='Canada/Eastern'):
     """ Sets system time zone, given a zone location """
