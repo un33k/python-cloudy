@@ -15,8 +15,8 @@ from fabric.api import cd
 
 def etc_git_init():
     """ Track changes in /etc/ """
-    etc_git = "/etc/.git"
-    if not os.path.exists(etc_git):
+
+    if not os.path.exists('/etc/.git'):
         with cd('/etc'):
             sudo('git init')
             sudo('git add .')

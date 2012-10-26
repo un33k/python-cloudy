@@ -12,7 +12,17 @@ from fabric.api import hide
 
 from cloudy.sys.etc import etc_git_commit
 
-
+def sys_install_core():
+    # core
+    requirements = '%s' % ' '.join([
+        'git',
+        'subversion',
+        'mercurial',
+    ])
+    
+    # install requirements
+    sudo('apt-get -y install {0}'.format(requirements))
+    
 def sys_set_timezone(zone='Canada/Eastern'):
     """ Sets system time zone, given a zone location """
     zone = os.path.abspath(os.path.join('/usr/share/zoneinfo', zone))
