@@ -20,6 +20,10 @@ def sys_install_common():
         'git',
         'subversion',
         'mercurial',
+        'wget',
+        'vim',
+        'less',
+        'sudo',
     ])
     
     # install requirements
