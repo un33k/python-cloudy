@@ -56,6 +56,13 @@ def sys_hostname_configure(hostname):
     sys_etc_git_commit('Configured hostname to: {0}'.format(hostname))
 
 
+def sys_locale_configure(locale='en_US.UTF-8'):
+    """ Configure system's locale - Ex: (cmd:<locale>)"""
+    sudo('dpkg-reconfigure locales')
+    sudo('update-locale LANG={0}'.format(locale))
+
+
+
 
 
 
