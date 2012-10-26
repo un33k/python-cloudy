@@ -2,6 +2,7 @@ import os
 import re
 import sys
 from operator import itemgetter
+import datetime
 
 from fabric.api import run
 from fabric.api import task
@@ -130,12 +131,13 @@ def psql_configure(version='', cluster='main', port='5432', listen='*'):
     postgresql_conf = os.path.abspath(os.path.join(conf_dir, 'postgresql.conf'))
     sudo('sed -i "s/#listen_addresses\s\+=\s\+\'localhost\'/listen_addresses = \'*\'/g" {0}'.format(postgresql_conf))
 
-    total_mem = sudo("free -m | head -2 | grep Mem | awk '{print $2}'")
-    shared_buffers = eval(total_mem) / 4    
-    sudo('sed -i "s/shared_buffers\s\+=\s\+[0-9]\+MB/shared_buffers = {0}MB/g" {1}'.format(shared_buffers, postgresql_conf))
+    # total_mem = sudo("free -m | head -2 | grep Mem | awk '{print $2}'")
+    # shared_buffers = eval(total_mem) / 4    
+    # sudo('sed -i "s/shared_buffers\s\+=\s\+[0-9]\+MB/shared_buffers = {0}MB/g" {1}'.format(shared_buffers, postgresql_conf))
     
+    # AWS security zone is relied on ... 
     pg_hba_conf = os.path.abspath(os.path.join(conf_dir, 'pg_hba.conf'))
-    sudo('echo \"host all all 0.0.0.0/0 md5\" >> {0}'.format(pg_hba_conf))
+    sudo('echo \"host all all 0.0.0.0/0 trust\" >> {0}'.format(pg_hba_conf))
     
     sys_etc_git_commit('Configured postgres cluster ({0} {1})'.format(version, cluster))
     
@@ -143,10 +145,60 @@ def psql_configure(version='', cluster='main', port='5432', listen='*'):
 
 
 def psql_postgres_password(password):
-    """ Change password the user: postgres """
+    """ Change password for user: postgres """
     sudo('echo "ALTER USER postgres WITH ENCRYPTED PASSWORD \'{0}\';" | sudo -u postgres psql'.format(password))
 
 
+def psql_create_user(username, password):
+    """ Create postgresql user """
+    sudo('echo "CREATE ROLE {0} WITH LOGIN ENCRYPTED PASSWORD \'{1}\';" | sudo -u postgres psql'.format(username, password))
+
+
+def psql_delete_user(username):
+    """ Delete postgresql user """
+    if username != 'postgres':
+        sudo('echo "DROP ROLE {0};" | sudo -u postgres psql'.format(username))
+    else:
+        print >> sys.stderr, "Cannot drop user 'postgres'"
+
+
+def psql_list_users():
+    """ List postgresql users """
+    sudo('sudo -u postgres psql -d template1 -c \"SELECT * from pg_user;\"')
+
+
+def psql_list_databases():
+    """ List postgresql databases """
+    sudo('sudo -u postgres psql -l')
+
+
+def psql_create_database(dbname, dbowner):
+    """ Create a postgres database for and existing user """
+    sudo('sudo -u postgres createdb -O {0} {1}'.format(dbowner, dbname))
+
+
+def psql_create_gis_database(dbname, dbowner):
+    """ Create a postgres GIS database for and existing user """
+    sudo('sudo -u postgres createdb -T template_postgis -O {0} {1}'.format(dbowner, dbname))
+        
+
+def psql_delete_database(dbname):
+    """ Delete (drop) a database """
+    sudo('echo "DROP DATABASE {0};" | sudo -u postgres psql'.format(dbname))
+
+def psql_dump_database(dump_dir, db_name, dump_name=''):
+    """ Backup (dump) a database and save into a given directory """
+    if not files.exists(dump_dir):
+        sudo('mkdir -p {0}'.format(dump_dir))
+    if not dump_name:
+        now = datetime.datetime.now()
+        dump_name = "{0}_{1}_{2}_{3}_{4}_{5}.psql.gz".format(db_name, now.year, now.month, now.day, now.hour, now.second)
+    dump_name = os.path.join(dump_dir, dump_name)
+    pg_dump = '/usr/bin/pg_dump'
+    if not files.exists(pg_dump):
+        pg_dump = run('which pg_dump')
+    if files.exists(pg_dump):
+        sudo('sudo -u postgres {0} -h localhost | gzip > {1}'.format(pg_dump, dump_name))
 
 
 
