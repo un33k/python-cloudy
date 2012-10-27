@@ -23,21 +23,21 @@ def sys_firewall_secure_server():
     """ Secure the server right away - Ex: (cmd)"""
     sudo('ufw logging on')
     sudo('ufw default deny incoming; ufw default allow outgoing')
-    sudo('ufw disable; ufw enable')
+    sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
     sys_etc_git_commit('Server is secured down')
 
 
 def sys_firwall_allow_incoming_http():
     """ Allow http (port 80) request to this server - Ex: (cmd)"""
     sudo('ufw allow http')
-    sudo('ufw disable; ufw enable')
+    sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
     sys_etc_git_commit('Server can accept http request on port (80)')
 
 
 def sys_firwall_disallow_incoming_http():
     """ Disallow http (port 80) request to this server - Ex: (cmd)"""
     sudo('ufw delete allow http')
-    sudo('ufw disable; ufw enable')
+    sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
     sys_etc_git_commit('Server no longer accept http request on port (80)')
 
 
