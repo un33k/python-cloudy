@@ -13,7 +13,7 @@ from fabric.contrib import files
 
 from cloudy.sys.etc import sys_etc_git_commit
 
-def sys_make_swap_partition(size='512'):
+def sys_swap_configure(size='512'):
     """ Ceates and install a swap file, given file size in MB - Ex (cmd:[Size-MB]) """
     swap_file = '/swap/{0}MiB.swap'.format(size)
     sudo('mkdir -p /swap')
