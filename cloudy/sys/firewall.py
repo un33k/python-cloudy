@@ -27,6 +27,19 @@ def sys_firewall_secure_server():
     sys_etc_git_commit('Server is secured down')
 
 
+def sys_firewall_wideopen():
+    """ Open up firewall, the server will be wide open - Ex: (cmd)"""
+    sudo('ufw default allow incoming; ufw default allow outgoing')
+    sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
+    sys_etc_git_commit('Server is wide open')
+    
+
+def sys_firewall_disable():
+    """ Disable firewall, the server will be wide open - Ex: (cmd)"""
+    sudo('ufw disable; sudo ufw status verbose')
+    sys_etc_git_commit('Server is disabled - No firewall')
+
+
 def sys_firwall_allow_incoming_http():
     """ Allow http (port 80) requests to this server - Ex: (cmd)"""
     sudo('ufw allow http')
