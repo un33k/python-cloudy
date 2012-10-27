@@ -28,17 +28,45 @@ def sys_firewall_secure_server():
 
 
 def sys_firwall_allow_incoming_http():
-    """ Allow http (port 80) request to this server - Ex: (cmd)"""
+    """ Allow http (port 80) requests to this server - Ex: (cmd)"""
     sudo('ufw allow http')
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
-    sys_etc_git_commit('Server can accept http request on port (80)')
+    sys_etc_git_commit('Server now accepts http request on port (80)')
 
 
 def sys_firwall_disallow_incoming_http():
-    """ Disallow http (port 80) request to this server - Ex: (cmd)"""
+    """ Disallow http (port 80) requests to this server - Ex: (cmd)"""
     sudo('ufw delete allow http')
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
-    sys_etc_git_commit('Server no longer accept http request on port (80)')
+    sys_etc_git_commit('Server no longer accepts http request on port (80)')
+
+
+def sys_firwall_allow_incoming_https():
+    """ Allow http (port 443) requests to this server - Ex: (cmd)"""
+    sudo('ufw allow https')
+    sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
+    sys_etc_git_commit('Server now accepts https requests on port (443)')
+
+
+def sys_firwall_disallow_incoming_https():
+    """ Disallow http (port 443) requests to this server - Ex: (cmd)"""
+    sudo('ufw delete allow https')
+    sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
+    sys_etc_git_commit('Server no longer accepts https requests on port (443)')
+
+
+def sys_firwall_allow_incoming_postgresql():
+    """ Allow postgresql (port 5432) requests to this server - Ex: (cmd)"""
+    sudo('ufw allow postgresql')
+    sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
+    sys_etc_git_commit('Server now accepts postgresql requests on port (5432)')
+
+
+def sys_firwall_disallow_incoming_postgresql():
+    """ Disallow postgresql (port 5432) requests to this server - Ex: (cmd)"""
+    sudo('ufw delete allow postgresql')
+    sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
+    sys_etc_git_commit('Server no longer accepts postgresql requests on port (5432)')
 
 
 
