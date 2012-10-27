@@ -19,16 +19,13 @@ class CloudyConfig(object):
         self.cfg = ConfigParser.ConfigParser()
 
         paths = []
-        paths.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../cfg/defaults.cfg")))
-        if type(filenames) == list:
-            for f in filenames:
-                p = os.path.expanduser(f)
-                if os.path.exists(p):
-                    paths.append(p)
-        else:
-            paths.append(filenames)
-
-        print paths
+        if isinstance(filenames, basestring):
+            filenames = [filenames]
+        for f in filenames:
+            p = os.path.expanduser(f)
+            if os.path.exists(p):
+                paths.append(p)
+        paths.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../cfg/defaults.cfg")))        
         
         try:
             self.cfg.read(paths)

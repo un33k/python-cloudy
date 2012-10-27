@@ -13,5 +13,21 @@ from fabric.api import settings
 from fabric.api import hide
 from fabric.contrib import files
 
-from cloudy.sys.etc import sys_etc_git_commit
+from libcloud.compute.types import Provider
+from libcloud.compute.providers import get_driver
 
+from cloudy.sys.etc import sys_etc_git_commit
+from cloudy.util.conf import CloudyConfig
+
+def aws_list_instances(cfg="~/.cloudy"):
+    c = CloudyConfig(filenames=cfg)
+    
+    # AWS_ACCESS_ID = c.cfg_grid['AWS']['AWS_ACCESS_ID']
+    # AWS_SECRET_KEY = c.cfg_grid['AWS']['AWS_SECRET_KEY']
+    # 
+    # Driver = get_driver(Provider.EC2)
+    # conn = Driver(AWS_ACCESS_ID, AWS_SECRET_KEY)
+    # nodes = conn.list_nodes()
+    # 
+    print c.cfg_grid
+    
