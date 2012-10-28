@@ -11,7 +11,7 @@ class CloudyConfig(object):
     log = None
     cfg_grid = {}
     
-    def __init__(self, filenames, log_level=logging.WARN):
+    def __init__(self, filenames='~/.cloudy', log_level=logging.WARN):
         """ Setup logging and ensure file paths are valid - file order is important, last wins """
 
         self.log = logging.getLogger(os.path.basename(__file__))
