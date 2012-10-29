@@ -24,13 +24,13 @@ def aws_list_instances():
     """ Lists all AWS EC2 instance - Ex: (cmd)"""
     try:
         c = CloudyConfig()
-        AWS_ACCESS_ID = c.cfg_grid['AWS']['aws_access_id'].strip()
-        AWS_SECRET_KEY = c.cfg_grid['AWS']['aws_secret_key'].strip()
+        ACCESS_ID = c.cfg_grid['AWS']['access_id'].strip()
+        SECRET_KEY = c.cfg_grid['AWS']['secret_key'].strip()
     except:
-        abort('Unable to read AWS_ACCESS_ID, AWS_SECRET_KEY')
+        abort('Unable to read ACCESS_ID, SECRET_KEY')
  
     Driver = get_driver(Provider.EC2)
-    conn = Driver(AWS_ACCESS_ID, AWS_SECRET_KEY)
+    conn = Driver(ACCESS_ID, SECRET_KEY)
     nodes = conn.list_nodes()
     print >> sys.stderr, nodes
     return nodes
@@ -40,13 +40,13 @@ def aws_create_node(name, securitygroup, ami, size='t1.micro'):
     
     try:
         c = CloudyConfig()
-        AWS_ACCESS_ID = c.cfg_grid['AWS']['aws_access_id'].strip()
-        AWS_SECRET_KEY = c.cfg_grid['AWS']['aws_secret_key'].strip()
+        ACCESS_ID = c.cfg_grid['AWS']['access_id'].strip()
+        SECRET_KEY = c.cfg_grid['AWS']['secret_key'].strip()
     except:
-        abort('Unable to read AWS_ACCESS_ID, AWS_SECRET_KEY')
+        abort('Unable to read ACCESS_ID, SECRET_KEY')
 
     Driver = get_driver(Provider.EC2_US_EAST)
-    conn = Driver(AWS_ACCESS_ID, AWS_SECRET_KEY)
+    conn = Driver(ACCESS_ID, SECRET_KEY)
     
     image = [i for i in conn.list_images() if i.id == ami ][0]
     size = [s for s in conn.list_sizes() if s.id == size][0]
