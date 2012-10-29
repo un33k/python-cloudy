@@ -27,6 +27,7 @@ def sys_ssh_disable_root_login():
     sshd_config = '/etc/ssh/sshd_config'
     files.sed(sshd_config, before='\s*#\s*\PermitRootLogin\s*(yes|no)', after='PermitRootLogin no',use_sudo=True)
     files.sed(sshd_config, before='\s*PermitRootLogin\s*yes', after='PermitRootLogin no',use_sudo=True)
+    sudo('sudo passwd -l root')
     sudo('service ssh reload')
     sys_etc_git_commit('Diabled root login')
 
