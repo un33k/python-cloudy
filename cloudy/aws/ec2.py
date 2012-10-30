@@ -60,18 +60,28 @@ def util_get_connection():
     return conn
 
 
-def util_wait_till_node(name, state, timeout=20):
+def util_wait_till_node(name, state, timeout=10):
     node = None
     elapsed = 0
     frequency = 5
     while elapsed < timeout:
         node = aws_get_node(name)
-        if node and node.state == state:
-            break
+        if node:
+            if node.state == state:
+                break
         time.sleep(frequency)
         elapsed = elapsed + frequency
     return node
-    
+
+def util_wait_till_node_destroyed(name, timeout=15):
+    return util_wait_till_node(name, NodeState.TERMINATED, timeout)
+
+
+def util_wait_till_node_running(name, timeout=15):
+    return util_wait_till_node(name, NodeState.RUNNING, timeout)
+
+
+
 def aws_list_instances():
     """ Lists all AWS EC2 instance - Ex: (cmd)"""
     conn = util_get_connection()
@@ -204,7 +214,7 @@ def aws_get_node(name):
 
 
 def aws_create_node(name, image, size, security, key, timeout=30):
-    """ Create a node """
+    """ Create a node - Ex: (cmd:name,image,size,secuirty,key,timeout) """
     conn = util_get_connection()
 
     if aws_get_node(name):
@@ -227,10 +237,28 @@ def aws_create_node(name, image, size, security, key, timeout=30):
     node = conn.create_node(name=name, image=image, size=size, ex_securitygroup=security, ex_keyname=key)
     if not node:
         abort('Failed to create node (name:{0}, image:{1}, size:{2})'.format(name, image, size))
-    
-    node = util_wait_till_node(name, NodeState.RUNNING, timeout)
+
+    node = util_wait_till_node_running(name)
     util_print_node(node)
     return node
+
+
+def aws_destroy_node(name, timeout=30):
+    """ Destory a computing node - Ex (cmd:name)"""
+
+    node = aws_get_node(name)
+    if not node:
+        abort('Node does not exist or terminiated ({0})'.format(name))
+
+    if node.destroy():
+        node = util_wait_till_node_destroyed(name, timeout)
+        if node:
+            print >> sys.stderr, 'Node is destroyed ({0})'.format(name)
+        else:
+            print >> sys.stderr, 'Node is bein destroyed ({0})'.format(name)
+    else:
+        abort('Failed to destroy node ({0})'.format(name))
+
 
 
 
