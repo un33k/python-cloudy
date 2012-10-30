@@ -62,6 +62,8 @@ def sys_locale_configure(locale='en_US.UTF-8'):
     sudo('update-locale LANG={0}'.format(locale))
 
 
+def sys_uname():
+    sudo('uname -a')
 
 
 
