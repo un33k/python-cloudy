@@ -214,7 +214,7 @@ def aws_get_node(name):
 
 
 def aws_create_node(name, image, size, security, key, timeout=30):
-    """ Create a node - Ex: (cmd:name,image,size,secuirty,key,timeout) """
+    """ Create a node - Ex: (cmd:<name>,<image>,<size>,[secuirty],[key],[timeout]) """
     conn = util_get_connection()
 
     if aws_get_node(name):
@@ -244,7 +244,7 @@ def aws_create_node(name, image, size, security, key, timeout=30):
 
 
 def aws_destroy_node(name, timeout=30):
-    """ Destory a computing node - Ex (cmd:name)"""
+    """ Destory a computing node - Ex (cmd:<name>)"""
 
     node = aws_get_node(name)
     if not node:
@@ -260,7 +260,16 @@ def aws_destroy_node(name, timeout=30):
         abort('Failed to destroy node ({0})'.format(name))
 
 
-
+def aws_create_volume(name, size, location, snapshot=None):
+    """ Create a volume of a given size in a given zone - Ex: (cmd:<name>,<size>,[location],[snapshot])"""
+    
+    conn = util_get_connection()
+    loc = aws_get_location(location)
+    if not loc:
+        abort('Location does not exist ({0})'.format(location))
+    
+    volume = conn.create_volume(name=name, size=size, location=loc, snapshot=snapshot)
+    return volume
 
 
     
