@@ -3,6 +3,7 @@ import re
 import sys
 from operator import itemgetter
 import datetime
+import time
 
 from fabric.api import run
 from fabric.api import task
@@ -20,6 +21,19 @@ from libcloud.compute.providers import get_driver
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.util.conf import CloudyConfig
 from libcloud.compute.types import NodeState
+from libcloud.compute.base import Node
+
+def util_print_node(node):
+    if node:
+        print >> sys.stderr, ', '.join([
+                        'name: ' + node.name, 
+                        'status: ' + util_get_state2string(node.state), 
+                        'image: '  + node.extra['imageId'],
+                        'zone: ' + node.extra['availability'],
+                        'key: '  + node.extra['keyname'],
+                        'size: ' + node.extra['instancetype'],
+                        'pub ip: ' + str(node.public_ips)]
+                    )
 
 def util_get_state2string(state):
     compute_state_map = {
@@ -46,6 +60,18 @@ def util_get_connection():
     return conn
 
 
+def util_wait_till_node(name, state, timeout=20):
+    node = None
+    elapsed = 0
+    frequency = 5
+    while elapsed < timeout:
+        node = aws_get_node(name)
+        if node and node.state == state:
+            break
+        time.sleep(frequency)
+        elapsed = elapsed + frequency
+    return node
+    
 def aws_list_instances():
     """ Lists all AWS EC2 instance - Ex: (cmd)"""
     conn = util_get_connection()
@@ -123,7 +149,7 @@ def aws_list_security_groups():
         print >> sys.stderr, i
 
 
-def aws_get_security_group(name):
+def aws_security_group_found(name):
     """ Confirm if a security group exists - Ex: (cmd:<name>) """
     conn = util_get_connection()
     groups = sorted([i for i in conn.ex_list_security_groups()])
@@ -131,29 +157,8 @@ def aws_get_security_group(name):
         for i in groups:
             if i == name:
                 print >> sys.stderr, i
-                return i
-    return None
-
-
-def aws_list_nodes():
-    """ List all available computing nodes - Ex: (cmd)"""
-
-    conn = util_get_connection()
-    nodes = sorted([i for i in conn.list_nodes()])
-    for i in nodes:
-        print >> sys.stderr, ' - '.join([i.name, util_get_state2string(i.state), str(i.public_ips)])
-
-
-def aws_get_node(name):
-    """ Confirm if a computing node exists - Ex: (cmd:<name>) """
-
-    conn = util_get_connection()
-    nodes = sorted([i for i in conn.list_nodes()])
-    for i in nodes:
-        if i.name == name:
-            print >> sys.stderr, ' - '.join([i.name, util_get_state2string(i.state), str(i.public_ips)])
-            return i
-    return None
+                return True
+    return False
 
 
 def aws_list_keypairs():
@@ -164,7 +169,7 @@ def aws_list_keypairs():
         print i
 
 
-def aws_get_keypairs(name):
+def aws_keypair_found(name):
     """ Confirm if a keypair exists - Ex: (cmd:<name>) """
 
     conn = util_get_connection()
@@ -172,30 +177,59 @@ def aws_get_keypairs(name):
     for i in keys:
         if i == name:
             print i
-            return i
+            return True
 
+    return False
+
+
+def aws_list_nodes():
+    """ List all available computing nodes - Ex: (cmd)"""
+
+    conn = util_get_connection()
+    nodes = sorted([i for i in conn.list_nodes()])
+    for i in nodes:
+        util_print_node(i)
+
+
+def aws_get_node(name):
+    """ Confirm if a computing node exists - Ex: (cmd:<name>) """
+
+    conn = util_get_connection()
+    nodes = sorted([i for i in conn.list_nodes()])
+    for i in nodes:
+        if i.name == name:
+            util_print_node(i)
+            return i
     return None
 
 
-def aws_create_node(name, image, size, security, key='~/.ssh/id_rsa.pub'):
+def aws_create_node(name, image, size, security, key, timeout=30):
     """ Create a node """
     conn = util_get_connection()
-    
-    image = aws_get_image(image)
-    if not image:
-        abort('Invalid image ({0})'.format(image))
+
+    if aws_get_node(name):
+        abort('Node already exists ({0})'.format(name))
 
     size = aws_get_size(size)
     if not size:
         abort('Invalid size ({0})'.format(size))
+
+    if not aws_security_group_found(security):
+        abort('Invalid security group ({0})'.format(security))
         
-    os.path.expanduser(key)
-    
-    node = conn.create_node(name=name, image=image, size=size, ex_securitygroup=securitygroup)
+    if not aws_keypair_found(key):
+        abort('Invalid key ({0})'.format(key))
+
+    image = aws_get_image(image)
+    if not image:
+        abort('Invalid image ({0})'.format(image))
+
+    node = conn.create_node(name=name, image=image, size=size, ex_securitygroup=security, ex_keyname=key)
     if not node:
         abort('Failed to create node (name:{0}, image:{1}, size:{2})'.format(name, image, size))
     
-    print >> sys.stderr, node
+    node = util_wait_till_node(name, NodeState.RUNNING, timeout)
+    util_print_node(node)
     return node
 
 
