@@ -19,6 +19,19 @@ from libcloud.compute.providers import get_driver
 
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.util.conf import CloudyConfig
+from libcloud.compute.types import NodeState
+
+def util_get_state2string(state):
+    compute_state_map = {
+        NodeState.RUNNING: 'running',
+        NodeState.REBOOTING: 'rebooting',
+        NodeState.TERMINATED: 'terminated',
+        NodeState.PENDING: 'pending',
+        NodeState.UNKNOWN: 'unknown',
+    }
+    if state in compute_state_map:
+        return compute_state_map[state]
+
 
 def util_get_connection():
     try:
@@ -41,53 +54,100 @@ def aws_list_instances():
 
 
 def aws_list_sizes():
-    """ List node sizes """
+    """ List node sizes - Ex: (cmd)"""
     conn = util_get_connection()
-    sizes = sorted([s for s in conn.list_sizes()])
-    for s in sizes:
-        print >> sys.stderr, ' - '.join([s.id, str(s.ram), str(s.price), s.driver.name])
+    sizes = sorted([i for i in conn.list_sizes()])
+    for i in sizes:
+        print >> sys.stderr, ' - '.join([i.id, str(i.ram), str(i.price)])
 
 
 def aws_get_size(size):
-    """ Get Node Size """
+    """ Get Node Size - Ex: (cmd:<size>)"""
     conn = util_get_connection()
-    sizes = [s for s in conn.list_sizes()]
+    sizes = [i for i in conn.list_sizes()]
     if size:
-        for s in sizes:
-            if str(s.ram) == size or s.id == size:
-                print >> sys.stderr, ' - '.join([s.id, str(s.ram), str(s.price), s.driver.name])
-                return s
+        for i in sizes:
+            if str(i.ram) == size or i.id == size:
+                print >> sys.stderr, ' - '.join([i.id, str(i.ram), str(i.price)])
+                return i
     
     return None
 
-def aws_get_images():
-    """ List available images """
+
+def aws_list_images():
+    """ List available images - Ex: (cmd)"""
     conn = util_get_connection()
     images = sorted([i for i in conn.list_images()])
     for i in images:
-        print >> sys.stderr, ' - '.join([i.id, i.name, i.driver.name])
+        print >> sys.stderr, ' - '.join([i.id, i.name])
 
 
 def aws_get_image(name):
-    """ Confirm if a node exists """
+    """ Confirm if a node exists - Ex: (cmd:<image>)"""
     conn = util_get_connection()
     images = [i for i in conn.list_images()]
     if name:
         for i in images:
             if name == i.id:
-                print >> sys.stderr, ' - '.join([i.id, i.name, i.driver.name])
+                print >> sys.stderr, ' - '.join([i.id, i.name])
                 return i
     return None
 
 
-def aws_get_locations():
-    """ List available locations """
+def aws_list_locations():
+    """ List available locations - Ex: (cmd) """
     conn = util_get_connection()
-    locations = sorted([l for l in conn.list_locations()])
-    for l in locations:
-        print l
-        # print >> sys.stderr, ' - '.join([i.id, i.name, i.driver.name])
+    locations = sorted([i for i in conn.list_locations()])
+    for i in locations:
+        print >> sys.stderr, ' - '.join([i.availability_zone.name, i.id, i.name, i.country])
 
+
+def aws_get_location(name):
+    """ Confirm if a location exists - Ex: (cmd:<location>)"""
+    conn = util_get_connection()
+    locations = sorted([i for i in conn.list_locations()])
+    if name:
+        for i in locations:
+            if name == i.availability_zone.name:
+                print >> sys.stderr, ' - '.join([i.availability_zone.name, i.id, i.name, i.country])
+                return i
+    return None
+
+
+def aws_list_security_groups():
+    """ List available security groups - Ex: (cmd)"""
+    conn = util_get_connection()
+    groups = sorted([i for i in conn.ex_list_security_groups()])
+    for i in groups:
+        print >> sys.stderr, i
+
+
+def aws_get_security_group(name):
+    """ Confirm if a security group exists - Ex: (cmd:<securitygroup>) """
+    conn = util_get_connection()
+    groups = sorted([i for i in conn.ex_list_security_groups()])
+    if name:
+        for i in groups:
+            if i == name:
+                print >> sys.stderr, i
+                return i
+    return None
+
+
+def aws_list_nodes():
+    conn = util_get_connection()
+    nodes = sorted([i for i in conn.list_nodes()])
+    for i in nodes:
+        print >> sys.stderr, ' - '.join([i.name, util_get_state2string(i.state), str(i.public_ips)])
+
+def aws_get_node(name):
+    conn = util_get_connection()
+    nodes = sorted([i for i in conn.list_nodes()])
+    for i in nodes:
+        if i.name == name:
+            print >> sys.stderr, ' - '.join([i.name, util_get_state2string(i.state), str(i.public_ips)])
+            return i
+    return None
 
 def aws_create_node(name, image, size, security, key):
     """ Create a node """
