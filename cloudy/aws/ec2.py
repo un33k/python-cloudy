@@ -45,6 +45,7 @@ def util_get_connection():
     conn = Driver(ACCESS_ID, SECRET_KEY)
     return conn
 
+
 def aws_list_instances():
     """ Lists all AWS EC2 instance - Ex: (cmd)"""
     conn = util_get_connection()
@@ -123,7 +124,7 @@ def aws_list_security_groups():
 
 
 def aws_get_security_group(name):
-    """ Confirm if a security group exists - Ex: (cmd:<securitygroup>) """
+    """ Confirm if a security group exists - Ex: (cmd:<name>) """
     conn = util_get_connection()
     groups = sorted([i for i in conn.ex_list_security_groups()])
     if name:
@@ -135,12 +136,17 @@ def aws_get_security_group(name):
 
 
 def aws_list_nodes():
+    """ List all available computing nodes - Ex: (cmd)"""
+
     conn = util_get_connection()
     nodes = sorted([i for i in conn.list_nodes()])
     for i in nodes:
         print >> sys.stderr, ' - '.join([i.name, util_get_state2string(i.state), str(i.public_ips)])
 
+
 def aws_get_node(name):
+    """ Confirm if a computing node exists - Ex: (cmd:<name>) """
+
     conn = util_get_connection()
     nodes = sorted([i for i in conn.list_nodes()])
     for i in nodes:
@@ -149,7 +155,29 @@ def aws_get_node(name):
             return i
     return None
 
-def aws_create_node(name, image, size, security, key):
+
+def aws_list_keypairs():
+    """ List all available keyparis - Ex: (cmd)"""
+    conn = util_get_connection()
+    nodes = sorted([i for i in conn.ex_describe_all_keypairs()])
+    for i in nodes:
+        print i
+
+
+def aws_get_keypairs(name):
+    """ Confirm if a keypair exists - Ex: (cmd:<name>) """
+
+    conn = util_get_connection()
+    keys = sorted([i for i in conn.ex_describe_all_keypairs()])
+    for i in keys:
+        if i == name:
+            print i
+            return i
+
+    return None
+
+
+def aws_create_node(name, image, size, security, key='~/.ssh/id_rsa.pub'):
     """ Create a node """
     conn = util_get_connection()
     
@@ -161,7 +189,8 @@ def aws_create_node(name, image, size, security, key):
     if not size:
         abort('Invalid size ({0})'.format(size))
         
-    os.path.expanduser(f)
+    os.path.expanduser(key)
+    
     node = conn.create_node(name=name, image=image, size=size, ex_securitygroup=securitygroup)
     if not node:
         abort('Failed to create node (name:{0}, image:{1}, size:{2})'.format(name, image, size))
