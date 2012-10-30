@@ -80,12 +80,27 @@ def aws_get_image(name):
     return None
 
 
-def aws_create_node(name, ami, security, key, size='t1.micro'):
+def aws_get_locations():
+    """ List available locations """
+    conn = util_get_connection()
+    locations = sorted([l for l in conn.list_locations()])
+    for l in locations:
+        print l
+        # print >> sys.stderr, ' - '.join([i.id, i.name, i.driver.name])
+
+
+def aws_create_node(name, image, size, security, key):
     """ Create a node """
     conn = util_get_connection()
     
-    image = [i for i in conn.list_images() if i.id == ami ][0]
-    size = [s for s in conn.list_sizes() if s.id == size][0]
+    image = aws_get_image(image)
+    if not image:
+        abort('Invalid image ({0})'.format(image))
+
+    size = aws_get_size(size)
+    if not size:
+        abort('Invalid size ({0})'.format(size))
+        
     os.path.expanduser(f)
     node = conn.create_node(name=name, image=image, size=size, ex_securitygroup=securitygroup)
     if not node:
