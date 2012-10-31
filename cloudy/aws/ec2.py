@@ -272,4 +272,19 @@ def aws_create_volume(name, size, location, snapshot=None):
     return volume
 
 
+def aws_list_volumes():
+    from boto.ec2.connection import EC2Connection
+    from boto.utils import get_instance_metadata
+    try:
+        c = CloudyConfig()
+        ACCESS_ID = c.cfg_grid['AWS']['access_id'].strip()
+        SECRET_KEY = c.cfg_grid['AWS']['secret_key'].strip()
+    except:
+        abort('Unable to read ACCESS_ID, SECRET_KEY')
+
+    conn = EC2Connection(ACCESS_ID, SECRET_KEY)
+    volumes = [v for v in conn.get_all_volumes()]
+    print volumes
+    
+
     
