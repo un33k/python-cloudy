@@ -25,7 +25,7 @@ def sys_mount_device(device, mount_point, filesystem='xfs'):
 
     if filesystem == 'xfs':
         sudo('apt-get install -y xfsprogs')
-    sudo('modprobe {0}'.format(filesystem))
+    sudo('grep -q xfs /proc/filesystems || modprobe {0}'.format(filesystem))
     sudo('mkfs.{0} {1}'.format(filesystem, device))
     sudo('echo "{0}  {1}   {2} noatime 0 0" | sudo tee -a /etc/fstab'.format(device, mount_point, filesystem))
     sudo('mkdir -p {0}'.format(mount_point))
