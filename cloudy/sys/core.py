@@ -12,6 +12,18 @@ from fabric.api import hide
 
 from cloudy.sys.etc import sys_etc_git_commit
 
+def sys_update():
+    """ Update package repositories - Ex: (cmd)"""
+    sudo('apt-get -y update')
+    sys_etc_git_commit('Updated package repositories')
+
+
+def sys_safe_upgrade():
+    """ Performe a safe upgrade - Ex: (cmd)"""
+    sudo('aptitude -y safe-upgrade')
+    sys_etc_git_commit('Upgraded the system safely')
+
+
 def sys_install_common():
     """ Install common application - Ex: (cmd)"""
     requirements = '%s' % ' '.join([
