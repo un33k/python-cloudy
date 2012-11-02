@@ -12,7 +12,7 @@ from fabric.api import hide
 from fabric.api import cd
 from fabric.contrib import files
 
-def is_get_installed():
+def is_git_installed():
     """ Determin if git is installed on host """
     with settings(warn_only=True):
         git = run('which git')
@@ -23,7 +23,7 @@ def is_get_installed():
 def sys_etc_git_init():
     """ Track changes in /etc/ - Ex: (cmd) """
     
-    if not is_get_installed():
+    if not is_git_installed():
         return
     if not files.exists('/etc/.git', use_sudo=True):
         with cd('/etc'):
@@ -34,7 +34,7 @@ def sys_etc_git_init():
 def sys_etc_git_commit(msg):
     """ Add/Remove files from git and commit changes - Ex: (cmd:<"some message">) """
 
-    if not is_get_installed():
+    if not is_git_installed():
         return
 
     sys_etc_git_init()
