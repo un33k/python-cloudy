@@ -23,6 +23,7 @@ def sys_firewall_secure_server():
     """ Secure the server right away - Ex: (cmd)"""
     sudo('ufw logging on')
     sudo('ufw default deny incoming; ufw default allow outgoing')
+    sudo('ufw allow ssh')
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
     sys_etc_git_commit('Server is secured down')
 
