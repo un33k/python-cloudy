@@ -11,6 +11,10 @@ from fabric.api import settings
 from fabric.api import hide
 from fabric.api import cd
 from fabric.contrib import files
+from fabric.utils import abort
+
+
+from cloudy.sys.etc import sys_etc_git_commit
 
 
 def sys_install_postfix():

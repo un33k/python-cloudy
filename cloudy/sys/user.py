@@ -10,6 +10,7 @@ from fabric.api import env
 from fabric.api import settings
 from fabric.api import hide
 from fabric.contrib import files
+from fabric.utils import abort
 
 from cloudy.sys.etc import sys_etc_git_commit
 
@@ -49,6 +50,13 @@ def sys_user_set_group_umask(username, umask='0002'):
     sudo('sed -i /\s*\umask\s*.*/d {0}'.format(bashrc))
     sudo('sed -i \'1iumask {0}\' {1}'.format(str(umask), bashrc))
     sys_etc_git_commit('Added umask ({0}) to user ({1})'.format(umask, username))
+
+
+def sys_user_change_password(username, password):
+    """ Add user to existing group - Ex: (cmd:<user>,<password>)"""
+    sudo('sudo usermod -a -G {0} {1}'.format(group, username))
+    sys_etc_git_commit('Added user ({0}) to group ({1})'.format(username, group))
+
 
 
 

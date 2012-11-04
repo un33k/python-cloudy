@@ -10,6 +10,7 @@ from fabric.api import env
 from fabric.api import settings
 from fabric.api import hide
 from fabric.contrib import files
+from fabric.utils import abort
 
 from cloudy.sys.etc import sys_etc_git_commit
 
@@ -60,6 +61,14 @@ def sys_git_configure(user, name, email):
     sudo('sudo -u {0} git config --global user.name \"{1}\"'.format(user, name))
     sudo('sudo -u {0} git config --global user.email \"{1}\"'.format(user, email))
     sys_etc_git_commit('Configured git for user: {0}'.format(user))
+
+
+def sys_add_hosts(host, ip):
+    """ Add ip:host to /etc/hosts - Ex: (cmd:<host>,<ip>)"""
+    host_file = '/etc/hosts'
+    sudo('sed -i /\s*\{0}\s*.*/d {1}'.format(host, host_file))
+    sudo('sed -i \'1i{0}\t{1}\' {2}'.format(ip, host, host_file))
+    sys_etc_git_commit('Added host:{0}, ip:{1} to: {2}'.format(host, ip, host_file))
 
 
 def sys_hostname_configure(hostname):
