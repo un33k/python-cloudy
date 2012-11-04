@@ -25,6 +25,7 @@ def srv_postgresql_server_setup():
     sys_configure_timezone('Canada/Eastern')
     sys_git_configure('root', 'Val Neekman', 'val@neekware.com')
     sys_hostname_configure('nw-db1')
+    sys_add_hosts('nw-db1', '127.0.0.1')
     sys_locale_configure()
     sys_install_postfix()
     sys_security_install_common()

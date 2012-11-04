@@ -14,8 +14,17 @@ from fabric.utils import abort
 
 from cloudy.sys.etc import sys_etc_git_commit
 
+
+def sys_user_delete(username):
+    """ Delete new user - Ex: (cmd:<user>)"""
+    with settings(warn_only=True):
+        sudo('userdel {0}'.format(username))
+    sys_etc_git_commit('Deleted user({0})'.format(username))
+
+
 def sys_user_add(username):
     """ Add new user - Ex: (cmd:<user>)"""
+    sys_user_delete(username)
     sudo('useradd --create-home --shell \"/bin/bash\" {0}'.format(username))
     sys_etc_git_commit('Added user({0})'.format(username))
 
@@ -56,8 +65,6 @@ def sys_user_change_password(username, password):
     """ Add user to existing group - Ex: (cmd:<user>,<password>)"""
     sudo('sudo usermod -a -G {0} {1}'.format(group, username))
     sys_etc_git_commit('Added user ({0}) to group ({1})'.format(username, group))
-
-
 
 
 
