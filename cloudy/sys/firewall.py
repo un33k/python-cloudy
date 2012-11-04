@@ -32,69 +32,75 @@ def sys_firewall_wideopen():
     """ Open up firewall, the server will be wide open - Ex: (cmd)"""
     sudo('ufw default allow incoming; ufw default allow outgoing')
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
-    sys_etc_git_commit('Server is wide open')
     
 
 def sys_firewall_disable():
     """ Disable firewall, the server will be wide open - Ex: (cmd)"""
     sudo('ufw disable; sudo ufw status verbose')
-    sys_etc_git_commit('Server is disabled - No firewall')
 
 
 def sys_firwall_allow_incoming_http():
     """ Allow http (port 80) requests to this server - Ex: (cmd)"""
     sudo('ufw allow http')
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
-    sys_etc_git_commit('Server now accepts http request on port (80)')
 
 
 def sys_firwall_disallow_incoming_http():
     """ Disallow http (port 80) requests to this server - Ex: (cmd)"""
     sudo('ufw delete allow http')
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
-    sys_etc_git_commit('Server no longer accepts http request on port (80)')
 
 
 def sys_firwall_allow_incoming_https():
     """ Allow http (port 443) requests to this server - Ex: (cmd)"""
     sudo('ufw allow https')
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
-    sys_etc_git_commit('Server now accepts https requests on port (443)')
 
 
 def sys_firwall_disallow_incoming_https():
     """ Disallow http (port 443) requests to this server - Ex: (cmd)"""
     sudo('ufw delete allow https')
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
-    sys_etc_git_commit('Server no longer accepts https requests on port (443)')
 
 
 def sys_firwall_allow_incoming_postgresql():
     """ Allow postgresql (port 5432) requests to this server - Ex: (cmd)"""
     sudo('ufw allow postgresql')
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
-    sys_etc_git_commit('Server now accepts postgresql requests on port (5432)')
 
 
 def sys_firwall_disallow_incoming_postgresql():
     """ Disallow postgresql (port 5432) requests to this server - Ex: (cmd)"""
     sudo('ufw delete allow postgresql')
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
-    sys_etc_git_commit('Server no longer accepts postgresql requests on port (5432)')
 
 
-def sys_firwall_allow_incoming_port(port, proto='any'):
-    """ Allow requests on specific port to this server - Ex: (cmd:port,[proto])"""
+def sys_firwall_allow_incoming_port(port):
+    """ Allow requests on specific port to this server - Ex: (cmd:<port>)"""
+    sudo('ufw allow {0}}'.format(port, proto))
+    sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
+
+
+def sys_firwall_disallow_incoming_port(port):
+    """ Disallow requests to this server on specific port - Ex: (cmd:<port>)"""
+    sudo('ufw delete allow {0}'.format(port))
+    with settings(warn_only=False):
+        sudo('ufw delete allow {0}/tcp'.format(port))
+        sudo('ufw delete allow {0}/udp'.format(port))
+    sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
+
+
+def sys_firwall_allow_incoming_port_proto(port, proto):
+    """ Allow requests on specific port to this server - Ex: (cmd:<port>,<proto>)"""
     sudo('ufw allow {0}/{1}'.format(port, proto))
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
-    sys_etc_git_commit('Server now accepts {0} requests on port ({1})'.format(proto, port))
 
 
-def sys_firwall_disallow_incoming_port(port, proto='any'):
-    """ Disallow requests to this server on specific port - Ex: (cmd:port,[proto])"""
+def sys_firwall_disallow_incoming_port_proto(port, proto):
+    """ Disallow requests to this server on specific port - Ex: (cmd:<port>,<proto>)"""
     sudo('ufw delete allow {0}/{1}'.format(port, proto))
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
-    sys_etc_git_commit('Server no longer accepts {0} requests on port ({1})'.format(proto, port))
+
 
 
 
