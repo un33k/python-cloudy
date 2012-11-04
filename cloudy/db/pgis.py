@@ -16,14 +16,14 @@ from cloudy.db.psql import db_psql_default_installed_version
 from cloudy.sys.etc import sys_etc_git_commit
 
 
-def db_pgis_install(version=''):
+def db_pgis_install(psql_version=''):
     """ Install postgis of a given postgres version - Ex: (cmd:[pgversion])"""
-    if not version:
-        version = psql_default_installed_version()
+    if not psql_version:
+        psql_version = db_psql_default_installed_version()
         
     # requirements
     requirements = '%s' % ' '.join([
-        'postgresql-{0}-postgis'.format(version),
+        'postgresql-{0}-postgis'.format(psql_version),
         'postgis',
         'proj',
         'gdal-bin',
@@ -41,14 +41,14 @@ def db_pgis_install(version=''):
     # install requirements
     sudo('apt-get -y install {0}'.format(requirements))
     sudo('service postgresql start')
-    sys_etc_git_commit('Installed postgis for pqsl ({0})'.format(version))
+    sys_etc_git_commit('Installed postgis for pqsl ({0})'.format(psql_version))
 
 
 def db_pgis_get_latest_version(pg_version=''):
     """ Returns the path of the installed postgis given a postgres version - Ex: (cmd:[pgversion])"""
     
     if not pg_version:
-        pg_version = psql_default_installed_version()
+        pg_version = db_psql_default_installed_version()
     
     latest_pgis_version = ''
     with settings(
@@ -77,9 +77,9 @@ def db_pgis_configure(pg_version='', pgis_version=''):
     """ Configure postgis template - Ex: (cmd:[pgversion],[gisversion]) """
     
     if not pg_version:
-        pg_version = psql_default_installed_version()
+        pg_version = db_psql_default_installed_version()
     if not pgis_version:
-        pgis_version = pgis_get_latest_version(pg_version)
+        pgis_version = db_pgis_get_latest_version(pg_version)
 
     sudo('sudo -u postgres psql -d postgres -c \"UPDATE pg_database SET datistemplate=\'false\' WHERE datname=\'template_postgis\';\"')
     with settings(warn_only=True):

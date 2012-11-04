@@ -62,7 +62,7 @@ def db_psql_install(version=''):
     """ Install postgres of a given version or the latest version - Ex: (cmd:[9.1])"""
 
     if not version:
-        version = psql_latest_version()
+        version = db_psql_latest_version()
         
     # requirements
     requirements = '%s' % ' '.join([
@@ -74,7 +74,7 @@ def db_psql_install(version=''):
     ])
     
     # install requirements
-    sudo('apt-get -y install{0}'.format(requirements))
+    sudo('apt-get -y install {0}'.format(requirements))
     sys_etc_git_commit('Installed postgres ({0})'.format(version))
 
 
@@ -82,7 +82,7 @@ def db_psql_make_data_dir(version='', data_dir='/var/lib/postgresql'):
     """ Make data directory for the postgres cluster - Ex: (cmd:[pgversion],[datadir])"""
     
     if not version:
-        version = psql_latest_version()
+        version =db_psql_latest_version()
 
     data_dir = os.path.abspath(os.path.join(data_dir, '{0}'.format(version)))
     sudo('mkdir -p {0}'.format(data_dir))
@@ -102,13 +102,13 @@ def db_psql_create_cluster(version='', cluster='main', encoding='UTF-8', data_di
     """ Make a new postgresql clauster - Ex: (cmd:[pgversion],[cluster],[encoding],[datadir])"""
 
     if not version:
-        version = psql_default_installed_version()
+        version = db_psql_default_installed_version()
     if not version:
-        version = psql_latest_version()
+        version = db_psql_latest_version()
 
-    psql_remove_cluster(version, cluster)
+    db_psql_remove_cluster(version, cluster)
     
-    data_dir = psql_make_data_dir(version, data_dir)
+    data_dir = db_psql_make_data_dir(version, data_dir)
     sudo('chown -R postgres {0}'.format(data_dir))
     sudo('pg_createcluster --start -e {0} {1} {2} -d {3}'.format(encoding, version, cluster, data_dir))
     sudo('service postgresql start')
@@ -118,12 +118,12 @@ def db_psql_create_cluster(version='', cluster='main', encoding='UTF-8', data_di
 def db_psql_configure(version='', cluster='main', port='5432', interface='*'):
     """ Configure postgres - Ex: (cmd:[pgversion],[cluster],[port],[interface])"""
     if not version:
-        version = psql_default_installed_version()
+        version = db_psql_default_installed_version()
 
     """ Configures posgresql configuration files """
     conf_dir = '/etc/postgresql/{0}/{1}'.format(version, cluster)
     postgresql_conf = os.path.abspath(os.path.join(conf_dir, 'postgresql.conf'))
-    sudo('sed -i "s/#listen_addresses\s\+=\s\+\'localhost\'/listen_addresses = \'{0}\'/g" {0}'.format(interface, postgresql_conf))
+    sudo('sed -i "s/#listen_addresses\s\+=\s\+\'localhost\'/listen_addresses = \'{0}\'/g" {1}'.format(interface, postgresql_conf))
 
     # total_mem = sudo("free -m | head -2 | grep Mem | awk '{print $2}'")
     # shared_buffers = eval(total_mem) / 4    
