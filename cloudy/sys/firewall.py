@@ -83,15 +83,15 @@ def sys_firwall_disallow_incoming_postgresql():
     sys_etc_git_commit('Server no longer accepts postgresql requests on port (5432)')
 
 
-def sys_firwall_allow_incoming_port(port, proto='tcp'):
-    """ Allow requests on specific port to this server - Ex: (cmd:port,proto)"""
+def sys_firwall_allow_incoming_port(port, proto='any'):
+    """ Allow requests on specific port to this server - Ex: (cmd:port,[proto])"""
     sudo('ufw allow {0}/{1}'.format(port, proto))
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
     sys_etc_git_commit('Server now accepts {0} requests on port ({1})'.format(proto, port))
 
 
-def sys_firwall_disallow_incoming_port(port, proto='tcp'):
-    """ Disallow requests to this server on specific port - Ex: (cmd:port,proto)"""
+def sys_firwall_disallow_incoming_port(port, proto='any'):
+    """ Disallow requests to this server on specific port - Ex: (cmd:port,[proto])"""
     sudo('ufw delete allow {0}/{1}'.format(port, proto))
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
     sys_etc_git_commit('Server no longer accepts {0} requests on port ({1})'.format(proto, port))
