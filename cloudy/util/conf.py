@@ -33,7 +33,7 @@ class CloudyConfig(object):
             self.log.error("Unable to open config file(s) (%s)" % e)
         else:
             for section in self.cfg.sections():
-                self.cfg_grid[section] = self._section_map(section).strip()
+                self.cfg_grid[section] = self._section_map(section)
 
 
     def _section_map(self, section):
@@ -51,13 +51,13 @@ class CloudyConfig(object):
         return valid
 
 
-    def get_variable(self, section, variable, fallback=None):
+    def get_variable(self, section, variable, fallback=''):
         """ Given a section and a variable, get the value """
         var = fallback
         try:
-            var = self.cfg_grid[section][variable]
+            var = self.cfg_grid[section.upper()][variable].strip()
         except:
-            var = None
+            pass
         return var
 
 

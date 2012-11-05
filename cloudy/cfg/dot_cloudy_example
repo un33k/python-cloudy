@@ -1,0 +1,23 @@
+
+
+
+[COMMON]
+# git info
+git-user-full-name      = full name
+git-user-email          = name@example.com
+
+# timezone and locale
+timezone                = Canada/Eastern
+locale                  = en_US.UTF-8
+
+[PG_MASTER]
+hostname                = db1
+admin-user              = adminuser
+admin-pass              = adminpass
+admin-group             = postgres
+pg-version              = 9.1
+pg-data-dir             = /data/postgresql
+postgres-pass           = postgres-user-pass
+pgis-version            = 1.5
+
+
