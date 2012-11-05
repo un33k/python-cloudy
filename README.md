@@ -13,22 +13,23 @@ A Python utility that simplifies cloud configuration.
 How to install
 ==================
 
-    1. easy_install python-cloudy
-    2. pip install python-cloudy
-    3. git clone http://github.com/un33k/python-cloudy
-        a. cd python-cloudy
-        b. run python setup.py
-    4. wget https://github.com/un33k/python-cloudy/zipball/master
-        a. unzip the downloaded file
-        b. cd into python-cloudy-* directory
-        c. run python setup.py
+    1. virtualenv cloudy
+    2. source cloudy/bin/activate
+    3. cd cloudy
+    4. git clone http://github.com/un33k/python-cloudy
+    5. pip install -e python-cloudy
+    6. cd python-cloudy/cloudy
+    7. fab -l
+    8. optional [create a ~/.cloudy file based on the example in the cfg dir]
 
 How to use
 =================
 
 ``Usage``
-TODO
-
+    fab -l # list all the commands
+    fab -H 10.10.10.10 -i ~/.ssh/key.pem sys_uname
+    ..etc.
+    
 ``Note:``
 
 Running the tests
