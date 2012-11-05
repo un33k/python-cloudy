@@ -4,7 +4,9 @@ from cloudy.aws import *
 from cloudy.srv import *
 from cloudy.util import *
 from fabric.api import env
+import logging
 
+logging.getLogger().setLevel(logging.WARNING)
 
 def setup_db_postgres_primary(cfg_files='~/.cloudy'):
     cfg = CloudyConfig(filenames=cfg_files)
