@@ -89,5 +89,16 @@ def sys_uname():
     sudo('uname -a')
 
 
+def sys_show_process_by_memory_usage():
+    """ List processes by memory usage """
+    run('ps -eo pmem,pcpu,rss,vsize,args | sort -k 1 -r')
+
+def sys_show_disk_io():
+    """ List disk io """
+    run('iostat -d -x 2 5')
+
+
+
+
 
 
