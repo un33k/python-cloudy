@@ -43,13 +43,15 @@ def sys_user_remove_sudoer(username):
 
 def sys_user_add_to_group(username, group):
     """ Add user to existing group - Ex: (cmd:<user>,<group>)"""
-    sudo('sudo usermod -a -G {0} {1}'.format(group, username))
+    with settings(warn_only=True):
+        sudo('sudo usermod -a -G {0} {1}'.format(group, username))
     sys_etc_git_commit('Added user ({0}) to group ({1})'.format(username, group))
 
 
 def sys_user_create_group(group):
     """ Create a new group - Ex: (cmd:<group>)"""
-    sudo('sudo addgroup {0}'.format(group))
+    with settings(warn_only=True):
+        sudo('sudo addgroup {0}'.format(group))
     sys_etc_git_commit('Created a new group ({0})'.format(group))
 
 
