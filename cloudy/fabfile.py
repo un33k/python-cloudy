@@ -54,6 +54,8 @@ def setup_db_postgres_primary(cfg_files='~/.cloudy'):
         sys_user_set_group_umask(admin_user)
         sys_user_create_group(admin_group)
         sys_user_add_to_group(admin_user, admin_group)
+        if git_user_full_name and git_user_email:
+            sys_git_configure(admin_user, git_user_full_name, git_user_email)
 
 
     # posgresql: version, cluster, data_dir
@@ -130,8 +132,8 @@ def setup_webserver(cfg_files='~/.cloudy'):
         sys_user_set_group_umask(admin_user)
         sys_user_create_group(admin_group)
         sys_user_add_to_group(admin_user, admin_group)
-
-
+        if git_user_full_name and git_user_email:
+            sys_git_configure(admin_user, git_user_full_name, git_user_email)
 
         
         
