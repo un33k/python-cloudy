@@ -40,11 +40,12 @@ def setup_db_postgres_primary(cfg_files='~/.cloudy'):
     # users & passwords
     admin_user = cfg.get_variable('pg_master', 'admin-user')
     admin_pass = cfg.get_variable('pg_master', 'admin-pass')
-    admin_group = cfg.get_variable('pg_master', 'admin-group', 'postgres')
+    admin_group = cfg.get_variable('pg_master', 'admin-group', 'admin')
     if admin_user and admin_pass:
         sys_user_add(admin_user)
         sys_user_add_sudoer(admin_user)
         sys_user_set_group_umask(admin_user)
+        sys_user_create_group(admin_group)
         sys_user_add_to_group(admin_user, admin_group)
 
 

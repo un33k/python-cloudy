@@ -47,6 +47,12 @@ def sys_user_add_to_group(username, group):
     sys_etc_git_commit('Added user ({0}) to group ({1})'.format(username, group))
 
 
+def sys_user_create_group(group):
+    """ Create a new group - Ex: (cmd:<group>)"""
+    sudo('sudo addgroup {0}'.format(group))
+    sys_etc_git_commit('Created a new group ({0})'.format(group))
+
+
 def sys_user_remove_from_group(username, group):
     """ Remove a user from a group - Ex: (cmd:<user>,<group>)"""
     sudo('sudo deluser {0} {1}'.format(username, group))
