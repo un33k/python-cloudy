@@ -67,10 +67,10 @@ def sys_ssh_push_public_key(pub_key='~/.ssh/id_rsa.pub'):
     if not os.path.exists(pub_key):
         abort('File not found: {0}'.format(pub_key))
     put(pub_key, '/tmp/')
-    sudo('mkdir -p ~/.ssh')
-    sudo('cat /tmp/{0} >> {1}'.format(os.path.basename(pub_key), auth_key))
-    sudo('rm -f /tmp/{0}'.format(os.path.basename(pub_key)))
-    sudo('chmod 600 {0}'.format(auth_key))
+    run('mkdir -p ~/.ssh')
+    run('cat /tmp/{0} >> {1}'.format(os.path.basename(pub_key), auth_key))
+    run('rm -f /tmp/{0}'.format(os.path.basename(pub_key)))
+    run('chmod 600 {0}'.format(auth_key))
 
 
 

@@ -86,7 +86,7 @@ def sys_locale_configure(locale='en_US.UTF-8'):
 
 def sys_uname():
     """ Remote system info - Ex: (cmd)"""
-    sudo('uname -a')
+    run('uname -a')
 
 
 def sys_show_process_by_memory_usage():
