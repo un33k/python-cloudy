@@ -68,9 +68,9 @@ def sys_user_set_group_umask(username, umask='0002'):
 
 
 def sys_user_change_password(username, password):
-    """ Add user to existing group - Ex: (cmd:<user>,<password>)"""
-    sudo('sudo usermod -a -G {0} {1}'.format(group, username))
-    sys_etc_git_commit('Added user ({0}) to group ({1})'.format(username, group))
+    """ Change password for a user - Ex: (cmd:<user>,<password>)"""
+    sudo('sudo echo "{0}:{1}" | chpasswd'.format(username, password))
+    sys_etc_git_commit('Password changed for user ({0})'.format(username))
 
 
 
