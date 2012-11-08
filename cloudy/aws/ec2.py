@@ -82,8 +82,7 @@ def util_wait_till_node_running(name, timeout=15):
 
 
 
-def aws_list_instances():
-    """ Lists all AWS EC2 instance - Ex: (cmd)"""
+def util_list_instances():
     conn = util_get_connection()
     nodes = conn.list_nodes()
     print >> sys.stderr, nodes
