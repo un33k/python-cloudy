@@ -48,9 +48,10 @@ def sys_install_common():
 def sys_git_configure(user, name, email):
     """ Configure git for a given user - Ex: (cmd:<user>,<name>,<email>)"""
     sudo('apt-get install -y git-core')
-    sudo('sudo -u {0} git config --global user.name \"{1}\"'.format(user, name))
-    sudo('sudo -u {0} git config --global user.email \"{1}\"'.format(user, email))
-    sys_etc_git_commit('Configured git for user: {0}'.format(user))
+    with settings(warn_only=True):
+        sudo('sudo -u {0} git config --global user.name \"{1}\"'.format(user, name))
+        sudo('sudo -u {0} git config --global user.email \"{1}\"'.format(user, email))
+        sys_etc_git_commit('Configured git for user: {0}'.format(user))
 
 
 def sys_add_hosts(host, ip):

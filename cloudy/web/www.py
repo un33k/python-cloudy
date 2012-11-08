@@ -13,6 +13,8 @@ from fabric.api import cd
 from fabric.contrib import files
 from fabric.utils import abort
 
+from cloudy.sys.etc import sys_etc_git_commit
+
 def web_install_common():
     """ Install common web server/proxy packages - Ex: (cmd)"""
     requirements = '%s' % ' '.join([
