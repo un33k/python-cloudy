@@ -7,7 +7,8 @@ def setup_generic_server(cfg_files='~/.cloudy'):
     cfg = CloudyConfig(filenames=cfg_files)
     sys_update()
     sys_install_common()
-    
+    sys_time_install_common()
+
     # git info
     git_user_full_name = cfg.get_variable('common', 'git-user-full-name')
     git_user_email = cfg.get_variable('common', 'git-user-email')
@@ -21,8 +22,8 @@ def setup_generic_server(cfg_files='~/.cloudy'):
     
     # timezone and locale
     timezone = cfg.get_variable('common', 'timezone', 'Canada/Eastern')
-    locale = cfg.get_variable('common', 'locale', 'en_US.UTF-8')
     sys_configure_timezone(timezone)
+    locale = cfg.get_variable('common', 'locale', 'en_US.UTF-8')
     sys_locale_configure()
 
     # swap

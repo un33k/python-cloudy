@@ -45,16 +45,6 @@ def sys_install_common():
     sys_etc_git_commit('Installed common system packages')
 
 
-def sys_configure_timezone(zone):
-    """ Configure system time zone - Ex: (cmd:<zone>) """
-    zone = os.path.abspath(os.path.join('/usr/share/zoneinfo', zone))
-    if files.exists(zone):
-        sudo('ln -sf {0} /etc/localtime'.format(zone))
-        sys_etc_git_commit('Updated system timezone to ({0})'.format(zone))
-    else:
-        print >> sys.stderr, 'Zone not found {0}'.format(zone)
-
-
 def sys_git_configure(user, name, email):
     """ Configure git for a given user - Ex: (cmd:<user>,<name>,<email>)"""
     sudo('apt-get install -y git-core')
