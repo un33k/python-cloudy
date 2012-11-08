@@ -60,17 +60,27 @@ def sys_ssh_disable_password_authentication():
     sys_etc_git_commit('Disable password authentication')
 
 
-def sys_ssh_push_public_key(pub_key='~/.ssh/id_rsa.pub'):
-    """ Install a public key on the remote server - Ex: (cmd:[pub key])"""
-    auth_key = '~/.ssh/authorized_keys'
+def sys_ssh_push_public_key(user='', pub_key='~/.ssh/id_rsa.pub'):
+    """ Install a public key on the remote server - Ex: (cmd:[user],[pub key])"""
+    if not user:
+        home_dir = '~'
+    else:
+        home_dir = '/home/{0}'.format(user)
+        if not files.exists(home_dir):
+            abort('Home directory not found for user: {0}'.format(user))
+
     pub_key = os.path.expanduser(pub_key)
     if not os.path.exists(pub_key):
-        abort('File not found: {0}'.format(pub_key))
+        abort('Public key not found: {0}'.format(pub_key))
+
     put(pub_key, '/tmp/')
-    run('mkdir -p ~/.ssh')
-    run('cat /tmp/{0} >> {1}'.format(os.path.basename(pub_key), auth_key))
-    run('rm -f /tmp/{0}'.format(os.path.basename(pub_key)))
-    run('chmod 600 {0}'.format(auth_key))
+    sudo('sudo -u {0} mkdir -p {1}/.ssh'.format(user, home_dir))
+    
+    auth_key = '{0}/.ssh/authorized_keys'.format(home_dir)
+    sudo('sudo -u {0} cat /tmp/{1} >> {2}'.format(user, os.path.basename(pub_key), auth_key))
+    sudo('sudo rm -f /tmp/{1}'.format(user, os.path.basename(pub_key)))
+    sudo('sudo chown {0}:{0} {1}'.format(user, auth_key))
+    sudo('sudo -u {0} chmod 600 {1}'.format(user, auth_key))
 
 
 
