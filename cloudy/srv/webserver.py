@@ -32,7 +32,6 @@ def srv_setup_web_server(cfg_files='~/.cloudy'):
 
     # create web directory
     web_create_data_directory()
-    web_create_log_directory()
 
 
 
