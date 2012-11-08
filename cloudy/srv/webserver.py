@@ -23,6 +23,7 @@ def srv_setup_web_server(cfg_files='~/.cloudy'):
 
     # setup python stuff
     sys_python_install_common()
+    web_install_common()
     
     # install cache daemon
     sys_memcached_install()
