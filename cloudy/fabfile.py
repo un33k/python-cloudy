@@ -6,4 +6,4 @@ from cloudy.web import *
 from fabric.api import env
 import logging
 
-logging.getLogger().setLevel(logging.WARNING)
+logging.getLogger().setLevel(logging.ERROR)
