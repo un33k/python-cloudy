@@ -18,10 +18,13 @@ def sys_python_install_common():
     """ Install common python application - Ex: (cmd) """
 
     requirements = '%s' % ' '.join([
-        'python-psycopg2',
-        'python-setuptools',
         'python-dev',
+        'python-setuptools',
+        'python-psycopg2',
         'python-virtualenv',
+        'python-imaging',
+        'python-pip',
+        'virtualenvwrapper',
     ])
     sudo('apt-get -y install {0}'.format(requirements))
     sys_etc_git_commit('Installed common python packages')
