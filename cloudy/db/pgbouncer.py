@@ -13,6 +13,7 @@ from fabric.api import settings
 from fabric.api import hide
 from fabric.contrib import files
 
+from cloudy.db.psql import db_psql_default_installed_version
 from cloudy.sys.etc import sys_etc_git_commit
 
 
@@ -29,8 +30,11 @@ def db_pgbouncer_install():
     sys_etc_git_commit('Installed pgbouncer')
 
 
-def db_pgbouncer_configure():
+def db_pgbouncer_configure(pg_version=''):
     """ Install pgbouncer - Ex: (cmd:)"""
+    if not pg_version:
+        pg_version = db_psql_default_installed_version()
+
     cfgfile = 'pgbouncer.ini'
     pgini = os.path.expanduser(os.path.join(os.path.dirname( __file__), '../cfg/{0}'.format(cfgfile)))
     sudo('rm -rf /etc/pgbouncer/'+cfgfile)

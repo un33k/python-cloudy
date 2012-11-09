@@ -97,5 +97,24 @@ def sys_shutdown(restart=True):
         sudo('shutdown now')
 
 
+def sys_add_chkconfig():
+    """ Add Redhat style chkconfig - Ex: (cmd) """
+    sudo('apt-get install -y chkconfig')
+    sudo('sudo ln -sf /usr/lib/insserv/insserv /sbin/insserv')
 
+
+def sys_show_default_startup(program=''):
+    """ List of applications that start at system startup - Ex: (cmd:[program]) """
+    if program:
+        program = ' | grep {0}'.format(program)
+    sudo('chkconfig {0}'.format(program))
+
+def sys_add_default_startup(program):
+    """ Add an applications to start at system startup - Ex: (cmd) """
+    sudo('chkconfig -s {0} on'.format(program))
+
+
+def sys_remove_default_startup(program):
+    """ Remove an applications from starting at system startup - Ex: (cmd) """
+    sudo('chkconfig -s {0} off'.format(program))
 
