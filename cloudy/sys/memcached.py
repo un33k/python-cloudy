@@ -46,7 +46,17 @@ def sys_memcached_configure_interface(interface='0.0.0.0'):
     sudo('service memcached restart')
     sys_etc_git_commit('Configured memcached (interface={0})'.format(interface))
 
-
+def sys_memcached_config():
+    """ Install memcached - Ex: (cmd:)"""
+    cfgdir = os.path.join(os.path.dirname( __file__), '../cfg')
+    
+    localcfg = os.path.expanduser(os.path.join(cfgdir, 'memcached/memcached.conf'))
+    remotecfg = '/etc/memcached.conf'
+    sudo('rm -rf ' + remotecfg)
+    put(localcfg, remotecfg, use_sudo=True)
+    sys_memcached_configure_memory()
+    sudo('service memcached start')
+    sys_etc_git_commit('Configured memcached')
 
 
 
