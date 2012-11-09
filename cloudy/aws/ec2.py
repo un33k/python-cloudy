@@ -81,7 +81,6 @@ def util_wait_till_node_running(name, timeout=15):
     return util_wait_till_node(name, NodeState.RUNNING, timeout)
 
 
-
 def util_list_instances():
     conn = util_get_connection()
     nodes = conn.list_nodes()
