@@ -89,6 +89,12 @@ def sys_show_disk_io():
     run('iostat -d -x 2 5')
 
 
+def sys_shutdown(restart=True):
+    """ Shutdown a host - Ex: (cmd:[restart])"""
+    if restart:
+        sudo('shutdown -r now')
+    else:
+        sudo('shutdown now')
 
 
 
