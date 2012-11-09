@@ -17,6 +17,7 @@ def srv_setup_psql_database_server(cfg_files='~/.cloudy'):
 
     # posgresql: version, cluster, data_dir
     pg_version = cfg.get_variable('pg_master', 'pg-version')
+    pg_listen_address = cfg.get_variable('pg_master', 'listen-address', '*')
     pg_cluster = cfg.get_variable('pg_master', 'pg-cluster', 'main')
     pg_encoding = cfg.get_variable('pg_master', 'pg-encoding', 'UTF-8')
     pg_data_dir = cfg.get_variable('pg_master', 'pg-data-dir', '/var/lib/postgresql')
@@ -25,7 +26,7 @@ def srv_setup_psql_database_server(cfg_files='~/.cloudy'):
     db_psql_make_data_dir(pg_version, pg_data_dir)
     db_psql_remove_cluster(pg_version, pg_cluster)
     db_psql_create_cluster(pg_version, pg_cluster, pg_encoding, pg_data_dir)
-    db_psql_configure(version=pg_version, port=6432)
+    db_psql_configure(version=pg_version, port=6432, interface=pg_listen_address, restart=True)
     
     # change postgres' user password
     postgres_user_pass = cfg.get_variable('pg_master', 'postgres-pass')
