@@ -36,5 +36,11 @@ def srv_setup_web_server(cfg_files='~/.cloudy'):
     sys_remove_default_startup('postgresql')
     db_pgpool2_install()
     db_host = cfg.get_variable('webserver', 'db-host')
-    db_pgpool2_configure(db_host)
+    if db_host:
+        db_pgpool2_configure(db_host)
+        db_listen_address = cfg.get_variable('webserver', 'listen-address')
+        if db_listen_address:
+            sys_add_hosts(db_host, db_listen_address)
+
+    sys_shutdown()
 

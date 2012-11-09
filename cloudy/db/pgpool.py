@@ -45,6 +45,7 @@ def db_pgpool2_configure(dbhost=''):
     remotedefault = '/etc/default/pgpool2'
     sudo('rm -rf ' + remotedefault)
     put(localdefault, remotedefault, use_sudo=True)
+    sudo('service pgpool2 start')
 
     sys_etc_git_commit('Configured pgpool2')
 

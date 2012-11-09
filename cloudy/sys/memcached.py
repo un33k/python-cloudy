@@ -22,9 +22,12 @@ def sys_memcached_install():
     sys_etc_git_commit('Installed memcached')
 
 
-def sys_memcached_configure_memory(memory=64):
+def sys_memcached_configure_memory(memory=''):
     """ Configure memcached - Ex: (cmd:[RAM-MB]) """
     memcached_conf = '/etc/memcached.conf'
+    if not memory:
+        total_mem = sudo("free -m | head -2 | grep Mem | awk '{print $2}'")
+        memory = eval(total_mem) / 8    
     sudo('sed -i "s/-m\s\+[0-9]\+/-m {0}/g" {1}'.format(memory, memcached_conf))
     sudo('service memcached restart')
     sys_etc_git_commit('Configured memcached (memory={0})'.format(memory))

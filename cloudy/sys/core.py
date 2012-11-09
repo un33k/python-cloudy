@@ -117,4 +117,7 @@ def sys_add_default_startup(program):
 def sys_remove_default_startup(program):
     """ Remove an applications from starting at system startup - Ex: (cmd) """
     sudo('chkconfig -s {0} off'.format(program))
+    with settings(warn_only=True):
+        sudo('service {0} stop'.format(program))
+
 
