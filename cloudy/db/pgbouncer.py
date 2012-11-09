@@ -30,15 +30,22 @@ def db_pgbouncer_install():
     sys_etc_git_commit('Installed pgbouncer')
 
 
-def db_pgbouncer_configure(pg_version=''):
+def db_pgbouncer_configure(dbhost=''):
     """ Install pgbouncer - Ex: (cmd:)"""
-    if not pg_version:
-        pg_version = db_psql_default_installed_version()
+    cfgdir = os.path.join(os.path.dirname( __file__), '../cfg')
+    
+    localcfg = os.path.expanduser(os.path.join(cfgdir, 'pgbouncer/pgbouncer.ini'))
+    remotecfg = '/etc/pgbouncer/pgbouncer.ini'
+    sudo('rm -rf ' + remotecfg)
+    put(localcfg, remotecfg, use_sudo=True)
+    if dbhost:
+        sudo('sed -i "s/dbhost/{0}/g" {1}'.format(dbhost, remotecfg))
 
-    cfgfile = 'pgbouncer.ini'
-    pgini = os.path.expanduser(os.path.join(os.path.dirname( __file__), '../cfg/{0}'.format(cfgfile)))
-    sudo('rm -rf /etc/pgbouncer/'+cfgfile)
-    put(pgini, '/etc/pgbouncer', use_sudo=True)
+    localdefault = os.path.expanduser(os.path.join(cfgdir, 'pgbouncer/default-pgbouncer'))
+    remotedefault = '/etc/default/pgbouncer'
+    sudo('rm -rf ' + remotedefault)
+    put(localdefault, remotedefault, use_sudo=True)
+
     sys_etc_git_commit('Configured pgbouncer')
 
 
