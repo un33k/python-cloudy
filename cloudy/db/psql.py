@@ -115,7 +115,7 @@ def db_psql_create_cluster(version='', cluster='main', encoding='UTF-8', data_di
     sys_etc_git_commit('Created new postgres cluster ({0} {1})'.format(version, cluster))
 
 
-def db_psql_configure(version='', cluster='main', port='5432', interface='*'):
+def db_psql_configure(version='', cluster='main', port='5432', interface='*', restart=False):
     """ Configure postgres - Ex: (cmd:[pgversion],[cluster],[port],[interface])"""
     if not version:
         version = db_psql_default_installed_version()
@@ -124,7 +124,9 @@ def db_psql_configure(version='', cluster='main', port='5432', interface='*'):
     conf_dir = '/etc/postgresql/{0}/{1}'.format(version, cluster)
     postgresql_conf = os.path.abspath(os.path.join(conf_dir, 'postgresql.conf'))
     sudo('sed -i "s/#listen_addresses\s\+=\s\+\'localhost\'/listen_addresses = \'{0}\'/g" {1}'.format(interface, postgresql_conf))
-
+    sudo('sed -i /\s*\unix_socket_directory\s*.*/d {0}'.format(postgresql_conf))
+    sudo('sed -i \"1iunix_socket_directory = \'{0}\'\" {1}'.format('/var/run/postgresql', postgresql_conf))
+    
     # total_mem = sudo("free -m | head -2 | grep Mem | awk '{print $2}'")
     # shared_buffers = eval(total_mem) / 4    
     # sudo('sed -i "s/shared_buffers\s\+=\s\+[0-9]\+MB/shared_buffers = {0}MB/g" {1}'.format(shared_buffers, postgresql_conf))
@@ -134,8 +136,8 @@ def db_psql_configure(version='', cluster='main', port='5432', interface='*'):
     sudo('echo \"host all all 0.0.0.0/0 trust\" >> {0}'.format(pg_hba_conf))
     
     sys_etc_git_commit('Configured postgres cluster ({0} {1})'.format(version, cluster))
-    
-    sudo('service postgresql start')
+    if restart:
+        sudo('service postgresql start')
 
 
 def db_psql_postgres_password(password):
