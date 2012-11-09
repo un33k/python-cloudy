@@ -32,6 +32,9 @@ def srv_setup_web_server(cfg_files='~/.cloudy'):
 
     # create web directory
     web_create_data_directory()
-
-
+    db_psql_install()
+    sys_remove_default_startup('postgresql')
+    db_pgpool2_install()
+    db_host = cfg.get_variable('webserver', 'db-host')
+    db_pgpool2_configure(db_host)
 

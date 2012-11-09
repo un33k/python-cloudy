@@ -8,6 +8,7 @@ def setup_generic_server(cfg_files='~/.cloudy'):
     sys_update()
     sys_install_common()
     sys_time_install_common()
+    sys_add_chkconfig()
 
     # git info
     git_user_full_name = cfg.get_variable('common', 'git-user-full-name')
@@ -42,9 +43,6 @@ def setup_generic_server(cfg_files='~/.cloudy'):
         sys_user_set_group_umask(admin_user)
         sys_user_create_group(admin_group)
         sys_user_add_to_group(admin_user, admin_group)
-        if git_user_full_name and git_user_email:
-            sys_git_configure(admin_user, git_user_full_name, git_user_email)
-
 
 
 
