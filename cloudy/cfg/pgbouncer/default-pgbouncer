@@ -1,0 +1,12 @@
+# Defaults file for pgbouncer (/etc/default/pgbouncer)
+# Ensure /var/run/postgresql is created properly
+
+START=1
+OPTS="-d /etc/pgbouncer/pgbouncer.ini"
+
+if [ -d /var/run/postgresql ]; then
+    chmod 2775 /var/run/postgresql
+else
+    install -d -m 2775 -o postgres -g postgres /var/run/postgresql
+fi
+
