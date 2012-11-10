@@ -15,17 +15,6 @@ from fabric.utils import abort
 
 from cloudy.sys.etc import sys_etc_git_commit
 
-def web_install_common():
-    """ Install common web server/proxy packages - Ex: (cmd)"""
-    requirements = '%s' % ' '.join([
-        'nginx',
-        'supervisor',
-    ])
-    
-    # install requirements
-    sudo('apt-get -y install {0}'.format(requirements))
-    sys_etc_git_commit('Installed web server/proxy system packages')
-
 
 def web_create_data_directory(web_dir='/srv/www'):
     """ Create a data directory for the web files """

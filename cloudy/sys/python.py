@@ -25,6 +25,7 @@ def sys_python_install_common():
         'python-imaging',
         'python-pip',
         'virtualenvwrapper',
+        'python-imaging',
     ])
     sudo('apt-get -y install {0}'.format(requirements))
     sys_etc_git_commit('Installed common python packages')
