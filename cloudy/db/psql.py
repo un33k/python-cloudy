@@ -139,6 +139,10 @@ def db_psql_configure(version='', cluster='main', port='5432', interface='*', re
     if restart:
         sudo('service postgresql start')
 
+def db_psql_create_adminpack():
+    """ Install admin pack - Ex: (cmd)"""
+    sudo('echo "CREATE EXTENSION adminpack;" | sudo -u postgres psql')
+
 
 def db_psql_postgres_password(password):
     """ Change password for user: postgres - Ex: (cmd:<password>)"""
