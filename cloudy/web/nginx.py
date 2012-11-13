@@ -38,12 +38,19 @@ def util_nginx_bootstrap():
     sudo('rm -f /etc/nginx/sites-enabled/*default*')
 
 
-def web_nginx_setup_domain(domain):
-    """ Setup Nginx config file for a domain - Ex: (cmd:<domain>)"""
+def web_nginx_setup_domain(domain, proto='http'):
+    """ Setup Nginx config file for a domain - Ex: (cmd:<domain>,[protocol])"""
+    if 'https' in proto or 'ssl' in proto:
+        proto = 'https'
+        ssl_crt = '/etc/ssl/certs/{0}.crt'.format(domain)
+        ssl_key = '/etc/ssl/private/{0}.key'.format(domain)
+        if not files.exists(ssl_crt, use_sudo=True) or not files.exists(ssl_key, use_sudo=True):
+            abort('ssl certificate and key not found.\n{0}\n{1}'.format(ssl_crt, ssl_key))
+
     cfgdir = os.path.join(os.path.dirname( __file__), '../cfg')
 
-    localcfg = os.path.expanduser(os.path.join(cfgdir, 'nginx/domain.conf'))
-    remotecfg = '/etc/nginx/conf.d/{0}.conf'.format(domain)
+    localcfg = os.path.expanduser(os.path.join(cfgdir, 'nginx/{0}.conf'.format(proto)))
+    remotecfg = '/etc/nginx/conf.d/{0}.{1}.conf'.format(proto, domain)
     sudo('rm -rf ' + remotecfg)
     put(localcfg, remotecfg, use_sudo=True)
     port = 8181
