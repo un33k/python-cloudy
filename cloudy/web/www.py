@@ -30,4 +30,28 @@ def web_create_site_directory(domain):
     sudo('chmod -R g+w {0}/log'.format(path))
 
 
+def web_create_virtual_env(domain):
+    """ Create a virtual env for a domain - Ex: (cmd:foo.example.com)"""
+    path = '/srv/www/{0}/pri'.format(domain)
+    with cd(path):
+        sudo('virtualenv --no-site-packages venv')
+
+
+def web_install_python_image_library(domain, py_version=''):
+    """ Install PIL into a domain directory """
+    if not py_version:
+        with settings(
+        hide('warnings', 'running', 'stdout', 'stderr'), warn_only=True):
+            py_version = run("ls -la /usr/bin/python | head -n 1 | awk '{print $11}'")
+
+    if not py_version:
+        fail('Failed to find python version')
+    
+    site_packages = '/srv/www/{0}/pri/venv/lib/{1}/site-packages'.format(domain, py_version)
+    dist_packages = '/usr/lib/{0}/dist-packages'.format(py_version)
+    with cd(site_packages):
+        sudo('ln -sf {0}/PIL'.format(dist_packages))
+        sudo('ln -sf {0}/PIL.pth'.format(dist_packages))
+
+
 
