@@ -26,10 +26,9 @@ How to use
 =================
 
 ``Usage``
+
     fab -l # list all the commands
-    
     fab -H 10.10.10.10 -i ~/.ssh/key.pem sys_uname
-    
     ..etc.
     
 ``Note:``
