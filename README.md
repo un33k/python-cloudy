@@ -54,8 +54,6 @@ License
 
 Copyright (c) 2012, Val Neekman
 
-Neekware Inc.
-
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without 
