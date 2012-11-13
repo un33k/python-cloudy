@@ -24,7 +24,10 @@ def sys_python_install_common():
         'python-virtualenv',
         'python-imaging',
         'python-pip',
-        'virtualenvwrapper',
+        # 'virtualenvwrapper',
+        'libfreetype6-dev',
+        'libjpeg62-dev',
+        'libpng12-dev',
         'python-imaging',
     ])
     sudo('apt-get -y install {0}'.format(requirements))
