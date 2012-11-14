@@ -24,7 +24,7 @@ def web_geoip_install_requirements():
         'zlib1g-dev',
         'libssl-dev',
         'build-essential',
-        'linux-headers-`uname -r`',
+        # 'linux-headers-`uname -r`',
         'libtool',
     ])
     
@@ -34,6 +34,7 @@ def web_geoip_install_requirements():
 
 def web_geoip_install_maxmind_api():
     """ Install Maxmind C API - Ex: (cmd) """
+    tmp_dir = '/tmp/maxmind'
     geoip_url = 'http://www.maxmind.com/download/geoip/api/c/GeoIP.tar.gz'
     geocity_url = 'http://www.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz'
     sudo('rm -rf {0}; mkdir -p {0}'.format(tmp_dir))
