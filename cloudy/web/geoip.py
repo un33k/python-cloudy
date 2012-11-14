@@ -46,10 +46,22 @@ def web_geoip_install_maxmind_api():
             sudo('make install')
     sys_etc_git_commit('Installed Maxmind C API')
 
-def web_geoip_install_maxmind_city(dest_dir='/usr/local/share/GeoIP'):
-    """ Install Maxmind C API - Ex: (cmd) """
+def web_geoip_install_maxmind_country(dest_dir='/usr/local/share/GeoIP'):
+    """ Install Maxmind Country Lite - Ex: (cmd:[dest_dir]) """
     tmp_dir = '/tmp/maxmind'
-    geocity_url = 'http://www.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz'
+    geocity_url = 'http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz'
+    sudo('rm -rf {0}; mkdir -p {0}'.format(tmp_dir))
+    with cd(tmp_dir):
+        sudo('wget {0}'.format(geocity_url))
+        sudo('gzip -d GeoIP.dat.gz')
+        sudo('mkdir -p {0}'.format(dest_dir))
+        sudo('mv -f *.dat {0}'.format(dest_dir))
+
+
+def web_geoip_install_maxmind_city(dest_dir='/usr/local/share/GeoIP'):
+    """ Install Maxmind City Lite - Ex: (cmd:[dest_dir]) """
+    tmp_dir = '/tmp/maxmind'
+    geocity_url = 'http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz'
     sudo('rm -rf {0}; mkdir -p {0}'.format(tmp_dir))
     with cd(tmp_dir):
         sudo('wget {0}'.format(geocity_url))

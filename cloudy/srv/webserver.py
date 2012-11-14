@@ -43,5 +43,17 @@ def srv_setup_web_server(cfg_files='~/.cloudy'):
         if db_listen_address:
             sys_add_hosts(db_host, db_listen_address)
 
+    # geoIP
+    web_geoip_install_requirements()
+    web_geoip_install_maxmind_api()
+    web_geoip_install_maxmind_country()
+    web_geoip_install_maxmind_city()
     sys_shutdown()
+
+
+
+
+
+
+
 
