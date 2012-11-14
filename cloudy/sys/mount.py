@@ -16,8 +16,8 @@ from fabric.utils import abort
 from cloudy.sys.etc import sys_etc_git_commit
 
 
-def sys_mount_device(device, mount_point, filesystem='xfs'):
-    """ Mount a device which survice a reboot - Ex: (cmd:<device>,<mountpoint>,[filesystem]) """
+def sys_mount_device_format(device, mount_point, filesystem='xfs'):
+    """ Mount a device which survives a reboot - Ex: (cmd:<device>,<mountpoint>,[filesystem]) """
     
     if files.exists(mount_point):
         sudo('mkdir -p {0}'.format(mount_point))
@@ -34,5 +34,14 @@ def sys_mount_device(device, mount_point, filesystem='xfs'):
     sys_etc_git_commit('Mounted {0} on {1} using {2}'.format(device, mount_point, filesystem))
 
 
-
+def sys_mount_device_permanent(device, mount_point, filesystem='xfs'):
+    """ Put a mount record into fstab - Ex: (cmd:<device>,<mountpoint>,[filesystem]) """
+    
+    if files.exists(mount_point):
+        sudo('mkdir -p {0}'.format(mount_point))
+    if not files.exists(device):
+        abort('Device ({0}) missing or not attached'.format(device))
+    
+    sudo('grep -q {0} /proc/filesystems || modprobe {0}'.format(filesystem))
+    sudo('echo "{0}  {1}   {2} noatime 0 0" | sudo tee -a /etc/fstab'.format(device, mount_point, filesystem))
 
