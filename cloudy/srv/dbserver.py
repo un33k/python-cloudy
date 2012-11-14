@@ -2,6 +2,7 @@ from cloudy.db import *
 from cloudy.sys import *
 from cloudy.util import *
 from fabric.api import env
+from cloudy.srv.generic import setup_generic_server
 
 def srv_setup_psql_database_server(cfg_files='~/.cloudy'):
     """ Setup a postgresql / postgis database server - Ex: (cmd:[cfg-file])"""

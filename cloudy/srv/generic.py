@@ -43,6 +43,8 @@ def setup_generic_server(cfg_files='~/.cloudy'):
         sys_user_set_group_umask(admin_user)
         sys_user_create_group(admin_group)
         sys_user_add_to_group(admin_user, admin_group)
+        sys_user_create_group('www-data')
+        sys_user_add_to_group(admin_user, 'www-data')
 
 
 
