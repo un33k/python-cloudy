@@ -48,7 +48,7 @@ def srv_setup_web_server(cfg_files='~/.cloudy'):
     db_host = cfg.get_variable('webserver', 'db-host')
     if db_host:
         db_pgpool2_configure(db_host)
-        db_listen_address = cfg.get_variable('webserver', 'listen-address')
+        db_listen_address = cfg.get_variable('dbserver', 'listen-address')
         if db_listen_address:
             sys_add_hosts(db_host, db_listen_address)
 
