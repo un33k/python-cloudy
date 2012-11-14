@@ -114,6 +114,20 @@ def db_psql_create_cluster(version='', cluster='main', encoding='UTF-8', data_di
     sudo('service postgresql start')
     sys_etc_git_commit('Created new postgres cluster ({0} {1})'.format(version, cluster))
 
+def db_psql_set_permission(version='', cluster='main'):
+    """ Set default permission for postgresql - Ex: (cmd:<version>,[cluster])"""
+    if not version:
+        version = db_psql_default_installed_version()
+
+    cfgdir = os.path.join(os.path.dirname( __file__), '../cfg')
+    localcfg = os.path.expanduser(os.path.join(cfgdir, 'postgresql/pg_hba.conf'))
+    remotecfg = '/etc/postgresql/{0}/{1}/pg_hba.conf'.format(version, cluster)
+    sudo('rm -rf ' + remotecfg)
+    put(localcfg, remotecfg, use_sudo=True)
+    sudo('chown postgres:postgres {0}'.format(remotecfg))
+    sudo('chmod 644 {0}'.format(remotecfg))
+    sudo('service postgresql start')
+    sys_etc_git_commit('Set default postgres access for cluster ({0} {1})'.format(version, cluster))
 
 def db_psql_configure(version='', cluster='main', port='5432', interface='*', restart=False):
     """ Configure postgres - Ex: (cmd:[pgversion],[cluster],[port],[interface])"""
@@ -130,10 +144,6 @@ def db_psql_configure(version='', cluster='main', port='5432', interface='*', re
     # total_mem = sudo("free -m | head -2 | grep Mem | awk '{print $2}'")
     # shared_buffers = eval(total_mem) / 4    
     # sudo('sed -i "s/shared_buffers\s\+=\s\+[0-9]\+MB/shared_buffers = {0}MB/g" {1}'.format(shared_buffers, postgresql_conf))
-    
-    # AWS security zone is relied on ... 
-    pg_hba_conf = os.path.abspath(os.path.join(conf_dir, 'pg_hba.conf'))
-    sudo('echo \"host all all 0.0.0.0/0 trust\" >> {0}'.format(pg_hba_conf))
     
     sys_etc_git_commit('Configured postgres cluster ({0} {1})'.format(version, cluster))
     if restart:

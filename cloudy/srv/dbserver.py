@@ -27,6 +27,7 @@ def srv_setup_psql_database_server(cfg_files='~/.cloudy'):
     db_psql_make_data_dir(pg_version, pg_data_dir)
     db_psql_remove_cluster(pg_version, pg_cluster)
     db_psql_create_cluster(pg_version, pg_cluster, pg_encoding, pg_data_dir)
+    db_psql_set_permission(pg_version, pg_cluster)
     db_psql_configure(version=pg_version, port=6432, interface=pg_listen_address, restart=True)
     
     # change postgres' user password
