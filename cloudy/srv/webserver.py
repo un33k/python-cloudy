@@ -30,6 +30,15 @@ def srv_setup_web_server(cfg_files='~/.cloudy'):
     sys_memcached_configure_memory()
     sys_memcached_configure_interface()
 
+    # install apache2
+    web_apache_install()
+    apache_server_signature_on = False
+    web_apache2_server_signature(apache_server_signature_on)
+    web_apache2_install_mods()
+
+    # install nginx
+    web_nginx_install()
+    
     # create web directory
     web_create_data_directory()
     db_psql_install()

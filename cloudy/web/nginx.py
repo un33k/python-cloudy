@@ -14,6 +14,7 @@ from fabric.contrib import files
 from fabric.utils import abort
 
 from cloudy.sys.etc import sys_etc_git_commit
+from cloudy.sys.ports import sys_show_next_available_port
 
 def web_nginx_install():
     """ Install Nginx  - Ex: (cmd)"""
@@ -53,15 +54,7 @@ def web_nginx_setup_domain(domain, proto='http', port=''):
     remotecfg = '/etc/nginx/conf.d/{0}.{1}.conf'.format(proto, domain)
     sudo('rm -rf ' + remotecfg)
     put(localcfg, remotecfg, use_sudo=True)
-    if not port:
-        port = 8181
-        for count in range(50):
-            with settings(
-                hide('warnings', 'running', 'stdout', 'stderr'), warn_only=True):
-                port_in_use = run('netstat -lt | grep :{0}'.format(port))
-                if port_in_use:
-                    port += 1
-                    continue
+    port = sys_show_next_available_port(port)
     sudo('sed -i "s/port_num/{0}/g" {1}'.format(port, remotecfg))
     sudo('sed -i "s/example\.com/{0}/g" {1}'.format(domain.replace('.', '\.'), remotecfg))
     sudo('service nginx reload')

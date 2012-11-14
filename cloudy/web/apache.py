@@ -14,6 +14,7 @@ from fabric.contrib import files
 from fabric.utils import abort
 
 from cloudy.sys.etc import sys_etc_git_commit
+from cloudy.sys.ports import sys_show_next_available_port
 
 def web_apache_install():
     """ Install apache2  - Ex: (cmd)"""
@@ -37,8 +38,16 @@ def util_apache2_bootstrap():
     sudo('rm -f /etc/apache2/sites-enabled/*default*')
     files.append('/etc/apache2/envvars', ['export LANG="en_US.UTF-8"', 'export LC_ALL="en_US.UTF-8"'], use_sudo=True)
 
+def web_apache2_server_signature(sig=False):
+    """ Set Apache Server Signature ON/OF - Ex: (cmd:[True|False])"""
+    conf_file = '/etc/apache2/conf.d/security'
+    sudo('sed -i /\s*\ServerSignature\s*.*/d {0}'.format(conf_file))
+    signature = 'ServerSignature {0}'.format('On' if sig else 'Off')
+    sudo('sed -i \'1i{0}\' {1}'.format(signature, conf_file))
+    sys_etc_git_commit('Set Apache Signature to {0})'.format(signature))
 
-def web_install_apache_mods():
+
+def web_apache2_install_mods():
     """ Install apache2 related packages - Ex: (cmd)"""
     requirements = '%s' % ' '.join([
         'libapache2-mod-wsgi',
@@ -51,6 +60,16 @@ def web_install_apache_mods():
         sudo('a2enmod wsgi')
         sudo('a2enmod rpaf')
     sys_etc_git_commit('Installed apache2 and related packages')
+
+
+def web_apache2_set_port(port=''):
+    """ Setup Apache2 to listen to new port - Ex: (cmd:[port])"""
+
+    remotecfg = '/etc/apache2/ports.conf'
+    port = sys_show_next_available_port(port)
+    sudo('echo \"Listen 127.0.0.1:{0}\" >> {1}'.format(port, remotecfg))
+    sudo('service apache2 reload')
+    sys_etc_git_commit('Apache now listens on port {0}'.format(port))
 
 
 
