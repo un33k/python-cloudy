@@ -35,7 +35,7 @@ def sys_mount_device_format(device, mount_point, filesystem='xfs'):
 
 
 def sys_mount_device_permanent(device, mount_point, filesystem='xfs'):
-    """ Put a mount record into fstab - Ex: (cmd:<device>,<mountpoint>,[filesystem]) """
+    """ Mount and put a mount record into fstab - Ex: (cmd:<device>,<mountpoint>,[filesystem]) """
     
     if not files.exists(mount_point):
         sudo('mkdir -p {0}'.format(mount_point))
@@ -43,5 +43,6 @@ def sys_mount_device_permanent(device, mount_point, filesystem='xfs'):
         abort('Device ({0}) missing or not attached'.format(device))
     
     sudo('grep -q {0} /proc/filesystems || modprobe {0}'.format(filesystem))
+    sudo('mount -t {0} {1} {2}'.format(filesystem, device, mount_point))
     sudo('echo "{0}  {1}   {2} noatime 0 0" | sudo tee -a /etc/fstab'.format(device, mount_point, filesystem))
 
