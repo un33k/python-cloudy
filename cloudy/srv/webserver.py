@@ -56,7 +56,8 @@ def srv_setup_web_server(cfg_files='~/.cloudy'):
     web_geoip_install_maxmind_api()
     web_geoip_install_maxmind_country()
     web_geoip_install_maxmind_city()
-    sys_shutdown()
+    system_should_restart = True
+    sys_shutdown(system_should_restart)
 
 
 
