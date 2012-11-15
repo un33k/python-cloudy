@@ -37,7 +37,7 @@ def sys_mount_device_format(device, mount_point, filesystem='xfs'):
 def sys_mount_device_permanent(device, mount_point, filesystem='xfs'):
     """ Put a mount record into fstab - Ex: (cmd:<device>,<mountpoint>,[filesystem]) """
     
-    if files.exists(mount_point):
+    if not files.exists(mount_point):
         sudo('mkdir -p {0}'.format(mount_point))
     if not files.exists(device):
         abort('Device ({0}) missing or not attached'.format(device))
