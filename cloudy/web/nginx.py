@@ -54,9 +54,12 @@ def web_nginx_setup_domain(domain, proto='http', port=''):
     remotecfg = '/etc/nginx/conf.d/{0}.{1}.conf'.format(proto, domain)
     sudo('rm -rf ' + remotecfg)
     put(localcfg, remotecfg, use_sudo=True)
-    port = sys_show_next_available_port(port)
+    if not port:
+        port = sys_show_next_available_port()
     sudo('sed -i "s/port_num/{0}/g" {1}'.format(port, remotecfg))
     sudo('sed -i "s/example\.com/{0}/g" {1}'.format(domain.replace('.', '\.'), remotecfg))
+    sudo('chown -R root:root /etc/nginx/conf.d')
+    sudo('chmod -R 731 /etc/nginx/conf.d')
     sudo('service nginx reload')
     sys_etc_git_commit('Setup Nginx Config for Domain {0}'.format(domain))
 
