@@ -41,6 +41,9 @@ def sys_git_install():
     sudo('apt-get update')
     sudo('apt-get -y install git')
 
+def sys_install_upstart():
+    sudo('yes | apt-get -y install upstart')
+
 def sys_install_common():
     """ Install common application - Ex: (cmd)"""
     requirements = '%s' % ' '.join([
@@ -52,12 +55,11 @@ def sys_install_common():
         'vim',
         'less',
         'sudo',
-        'upstart',
     ])
 
     # install requirements
     sudo('apt-get -y install {}'.format(requirements))
-
+    sys_install_upstart()
 
 def sys_git_configure(user, name, email):
     """ Configure git for a given user - Ex: (cmd:<user>,<name>,<email>)"""
