@@ -10,7 +10,7 @@ from cloudy.util import *
 from cloudy.srv.recipe_generic_ubuntu import setup_generic_server
 
 
-def srv_setup_sf_cache(cfg_files):
+def srv_setup_cache(cfg_files):
     """
     Setup a cache server - Ex: (cmd:[cfg-file])
     """
