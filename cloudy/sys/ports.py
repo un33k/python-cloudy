@@ -21,7 +21,7 @@ def sys_show_next_available_port(start=''):
     for count in range(50):
         with settings(
             hide('warnings', 'running', 'stdout', 'stderr'), warn_only=True):
-            port_in_use = run('netstat -lt | grep :{0}'.format(port))
+            port_in_use = run('netstat -lt | grep :{}'.format(port))
             if port_in_use:
                 port += 1
                 continue

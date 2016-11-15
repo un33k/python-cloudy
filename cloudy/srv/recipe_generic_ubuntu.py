@@ -1,28 +1,30 @@
+import os
 from cloudy.db import *
 from cloudy.sys import *
 from cloudy.util import *
 from fabric.api import env
 
+
 def setup_generic_server(cfg_files='~/.cloudy'):
     cfg = CloudyConfig(filenames=cfg_files)
     sys_update()
-    sys_install_common()
-    sys_time_install_common()
-    sys_add_chkconfig()
 
     # git info
+    sys_git_install()
     git_user_full_name = cfg.get_variable('common', 'git-user-full-name')
     git_user_email = cfg.get_variable('common', 'git-user-email')
     if git_user_full_name and git_user_email:
         sys_git_configure('root', git_user_full_name, git_user_email)
 
-    sys_safe_upgrade()
+    sys_install_common()
+    sys_time_install_common()
+    sys_add_sysv_rc_conf()
+
     sys_install_postfix()
-    sys_security_install_common()
     sys_set_default_editor()
-    
+
     # timezone and locale
-    timezone = cfg.get_variable('common', 'timezone', 'Canada/Eastern')
+    timezone = cfg.get_variable('common', 'timezone', 'America/New_York')
     sys_configure_timezone(timezone)
     locale = cfg.get_variable('common', 'locale', 'en_US.UTF-8')
     sys_locale_configure()
@@ -45,6 +47,34 @@ def setup_generic_server(cfg_files='~/.cloudy'):
         sys_user_add_to_group(admin_user, admin_group)
         sys_user_create_group('www-data')
         sys_user_add_to_group(admin_user, 'www-data')
+
+        shared_key_dir = cfg.get_variable('common', 'shared-key-path')
+        if shared_key_dir:
+            sys_ssh_push_server_shared_keys(admin_user, shared_key_dir)
+
+
+    # ssh stuff
+    ssh_port = cfg.get_variable('common', 'ssh-port')
+    if ssh_port:
+        sys_ssh_set_port(ssh_port)
+
+    disable_root = cfg.get_variable('common', 'ssh-disable-root')
+    if disable_root and disable_root.upper() == 'YES':
+        sys_ssh_disable_root_login()
+
+    enable_password = cfg.get_variable('common', 'ssh-enable-password')
+    if enable_password and enable_password.upper() == 'YES':
+        sys_ssh_enable_password_authentication()
+
+    pub_key = cfg.get_variable('common', 'ssh-key-path')
+    if pub_key:
+        pub_key = os.path.expanduser(pub_key)
+        if os.path.exists(pub_key):
+            if admin_user:
+                sys_ssh_push_public_key(admin_user, pub_key)
+
+
+
 
 
 

@@ -1,43 +1,54 @@
+from fabric.api import env
+
 from cloudy.db import *
 from cloudy.sys import *
 from cloudy.aws import *
 from cloudy.srv import *
 from cloudy.web import *
 from cloudy.util import *
-from cloudy.srv.generic import setup_generic_server
-from fabric.api import env
+from cloudy.srv.recipe_generic_ubuntu import setup_generic_server
+
 
 def srv_setup_web_server(cfg_files='~/.cloudy'):
     """ Setup a webserver database server - Ex: (cmd:[cfg-file])"""
-    
+
     cfg = CloudyConfig(filenames=cfg_files)
-    
+
     # setup generic stuff
-    setup_generic_server()
-   
+    setup_generic_server(cfg_files)
+
     # hostname, ips
     hostname = cfg.get_variable('webserver', 'hostname')
     if hostname:
         sys_hostname_configure(hostname)
         sys_add_hosts(hostname, '127.0.0.1')
 
+        # setup db server
+        dbhost = cfg.get_variable('dbserver', 'db-host')
+        if dbhost:
+            dbaddress = cfg.get_variable('dbserver', 'listen-address')
+            if dbaddress and '*' not in dbaddress:
+                sys_add_hosts(dbhost, dbaddress)
+
     # setup python stuff
     sys_python_install_common()
-    
+
     # install cache daemon
     sys_memcached_install()
     sys_memcached_configure_memory()
     sys_memcached_configure_interface()
 
-    # install apache2
-    web_apache_install()
-    apache_server_signature_on = False
-    web_apache2_server_signature(apache_server_signature_on)
-    web_apache2_install_mods()
+    # install webserver
+    webserver = cfg.get_variable('dbserver', 'webserver')
+    if webserver.lower() == 'apache':
+        web_apache_install()
+        web_apache2_install_mods()
+    elif webserver.lower() == 'gunicorn':
+        web_supervisor_install()
 
     # install nginx
     web_nginx_install()
-    
+
     # create web directory
     web_create_data_directory()
     db_psql_install()
@@ -56,8 +67,7 @@ def srv_setup_web_server(cfg_files='~/.cloudy'):
     web_geoip_install_maxmind_api()
     web_geoip_install_maxmind_country()
     web_geoip_install_maxmind_city()
-    system_should_restart = True
-    sys_shutdown(system_should_restart)
+
 
 
 

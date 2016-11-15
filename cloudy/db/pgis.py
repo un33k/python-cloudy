@@ -16,46 +16,82 @@ from cloudy.db.psql import db_psql_default_installed_version
 from cloudy.sys.etc import sys_etc_git_commit
 
 
-def db_pgis_install(psql_version=''):
-    """ Install postgis of a given postgres version - Ex: (cmd:[pgversion])"""
+def db_pgis_install(psql_version='', pgis_version=''):
+    """ Install postgis of a given postgres version - Ex: (cmd:[psql_version],[pgis_version])"""
     if not psql_version:
         psql_version = db_psql_default_installed_version()
-        
+    if not pgis_version:
+        pgis_version = db_pgis_get_latest_version(psql_version)
+
+    libgeos_version = db_pgis_get_latest_libgeos_version()
+
     # requirements
     requirements = '%s' % ' '.join([
-        'postgresql-{0}-postgis'.format(psql_version),
+        'postgresql-{}-postgis-{}'.format(psql_version, pgis_version),
         'postgis',
-        'proj',
+        'libproj-dev',
         'gdal-bin',
         'binutils',
         'libgeos-c1',
-        'libgeos-3.2.2',
+        'libgeos-{}'.format(libgeos_version),
         'libgeos-dev',
         'libgdal1-dev',
+        'libgdal-dev',
         'libgeoip-dev',
         'libpq-dev',
         'libxml2',
-        'libxml2-dev'
+        'libxml2-dev',
+        'libxml2-utils',
+        'libjson0-dev',
+        'xsltproc',
+        'docbook-xsl',
+        'docbook-mathml',
     ])
-    
+
     # install requirements
-    sudo('apt-get -y install {0}'.format(requirements))
+    sudo('apt-get -y purge postgis')
+    sudo('apt-get -y install {}'.format(requirements))
     sudo('service postgresql start')
-    sys_etc_git_commit('Installed postgis for pqsl ({0})'.format(psql_version))
+    sys_etc_git_commit('Installed postgis for pqsl ({})'.format(psql_version))
 
 
 def db_pgis_get_latest_version(pg_version=''):
-    """ Returns the path of the installed postgis given a postgres version - Ex: (cmd:[pgversion])"""
-    
+    """ Returns the latest available postgis version for pg_version - Ex: (cmd:[pg_version])"""
+
     if not pg_version:
         pg_version = db_psql_default_installed_version()
-    
-    latest_pgis_version = ''
+
+    latest_version = ''
     with settings(
         hide('warnings', 'running', 'stdout', 'stderr'), warn_only=True):
-            ret = run('ls /usr/share/postgresql/{0}/contrib/'.format(pg_version))
+            ret = run('apt-cache search --names-only postgis')
 
-    version_re = re.compile('postgis-([0-9.]*)\s')
+    version_re = re.compile('postgresql-([0-9.]*)-postgis-([0-9.]*)\s-')
+    lines = ret.split('\n')
+    versions = []
+    for line in lines:
+        ver = version_re.search(line.lower())
+        if ver:
+            versions.append(ver.group(2))
+
+    versions.sort(key = itemgetter(2), reverse = False)
+    try:
+        latest_version = versions[0]
+    except:
+        pass
+
+    print >> sys.stderr, 'Latest available postgis is: [{}]'.format(latest_version)
+    return latest_version
+
+def db_pgis_get_latest_libgeos_version():
+    """ Returns the lastest libgeos version - Ex: (cmd)"""
+
+    latest_version = ''
+    with settings(
+        hide('warnings', 'running', 'stdout', 'stderr'), warn_only=True):
+            ret = run('apt-cache search --names-only libgeos')
+
+    version_re = re.compile('libgeos-([0-9.]*)\s-')
     lines = ret.split('\n')
     versions = []
     for line in lines:
@@ -63,47 +99,49 @@ def db_pgis_get_latest_version(pg_version=''):
         if ver:
             versions.append(ver.group(1))
 
-    versions.sort(key = itemgetter(2), reverse = False)
+    versions.sort(key = itemgetter(2), reverse = True)
     try:
-        latest_pgis_version = versions[0]
+        latest_version = versions[0]
     except:
         pass
 
-    print >> sys.stderr, 'Latest installed postgis is: [{0}]'.format(latest_pgis_version)
-    return latest_pgis_version
+    print >> sys.stderr, 'Latest available libgeos is: [{}]'.format(latest_version)
+    return latest_version
 
 
-def db_pgis_configure(pg_version='', pgis_version=''):
+def db_pgis_configure(pg_version='', pgis_version='', legacy=False):
     """ Configure postgis template - Ex: (cmd:[pgversion],[gisversion]) """
-    
+
     if not pg_version:
         pg_version = db_psql_default_installed_version()
     if not pgis_version:
         pgis_version = db_pgis_get_latest_version(pg_version)
 
+    # Allows non-superusers the ability to create from this template
     sudo('sudo -u postgres psql -d postgres -c \"UPDATE pg_database SET datistemplate=\'false\' WHERE datname=\'template_postgis\';\"')
     with settings(warn_only=True):
         sudo('sudo -u postgres psql -d postgres -c \"DROP database template_postgis;\"')
 
     sudo('sudo -u postgres createdb -E UTF8 template_postgis')
     with settings(warn_only=True):
-        sudo('sudo -u postgres createlang -d template_postgis plpgsql')
+        sudo('sudo -u postgres psql -d template_postgis -c \"CREATE EXTENSION postgis;\"')
+        sudo('sudo -u postgres psql -d template_postgis -c \"CREATE EXTENSION postgis_topology;\"')
 
-    sudo('sudo -u postgres psql -d postgres -c \"UPDATE pg_database SET datistemplate=\'true\' WHERE datname=\'template_postgis\';\"')
+    if legacy:
+        postgis_path = '/usr/share/postgresql/{}/contrib/postgis-{}'.format(pg_version, pgis_version)
+        sudo('sudo -u postgres psql -d template_postgis -f {}/legacy.sql'.format(postgis_path))
 
-    postgis_path = '/usr/share/postgresql/{0}/contrib/postgis-{1}'.format(pg_version, pgis_version)
-    sudo('sudo -u postgres psql -d template_postgis -f {0}/postgis.sql'.format(postgis_path))
-    sudo('sudo -u postgres psql -d template_postgis -f {0}/spatial_ref_sys.sql'.format(postgis_path))
-
+    # Enabling users to alter spatial tables.
     sudo('sudo -u postgres psql -d template_postgis -c \"GRANT ALL ON geometry_columns TO PUBLIC;\"')
     sudo('sudo -u postgres psql -d template_postgis -c \"GRANT ALL ON spatial_ref_sys TO PUBLIC;\"')
     sudo('sudo -u postgres psql -d template_postgis -c \"GRANT ALL ON geography_columns TO PUBLIC;\"')
-    sys_etc_git_commit('Configured postgis ({0}) for pqsl ({1})'.format(pg_version, pgis_version))
+
+    sys_etc_git_commit('Configured postgis ({}) for pqsl ({})'.format(pg_version, pgis_version))
 
 
 def db_pgis_get_database_gis_info(dbname):
     """ Returns the postgis verion of a postgis dababase - Ex: (cmd:<dbname>)"""
-    return sudo('sudo -u postgres  psql -d {0} -c \"SELECT postgis_full_version();\"'.format(dbname))
+    sudo('sudo -u postgres  psql -d {} -c \"SELECT PostGIS_Version();\";'.format(dbname))
 
 
 

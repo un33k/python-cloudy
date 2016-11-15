@@ -22,7 +22,7 @@ def sys_security_install_common():
         'logcheck',
         'logcheck-database',
     ])
-    sudo('apt-get -y install {0}'.format(requirements))
+    sudo('apt-get -y install {}'.format(requirements))
     sys_etc_git_commit('Installed common security packages')
 
 

@@ -20,59 +20,74 @@ def sys_update():
     sys_etc_git_commit('Updated package repositories')
 
 
-def sys_safe_upgrade():
-    """ Performe a safe upgrade - Ex: (cmd)"""
-    sudo('aptitude -y safe-upgrade')
-    sys_etc_git_commit('Upgraded the system safely')
+def sys_upgrade():
+    """ Perform a upgrade - Ex: (cmd)"""
+    sudo('apt-get update')
+    sudo('DEBIAN_FRONTEND=noninteractive; aptitude -y upgrade')
+    sudo('shutdown -r now')
+    sys_etc_git_commit('Upgraded the system')
 
+def sys_safe_upgrade():
+    """ Perform a safe upgrade - Ex: (cmd)"""
+    sudo('apt-get upgrade')
+    sudo('DEBIAN_FRONTEND=noninteractive; aptitude -y safe-upgrade')
+    sys_etc_git_commit('Upgraded the system safely')
+    sudo('shutdown -r now')
+
+def sys_git_install():
+    """
+    Install the latest version of git.
+    """
+    sudo('add-apt-repository ppa:git-core/ppa -y')
+    sudo('apt-get update')
+    sudo('apt-get -y install git')
 
 def sys_install_common():
     """ Install common application - Ex: (cmd)"""
     requirements = '%s' % ' '.join([
         'build-essential',
         'gcc',
-        'git',
         'subversion',
         'mercurial',
         'wget',
         'vim',
         'less',
         'sudo',
+        'upstart',
     ])
-    
+
     # install requirements
-    sudo('apt-get -y install {0}'.format(requirements))
-    sys_etc_git_commit('Installed common system packages')
+    sudo('apt-get -y install {}'.format(requirements))
 
 
 def sys_git_configure(user, name, email):
     """ Configure git for a given user - Ex: (cmd:<user>,<name>,<email>)"""
     sudo('apt-get install -y git-core')
     with settings(warn_only=True):
-        sudo('sudo -u {0} git config --global user.name \"{1}\"'.format(user, name))
-        sudo('sudo -u {0} git config --global user.email \"{1}\"'.format(user, email))
-        sys_etc_git_commit('Configured git for user: {0}'.format(user))
+        sudo('sudo -u {} git config --global user.name \"{}\"'.format(user, name))
+        sudo('sudo -u {} git config --global user.email \"{}\"'.format(user, email))
+        sys_etc_git_commit('Configured git for user: {}'.format(user))
 
 
 def sys_add_hosts(host, ip):
     """ Add ip:host to /etc/hosts - Ex: (cmd:<host>,<ip>)"""
     host_file = '/etc/hosts'
-    sudo('sed -i /\s*\{0}\s*.*/d {1}'.format(host, host_file))
-    sudo('sed -i \'1i{0}\t{1}\' {2}'.format(ip, host, host_file))
-    sys_etc_git_commit('Added host:{0}, ip:{1} to: {2}'.format(host, ip, host_file))
+    sudo('sed -i /\s*\{}\s*.*/d {}'.format(host, host_file))
+    sudo('sed -i \'1i{}\t{}\' {}'.format(ip, host, host_file))
+    sys_etc_git_commit('Added host:{}, ip:{} to: {}'.format(host, ip, host_file))
 
 
 def sys_hostname_configure(hostname):
     """ Configure hostname for a machine - Ex: (cmd:<name>)"""
-    sudo('echo {0} > /etc/hostname'.format(hostname))
+    sudo('echo {} > /etc/hostname'.format(hostname))
     sudo('hostname -F /etc/hostname')
-    sys_etc_git_commit('Configured hostname to: {0}'.format(hostname))
+    sys_etc_git_commit('Configured hostname to: {}'.format(hostname))
 
 
 def sys_locale_configure(locale='en_US.UTF-8'):
     """ Configure system's locale - Ex: (cmd:<locale>)"""
-    sudo('dpkg-reconfigure locales')
-    sudo('update-locale LANG={0}'.format(locale))
+    sudo('DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales')
+    sudo('update-locale LANG={}'.format(locale))
 
 
 def sys_uname():
@@ -97,27 +112,47 @@ def sys_shutdown(restart=True):
         sudo('shutdown now')
 
 
-def sys_add_chkconfig():
-    """ Add Redhat style chkconfig - Ex: (cmd) """
-    sudo('apt-get install -y chkconfig')
+def sys_add_sysv_rc_conf():
+    """ Add Redhat style sysv-rc-conf - Ex: (cmd) """
+    sudo('apt-get install -y  sysv-rc-conf')
     sudo('sudo ln -sf /usr/lib/insserv/insserv /sbin/insserv')
 
 
 def sys_show_default_startup(program=''):
     """ List of applications that start at system startup - Ex: (cmd:[program]) """
     if program:
-        program = ' | grep {0}'.format(program)
-    sudo('chkconfig {0}'.format(program))
+        program = ' | grep {}'.format(program)
+    sudo('sysv-rc-conf {}'.format(program))
 
 def sys_add_default_startup(program):
     """ Add an applications to start at system startup - Ex: (cmd) """
-    sudo('chkconfig -s {0} on'.format(program))
+    sudo('sysv-rc-conf -s {} on'.format(program))
 
 
 def sys_remove_default_startup(program):
     """ Remove an applications from starting at system startup - Ex: (cmd) """
-    sudo('chkconfig -s {0} off'.format(program))
+    sudo('sysv-rc-conf -s {} off'.format(program))
     with settings(warn_only=True):
-        sudo('service {0} stop'.format(program))
+        sudo('service {} stop'.format(program))
+
+
+def sys_mkdir(path='', owner='', group=''):
+    """ Make directory - Ex: (cmd:<dir>,[owner],[group])"""
+
+    if not path:
+        return
+
+    path = os.path.abspath(path)
+    sudo('mkdir -p {}'.format(path))
+    return path
+
+def sys_hold_package(package):
+    """ Prevent package from being updated. Hold the version - Ex: (cmd) """
+    sudo('apt-mark hold {}'.format(package))
+
+def sys_unhold_package(package):
+    """ Remove a package from being hold at a version - Ex: (cmd) """
+    sudo('apt-mark unhold {}'.format(package))
+
 
 

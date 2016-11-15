@@ -13,7 +13,7 @@ from fabric.api import cd
 from fabric.contrib import files
 from fabric.utils import abort
 
-
+from cloudy.util.common import sys_restart_service
 from cloudy.sys.etc import sys_etc_git_commit
 
 
@@ -24,6 +24,6 @@ def sys_install_postfix():
     sudo('echo \"postfix postfix/destinations string localhost.localdomain, localhost\" | debconf-set-selections')
     sudo('apt-get -y install postfix')
     sudo('/usr/sbin/postconf -e \"inet_interfaces = loopback-only\"')
-    sudo('service postfix start')
     sys_etc_git_commit('Installed postfix on loopback for outgoing mail')
+    sys_restart_service('postfix')
 

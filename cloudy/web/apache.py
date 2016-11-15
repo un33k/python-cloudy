@@ -21,44 +21,46 @@ def web_apache_install():
     requirements = '%s' % ' '.join([
         'apache2',
     ])
-    
+
     # install requirements
-    sudo('apt-get -y install {0}'.format(requirements))
+    sudo('apt-get -y install {}'.format(requirements))
+    web_apache2_install_mods()
     util_apache2_bootstrap()
     sys_etc_git_commit('Installed apache2')
 
 
 def util_apache2_bootstrap():
+    sudo('rm -rf /etc/apache2/*')
     cfgdir = os.path.join(os.path.dirname( __file__), '../cfg')
+
+    localcfg = os.path.expanduser(os.path.join(cfgdir, 'apache2/apache2.conf'))
+    remotecfg = '/etc/apache2/apache2.conf'
+    put(localcfg, remotecfg, use_sudo=True)
+
+    localcfg = os.path.expanduser(os.path.join(cfgdir, 'apache2/envvars.conf'))
+    remotecfg = '/etc/apache2/envvars'
+    put(localcfg, remotecfg, use_sudo=True)
 
     localcfg = os.path.expanduser(os.path.join(cfgdir, 'apache2/ports.conf'))
     remotecfg = '/etc/apache2/ports.conf'
-    sudo('rm -rf ' + remotecfg)
     put(localcfg, remotecfg, use_sudo=True)
-    sudo('rm -f /etc/apache2/sites-enabled/*default*')
-    files.append('/etc/apache2/envvars', ['export LANG="en_US.UTF-8"', 'export LC_ALL="en_US.UTF-8"'], use_sudo=True)
 
-def web_apache2_server_signature(sig=False):
-    """ Set Apache Server Signature ON/OF - Ex: (cmd:[True|False])"""
-    conf_file = '/etc/apache2/conf.d/security'
-    sudo('sed -i /\s*\ServerSignature\s*.*/d {0}'.format(conf_file))
-    signature = 'ServerSignature {0}'.format('On' if sig else 'Off')
-    sudo('sed -i \'1i{0}\' {1}'.format(signature, conf_file))
-    sys_etc_git_commit('Set Apache Signature to {0})'.format(signature))
+    sudo('mkdir -p /etc/apache2/sites-available')
+    sudo('mkdir -p /etc/apache2/sites-enabled')
 
-
-def web_apache2_install_mods():
+def web_apache2_install_mods(py_version='2.7'):
     """ Install apache2 related packages - Ex: (cmd)"""
+    if '2' in py_version:
+        mod_wsgi = 'libapache2-mod-wsgi'
+    else:
+        mod_wsgi = 'libapache2-mod-wsgi-py3'
     requirements = '%s' % ' '.join([
-        'libapache2-mod-wsgi',
+        mod_wsgi,
         'libapache2-mod-rpaf',
     ])
-    
+
     # install requirements
-    sudo('apt-get -y install {0}'.format(requirements))
-    with settings(warn_only=True):
-        sudo('a2enmod wsgi')
-        sudo('a2enmod rpaf')
+    sudo('apt-get -y install {}'.format(requirements))
     sys_etc_git_commit('Installed apache2 and related packages')
 
 
@@ -67,9 +69,29 @@ def web_apache2_set_port(port=''):
 
     remotecfg = '/etc/apache2/ports.conf'
     port = sys_show_next_available_port(port)
-    sudo('echo \"Listen 127.0.0.1:{0}\" >> {1}'.format(port, remotecfg))
+    sudo('echo \"Listen 127.0.0.1:{}\" >> {}'.format(port, remotecfg))
     sudo('service apache2 reload')
-    sys_etc_git_commit('Apache now listens on port {0}'.format(port))
+    sys_etc_git_commit('Apache now listens on port {}'.format(port))
 
+
+def web_apache2_setup_domain(domain, port):
+    """ Setup Apache2 config file for a domain - Ex: (cmd:<domain>,[port])"""
+
+    apache_avail_dir = '/etc/apache2/sites-available'
+
+    cfgdir = os.path.join(os.path.dirname( __file__), '../cfg')
+    localcfg = os.path.expanduser(os.path.join(cfgdir, 'apache2/site.conf'))
+    remotecfg = '{}/{}'.format(apache_avail_dir, domain)
+    sudo('rm -rf ' + remotecfg)
+    put(localcfg, remotecfg, use_sudo=True)
+
+    sudo('sed -i "s/port_num/{}/g" {}'.format(port, remotecfg))
+    sudo('sed -i "s/example\.com/{}/g" {}'.format(domain.replace('.', '\.'), remotecfg))
+    sudo('chown -R root:root {}'.format(apache_avail_dir))
+    sudo('chmod -R 755 {}'.format(apache_avail_dir))
+    sudo('a2ensite {}'.format(domain))
+    web_apache2_set_port(port)
+    sudo('service apache2 reload')
+    sys_etc_git_commit('Setup Apache Config for Domain {}'.format(domain))
 
 
