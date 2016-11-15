@@ -7,7 +7,7 @@ from cloudy.sys import *
 from cloudy.web import *
 from cloudy.util import *
 
-from cloudy.srv.recipe_generic_ubuntu import setup_generic_server
+from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 
 
 def srv_setup_lb(cfg_files):
@@ -16,7 +16,7 @@ def srv_setup_lb(cfg_files):
     """
     cfg = CloudyConfig(filenames=cfg_files)
 
-    setup_generic_server(cfg_files)
+    srv_setup_generic_server(cfg_files)
 
     hostname = cfg.get_variable('common', 'hostname')
     if hostname:
