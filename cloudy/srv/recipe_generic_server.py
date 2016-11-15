@@ -6,6 +6,9 @@ from fabric.api import env
 
 
 def srv_setup_generic_server(cfg_files='~/.cloudy'):
+    """
+    Setup a generic server with the required packages - Ex: (cmd:[cfg-file])
+    """
     cfg = CloudyConfig(filenames=cfg_files)
     sys_update()
 
