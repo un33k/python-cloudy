@@ -84,6 +84,18 @@ def db_mysql_set_root_password(password):
 
 
 def db_mysql_create_database(root_pass, db_name):
-    """ Change password for user: postgres - Ex: (cmd:<root_pass>,<db_name>)"""
+    """ Change password for user: mysql - Ex: (cmd:<root_pass>,<db_name>)"""
     sudo('echo "CREATE DATABASE {} CHARACTER SET utf8 COLLATE utf8_general_ci;" | sudo mysql -u root -p{}'.format(db_name, root_pass))
+
+
+def db_mysql_create_user(root_pass, user, user_pass):
+    """ Change password for user: mysql - Ex: (cmd:<root_pass>,<db_name>)"""
+    sudo('echo "CREATE USER \'{}\'@\'localhost\' IDENTIFIED BY \'{}\';" | sudo mysql -u root -p{}'.format(user, user_pass, root_pass))
+
+
+def db_mysql_grant_user(root_pass, user, database):
+    """ Change password for user: mysql - Ex: (cmd:<root_pass>,<db_name>)"""
+    sudo('echo "GRANT ALL PRIVILEGES ON {}.* TO \'{}\'@\'localhost\';" | sudo mysql -u root -p{}'.format(database, user, root_pass))
+    sudo('echo "FLUSH PRIVILEGES;" | sudo mysql -u root -p{}'.format(root_pass))
+
 
