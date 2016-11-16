@@ -82,3 +82,8 @@ def db_mysql_set_root_password(password):
         run('mysqladmin -u root password {}'.format(password))
         sys_etc_git_commit('Set MySQL Root Password')
 
+
+def db_mysql_create_database(root_pass, db_name):
+    """ Change password for user: postgres - Ex: (cmd:<root_pass>,<db_name>)"""
+    sudo('echo "CREATE DATABASE {} CHARACTER SET utf8 COLLATE utf8_general_ci;" | sudo mysql -u root -p{}'.format(db_name, root_pass))
+
