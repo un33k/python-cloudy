@@ -31,8 +31,11 @@ def srv_setup_lb(cfg_files):
 
     # install nginx
     web_nginx_install()
+    protocol = 'http'
     domain_name = cfg.get_variable('webserver', 'domain-name', 'example.com')
-    certificate_path = cfg.get_variable('common', 'certificate-path', '~/.ssh/certificates/')
-    web_nginx_copy_ssl(domain_name, certificate_path)
+    certificate_path = cfg.get_variable('common', 'certificate-path')
+    if certificate_path:
+        web_nginx_copy_ssl(domain_name, certificate_path)
+        protocol = 'https'
     webserver_private_port = cfg.get_variable('webserver', 'private-port', 8181)
-    web_nginx_setup_domain(domain_name, 'https', webserver_private_port)
+    web_nginx_setup_domain(domain_name, protocol, webserver_private_port)
