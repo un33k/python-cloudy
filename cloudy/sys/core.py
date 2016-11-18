@@ -23,14 +23,14 @@ def sys_update():
 def sys_upgrade():
     """ Perform a upgrade - Ex: (cmd)"""
     sudo('apt-get update')
-    sudo('DEBIAN_FRONTEND=noninteractive; aptitude -y upgrade')
+    sudo('DEBIAN_FRONTEND=noninteractive aptitude -y upgrade')
     sudo('shutdown -r now')
     sys_etc_git_commit('Upgraded the system')
 
 def sys_safe_upgrade():
     """ Perform a safe upgrade - Ex: (cmd)"""
     sudo('apt-get upgrade')
-    sudo('DEBIAN_FRONTEND=noninteractive; aptitude -y safe-upgrade')
+    sudo('DEBIAN_FRONTEND=noninteractive aptitude -y safe-upgrade')
     sys_etc_git_commit('Upgraded the system safely')
     sudo('shutdown -r now')
 
