@@ -79,7 +79,7 @@ def db_mysql_set_root_password(password):
     if not password:
         print >> sys.stderr, 'Password required for mysql root'
     else:
-        run('mysqladmin -u root password {}'.format(password))
+        sudo('mysqladmin -u root password {}'.format(password))
         sys_etc_git_commit('Set MySQL Root Password')
 
 
