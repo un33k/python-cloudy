@@ -33,7 +33,7 @@ python-version          = 3.4
 
 [DBSERVER]
 #pg-version             = 9.6
-#pgis-version           = 2.3
+#pgis-version           = 2.2
 #listen-address         = *
 #pg-data-dir            = /data/postgresql
 postgres-admin          = postgres
