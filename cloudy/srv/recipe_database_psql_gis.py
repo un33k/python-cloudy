@@ -57,9 +57,6 @@ def srv_setup_db(cfg_files):
 
     # pgis version
     pgis_version = cfg.get_variable('dbserver', 'pgis-version', 'latest')
-    if pg_version:
-        if pg_version == 'latest':
-            pg_version = ''
-        db_pgis_install(pg_version, pgis_version)
-        db_pgis_configure(pg_version, pgis_version)
-        db_pgis_get_database_gis_info('template_postgis')
+    db_pgis_install(pg_version, pgis_version)
+    db_pgis_configure(pg_version, pgis_version)
+    db_pgis_get_database_gis_info('template_postgis')
