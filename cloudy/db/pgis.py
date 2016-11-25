@@ -32,7 +32,6 @@ def db_pgis_install(psql_version='', pgis_version=''):
         'libproj-dev',
         'gdal-bin',
         'binutils',
-        'libgeos-c1',
         'libgeos-{}'.format(libgeos_version),
         'libgeos-dev',
         'libgdal1-dev',
