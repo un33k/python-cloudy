@@ -1,16 +1,16 @@
 [COMMON]
 
 ### Git
-git-user-full-name      = Doozee Admin
-git-user-email          = support@dooz.ee
+git-user-full-name      = John Dole
+git-user-email          = jdole@example.com
 
 ### Timezone & Locale
-timezone                = US/Eastern
+timezone                = Canada/Eastern
 locale                  = en_US.UTF-8
 
 ### User & Group
-admin-user              = doozeeadmin
-admin-pass              = 5i06u8_P
+admin-user              = jdole
+admin-pass              = pass4jdole
 admin-group             = admin
 
 ### Security
@@ -19,8 +19,9 @@ ssh-enable-password     = YES
 ssh-port                = 11011
 ssh-key-path            = ~/.ssh/id_rsa.pub
 
+
 ### Server name
-hostname                = dz-tool-1
+hostname                = example-1
 
 ### Python
 python-version          = 3.4

@@ -9,8 +9,8 @@ timezone                = Canada/Eastern
 locale                  = en_US.UTF-8
 
 ### User & Group
-admin-user              = fooman
-admin-pass              = pass4fooman
+admin-user              = jdole
+admin-pass              = pass4jdole
 admin-group             = admin
 
 ### Security
