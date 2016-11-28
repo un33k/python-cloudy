@@ -23,13 +23,6 @@ def srv_setup_web(cfg_files):
         sys_hostname_configure(hostname)
         sys_add_hosts(hostname, '127.0.0.1')
 
-        # setup db server
-        dbhost = cfg.get_variable('dbserver', 'db-host')
-        if dbhost:
-            dbaddress = cfg.get_variable('dbserver', 'listen-address')
-            if dbaddress and '*' not in dbaddress:
-                sys_add_hosts(dbhost, dbaddress)
-
     # setup python stuff
     py_version = cfg.get_variable('common', 'python-version')
     sys_python_install_common(py_version)

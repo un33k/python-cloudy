@@ -58,9 +58,10 @@ def srv_setup_generic_server(cfg_files):
 
 
     # ssh stuff
-    ssh_port = cfg.get_variable('common', 'ssh-port')
+    ssh_port = cfg.get_variable('common', 'ssh-port', 22)
     if ssh_port:
         sys_ssh_set_port(ssh_port)
+        sys_firewall_allow_incoming_port(ssh_port)
 
     disable_root = cfg.get_variable('common', 'ssh-disable-root')
     if disable_root and disable_root.upper() == 'YES':

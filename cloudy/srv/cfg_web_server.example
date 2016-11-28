@@ -33,4 +33,5 @@ domain-name             = simplyfound.com
 [DBSERVER]
 pg-version              = 9.6
 pgis-version            = 2.2
-db-host                 = 192.168.189.111
+db-host                 = db-host
+listen-address          = 192.168.189.111
