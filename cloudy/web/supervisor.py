@@ -16,6 +16,7 @@ from fabric.utils import abort
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.ports import sys_show_next_available_port
 from cloudy.util.common import sys_restart_service
+from cloudy.util.common import sys_reload_service
 
 
 def web_supervisor_install():
@@ -66,7 +67,7 @@ def web_supervisor_setup_domain(domain, port, intrerface='0.0.0.0', worker_num=3
     sudo('chmod -R 755 {}'.format(supervisor_avail_dir))
     with cd(supervisor_enabled_dir):
         sudo('ln -sf {}'.format(remotecfg))
-    sudo('service supervisor force-reload')
+    sudo('sytemctl supervisor force-reload')
     sudo('supervisorctl restart {}'.format(domain))
     sys_etc_git_commit('Setup Supervisor Config for Domain {}'.format(domain))
 

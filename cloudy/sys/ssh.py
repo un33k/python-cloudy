@@ -13,6 +13,8 @@ from fabric.contrib import files
 from fabric.utils import abort
 
 from cloudy.sys.etc import sys_etc_git_commit
+from cloudy.util.common import sys_reload_service
+
 
 def sys_ssh_set_port(port=22):
     """ Set ssh port - Ex: (cmd:[port])"""
@@ -20,8 +22,7 @@ def sys_ssh_set_port(port=22):
     files.sed(sshd_config, before='\s*#\s*Port\s*[0-9]*', after='Port {}'.format(port), use_sudo=True)
     files.sed(sshd_config, before='\s*Port\s*[0-9]*', after='Port {}'.format(port), use_sudo=True)
     sys_etc_git_commit('Configured ssh (Port={})'.format(port))
-    sudo('service ssh reload')
-
+    sys_reload_service('ssh');
 
 def sys_ssh_disable_root_login():
     """ Disable root login - Ex: (cmd)"""
@@ -30,7 +31,7 @@ def sys_ssh_disable_root_login():
     files.sed(sshd_config, before='\s*PermitRootLogin\s*yes', after='PermitRootLogin no',use_sudo=True)
     sudo('sudo passwd -l root')
     sys_etc_git_commit('Diabled root login')
-    sudo('service ssh reload')
+    sys_reload_service('ssh');
 
 
 def sys_ssh_enable_root_login():
@@ -39,7 +40,7 @@ def sys_ssh_enable_root_login():
     files.sed(sshd_config, before='\s*#\s*\PermitRootLogin\s*(yes|no)', after='PermitRootLogin yes',use_sudo=True)
     files.sed(sshd_config, before='\s*PermitRootLogin\s*no', after='PermitRootLogin yes',use_sudo=True)
     sys_etc_git_commit('Endabled root login')
-    sudo('service ssh reload')
+    sys_reload_service('ssh');
 
 
 def sys_ssh_enable_password_authentication():
@@ -48,7 +49,7 @@ def sys_ssh_enable_password_authentication():
     files.sed(sshd_config, before='\s*#\s*\sPasswordAuthentication\s*(yes|no)', after='PasswordAuthentication yes',use_sudo=True)
     files.sed(sshd_config, before='\s*PasswordAuthentication\s*no', after='PasswordAuthentication yes',use_sudo=True)
     sys_etc_git_commit('Enable password authentication')
-    sudo('service ssh reload')
+    sys_reload_service('ssh');
 
 
 def sys_ssh_disable_password_authentication():
@@ -57,7 +58,7 @@ def sys_ssh_disable_password_authentication():
     files.sed(sshd_config, before='\s*#\s*\sPasswordAuthentication\s*(yes|no)', after='PasswordAuthentication no',use_sudo=True)
     files.sed(sshd_config, before='\s*PasswordAuthentication\s*yes', after='PasswordAuthentication no',use_sudo=True)
     sys_etc_git_commit('Disable password authentication')
-    sudo('service ssh reload')
+    sys_reload_service('ssh');
 
 
 def sys_ssh_push_public_key(user, pub_key='~/.ssh/id_rsa.pub'):

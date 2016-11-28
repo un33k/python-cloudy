@@ -16,6 +16,8 @@ from fabric.utils import abort, warn
 
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.ports import sys_show_next_available_port
+from cloudy.util.common import sys_start_service, sys_reload_service
+
 
 def web_nginx_install():
     """ Install Nginx  - Ex: (cmd)"""
@@ -26,7 +28,7 @@ def web_nginx_install():
     # install requirements
     sudo('apt-get -y install {}'.format(requirements))
     web_nginx_bootstrap()
-    sudo('service nginx restart')
+    sys_restart_service('nginx')
     sys_etc_git_commit('Installed Nginx')
 
 
@@ -93,7 +95,7 @@ def web_nginx_setup_domain(domain, proto='http', port='', interface='*'):
     with cd(nginx_enabled_dir):
         sudo('ln -sf {}'.format(remotecfg))
     time.sleep(2)
-    sudo('service nginx reload')
+    sys_reload_service('nginx')
     sys_etc_git_commit('Setup Nginx Config for Domain {}'.format(domain))
 
 

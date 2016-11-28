@@ -79,7 +79,7 @@ def web_deploy(domain):
             run('bin/manage.py collectstatic --noinput')
             run('bin/manage.py syncdb')
             run('bin/manage.py migrate')
-            sudo('service nginx reload')
+            sys_reload_service('nginx')
             sudo('supervisorctl restart {}'.format(domain))
 
 

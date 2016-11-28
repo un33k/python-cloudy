@@ -15,6 +15,7 @@ from fabric.utils import abort
 
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.ports import sys_show_next_available_port
+from cloudy.util.common import sys_start_service, sys_reload_service
 
 def web_apache_install():
     """ Install apache2  - Ex: (cmd)"""
@@ -70,7 +71,7 @@ def web_apache2_set_port(port=''):
     remotecfg = '/etc/apache2/ports.conf'
     port = sys_show_next_available_port(port)
     sudo('echo \"Listen 127.0.0.1:{}\" >> {}'.format(port, remotecfg))
-    sudo('service apache2 reload')
+    sys_reload_service('apache2')
     sys_etc_git_commit('Apache now listens on port {}'.format(port))
 
 
@@ -91,7 +92,7 @@ def web_apache2_setup_domain(domain, port):
     sudo('chmod -R 755 {}'.format(apache_avail_dir))
     sudo('a2ensite {}'.format(domain))
     web_apache2_set_port(port)
-    sudo('service apache2 reload')
+    sys_reload_service('apache2')
     sys_etc_git_commit('Setup Apache Config for Domain {}'.format(domain))
 
 

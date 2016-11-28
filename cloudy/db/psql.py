@@ -14,6 +14,7 @@ from fabric.api import hide
 from fabric.contrib import files
 
 from cloudy.sys.etc import sys_etc_git_commit
+from cloudy.util.common import sys_start_service
 
 
 def db_psql_install_postgres_repo():
@@ -139,7 +140,7 @@ def db_psql_create_cluster(version='', cluster='main', encoding='UTF-8', data_di
     data_dir = db_psql_make_data_dir(version, data_dir)
     sudo('chown -R postgres {}'.format(data_dir))
     sudo('pg_createcluster --start -e {} {} {} -d {}'.format(encoding, version, cluster, data_dir))
-    sudo('service postgresql start')
+    sys_start_service('postgresql');
     sys_etc_git_commit('Created new postgres cluster ({} {})'.format(version, cluster))
 
 def db_psql_set_permission(version='', cluster='main'):
@@ -154,7 +155,7 @@ def db_psql_set_permission(version='', cluster='main'):
     put(localcfg, remotecfg, use_sudo=True)
     sudo('chown postgres:postgres {}'.format(remotecfg))
     sudo('chmod 644 {}'.format(remotecfg))
-    sudo('service postgresql start')
+    sys_start_service('postgresql');
     sys_etc_git_commit('Set default postgres access for cluster ({} {})'.format(version, cluster))
 
 def db_psql_configure(version='', cluster='main', port='5432', interface='*', restart=False):
@@ -173,7 +174,7 @@ def db_psql_configure(version='', cluster='main', port='5432', interface='*', re
 
     sys_etc_git_commit('Configured postgres cluster ({} {})'.format(version, cluster))
     if restart:
-        sudo('service postgresql start')
+        sys_start_service('postgresql')
 
 def db_psql_create_adminpack():
     """ Install admin pack - Ex: (cmd)"""

@@ -14,6 +14,7 @@ from fabric.contrib import files
 
 from cloudy.db.psql import db_psql_default_installed_version
 from cloudy.sys.etc import sys_etc_git_commit
+from cloudy.util.common import sys_start_service
 
 
 def db_pgis_install(psql_version='', pgis_version=''):
@@ -50,7 +51,7 @@ def db_pgis_install(psql_version='', pgis_version=''):
     # install requirements
     sudo('apt-get -y purge postgis')
     sudo('apt-get -y install {}'.format(requirements))
-    sudo('service postgresql start')
+    sys_start_service('postgresql');
     sys_etc_git_commit('Installed postgis for pqsl ({})'.format(psql_version))
 
 
