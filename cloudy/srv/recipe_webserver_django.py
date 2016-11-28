@@ -51,7 +51,8 @@ def srv_setup_web(cfg_files):
     db_pgpool2_install()
     db_host = cfg.get_variable('dbserver', 'db-host')
     if db_host:
-        db_pgpool2_configure(db_host)
+        db_port = cfg.get_variable('dbserver', 'db-port', 5432)
+        db_pgpool2_configure(dbhost=db_host, dbport=db_port)
         db_listen_address = cfg.get_variable('dbserver', 'listen-address')
         if db_listen_address:
             sys_add_hosts(db_host, db_listen_address)
