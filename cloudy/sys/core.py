@@ -112,29 +112,16 @@ def sys_shutdown(restart=True):
     else:
         sudo('shutdown now')
 
-
-def sys_add_sysv_rc_conf():
-    """ Add Redhat style sysv-rc-conf - Ex: (cmd) """
-    sudo('apt-get install -y  sysv-rc-conf')
-    sudo('sudo ln -sf /usr/lib/insserv/insserv /sbin/insserv')
-
-
-def sys_show_default_startup(program=''):
-    """ List of applications that start at system startup - Ex: (cmd:[program]) """
-    if program:
-        program = ' | grep {}'.format(program)
-    sudo('sysv-rc-conf {}'.format(program))
-
 def sys_add_default_startup(program):
     """ Add an applications to start at system startup - Ex: (cmd) """
-    sudo('sysv-rc-conf -s {} on'.format(program))
+    sudo('systemctl enable {}'.format(program))
 
 
 def sys_remove_default_startup(program):
     """ Remove an applications from starting at system startup - Ex: (cmd) """
-    sudo('sysv-rc-conf -s {} off'.format(program))
     with settings(warn_only=True):
-        sudo('service {} stop'.format(program))
+        sudo('systemctl stop {}'.format(program))
+    sudo('systemctl disable {}'.format(program))
 
 
 def sys_mkdir(path='', owner='', group=''):
@@ -155,5 +142,11 @@ def sys_unhold_package(package):
     """ Remove a package from being hold at a version - Ex: (cmd) """
     sudo('apt-mark unhold {}'.format(package))
 
+def sys_set_ipv4_precedence():
+    """ Set IPv4 to precede for site where they prefer it = Ex: (cmd) """
+    get_address_info_config = '/etc/gai.conf'
+    pattern_before = '\s*#\s*\precedence\s*::ffff:0:0/96\s*100'
+    pattern_after = 'precedence ::ffff:0:0/96 100'
+    files.sed(get_address_info_config, before=pattern_before, after=pattern_after, use_sudo=True)
 
 

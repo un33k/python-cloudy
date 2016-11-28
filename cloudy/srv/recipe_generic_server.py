@@ -10,6 +10,8 @@ def srv_setup_generic_server(cfg_files):
     Setup a generic server with the required packages - Ex: (cmd:[cfg-file])
     """
     cfg = CloudyConfig(filenames=cfg_files)
+
+    sys_set_ipv4_precedence()
     sys_update()
 
     # git info
@@ -21,7 +23,6 @@ def srv_setup_generic_server(cfg_files):
 
     sys_install_common()
     sys_time_install_common()
-    sys_add_sysv_rc_conf()
 
     sys_install_postfix()
     sys_set_default_editor()
