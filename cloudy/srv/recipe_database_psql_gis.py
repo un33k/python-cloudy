@@ -18,13 +18,9 @@ def srv_setup_db(cfg_files):
 
     srv_setup_generic_server(cfg_files)
 
-    hostname = cfg.get_variable('common', 'hostname')
-    if hostname:
-        sys_hostname_configure(hostname)
-        sys_add_hosts(hostname, '127.0.0.1')
-        dbaddress = cfg.get_variable('dbserver', 'listen-address')
-        if dbaddress and '*' not in dbaddress:
-            sys_add_hosts(hostname, dbaddress)
+    dbaddress = cfg.get_variable('dbserver', 'listen-address')
+    if dbaddress and '*' not in dbaddress:
+        sys_add_hosts(hostname, dbaddress)
 
     # posgresql: version, cluster, data_dir
     pg_version = cfg.get_variable('dbserver', 'pg-version')

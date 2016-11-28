@@ -23,7 +23,7 @@ ssh-key-path            = ~/.ssh/id_rsa.pub
 hostname                = example-lb
 
 ### Python
-python-version          = 3.4
+#python-version          = 3.4
 
 ### Swap
 #swap-size              = 512

@@ -11,6 +11,11 @@ def srv_setup_generic_server(cfg_files):
     """
     cfg = CloudyConfig(filenames=cfg_files)
 
+    hostname = cfg.get_variable('common', 'hostname')
+    if hostname:
+        sys_hostname_configure(hostname)
+        sys_add_hosts(hostname, '127.0.0.1')
+
     sys_set_ipv4_precedence()
     sys_update()
 
@@ -56,12 +61,12 @@ def srv_setup_generic_server(cfg_files):
         if shared_key_dir:
             sys_ssh_push_server_shared_keys(admin_user, shared_key_dir)
 
-
     # ssh stuff
+    sys_firewall_install()
     ssh_port = cfg.get_variable('common', 'ssh-port', 22)
     if ssh_port:
         sys_ssh_set_port(ssh_port)
-        sys_firewall_allow_incoming_port(ssh_port)
+        sys_firewall_secure_server(ssh_port)
 
     disable_root = cfg.get_variable('common', 'ssh-disable-root')
     if disable_root and disable_root.upper() == 'YES':
