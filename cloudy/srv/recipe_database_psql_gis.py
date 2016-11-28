@@ -26,10 +26,6 @@ def srv_setup_db(cfg_files):
         if dbaddress and '*' not in dbaddress:
             sys_add_hosts(hostname, dbaddress)
 
-    ssh_port = cfg.get_variable('common', 'ssh-port', 22)
-    sys_firewall_install()
-    sys_firewall_secure_server(ssh_port)
-
     # posgresql: version, cluster, data_dir
     pg_version = cfg.get_variable('dbserver', 'pg-version')
     pg_listen_address = cfg.get_variable('dbserver', 'listen-address', '*')

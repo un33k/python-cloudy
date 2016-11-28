@@ -18,7 +18,7 @@ def srv_setup_web(cfg_files):
     srv_setup_generic_server(cfg_files)
 
     # hostname, ips
-    hostname = cfg.get_variable('webserver', 'hostname')
+    hostname = cfg.get_variable('common', 'hostname')
     if hostname:
         sys_hostname_configure(hostname)
         sys_add_hosts(hostname, '127.0.0.1')
@@ -31,31 +31,32 @@ def srv_setup_web(cfg_files):
                 sys_add_hosts(dbhost, dbaddress)
 
     # setup python stuff
-    sys_python_install_common()
-
-    # install cache daemon
-    sys_memcached_install()
-    sys_memcached_configure_memory()
-    sys_memcached_configure_interface()
+    py_version = cfg.get_variable('common', 'python-version')
+    sys_python_install_common(py_version)
 
     # install webserver
-    webserver = cfg.get_variable('dbserver', 'webserver')
+    webserver = cfg.get_variable('webserver', 'webserver')
     if webserver.lower() == 'apache':
         web_apache_install()
         web_apache2_install_mods()
     elif webserver.lower() == 'gunicorn':
         web_supervisor_install()
 
-    # install nginx
-    web_nginx_install()
-
     # create web directory
     web_create_data_directory()
-    db_psql_install()
-    db_pgis_install()
+
+    webserver_port = cfg.get_variable('webserver', 'webserver-port')
+    sys_firewall_allow_incoming_port(webserver_port)
+
+    # create db related
+    pg_version = cfg.get_variable('dbserver', 'pg-version')
+    db_psql_install(pg_version)
+    pgis_version = cfg.get_variable('dbserver', 'pgis-version')
+    db_pgis_install(pg_version, pgis_version)
     sys_remove_default_startup('postgresql')
+
     db_pgpool2_install()
-    db_host = cfg.get_variable('webserver', 'db-host')
+    db_host = cfg.get_variable('dbserver', 'db-host')
     if db_host:
         db_pgpool2_configure(db_host)
         db_listen_address = cfg.get_variable('dbserver', 'listen-address')

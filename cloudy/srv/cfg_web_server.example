@@ -23,12 +23,14 @@ ssh-key-path            = ~/.ssh/id_rsa.pub
 #shared-key-path         = ~/.ssh/shared/ssh
 
 hostname                = example-db
+python-version          = 3.5
+
+[WEBSERVER]
+webserver               = gunicorn
+webserver-port          = 8181
+domain-name             = simplyfound.com
 
 [DBSERVER]
-#pg-version             = 9.6
-#pgis-version           = 2.2
-#listen-address         = *
-#pg-data-dir            = /data/postgresql
-postgres-admin          = postgres
-postgres-pass           = pass4postgres
-postgres-sys-pass       = pass4postgres
+pg-version              = 9.6
+pgis-version            = 2.2
+db-host                 = 192.168.189.190
