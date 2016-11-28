@@ -27,7 +27,7 @@ def sys_ssh_set_port(port=22):
 def sys_ssh_disable_root_login():
     """ Disable root login - Ex: (cmd)"""
     sshd_config = '/etc/ssh/sshd_config'
-    files.sed(sshd_config, before='\s*#\s*\PermitRootLogin\s*(yes|no)', after='PermitRootLogin no',use_sudo=True)
+    files.sed(sshd_config, before='\s*#\s*PermitRootLogin\s*(yes|no)', after='PermitRootLogin no',use_sudo=True)
     files.sed(sshd_config, before='\s*PermitRootLogin\s*yes', after='PermitRootLogin no',use_sudo=True)
     sudo('sudo passwd -l root')
     sys_etc_git_commit('Diabled root login')
@@ -37,7 +37,7 @@ def sys_ssh_disable_root_login():
 def sys_ssh_enable_root_login():
     """ Enable root login - Ex: (cmd)"""
     sshd_config = '/etc/ssh/sshd_config'
-    files.sed(sshd_config, before='\s*#\s*\PermitRootLogin\s*(yes|no)', after='PermitRootLogin yes',use_sudo=True)
+    files.sed(sshd_config, before='\s*#\s*PermitRootLogin\s*(yes|no)', after='PermitRootLogin yes',use_sudo=True)
     files.sed(sshd_config, before='\s*PermitRootLogin\s*no', after='PermitRootLogin yes',use_sudo=True)
     sys_etc_git_commit('Endabled root login')
     sys_reload_service('ssh');
@@ -46,7 +46,7 @@ def sys_ssh_enable_root_login():
 def sys_ssh_enable_password_authentication():
     """ Enable password authentication - Ex: (cmd)"""
     sshd_config = '/etc/ssh/sshd_config'
-    files.sed(sshd_config, before='\s*#\s*\sPasswordAuthentication\s*(yes|no)', after='PasswordAuthentication yes',use_sudo=True)
+    files.sed(sshd_config, before='\s*#\s*PasswordAuthentication\s*(yes|no)', after='PasswordAuthentication yes',use_sudo=True)
     files.sed(sshd_config, before='\s*PasswordAuthentication\s*no', after='PasswordAuthentication yes',use_sudo=True)
     sys_etc_git_commit('Enable password authentication')
     sys_reload_service('ssh');
@@ -55,7 +55,7 @@ def sys_ssh_enable_password_authentication():
 def sys_ssh_disable_password_authentication():
     """ Diable password authentication - Ex: (cmd)"""
     sshd_config = '/etc/ssh/sshd_config'
-    files.sed(sshd_config, before='\s*#\s*\sPasswordAuthentication\s*(yes|no)', after='PasswordAuthentication no',use_sudo=True)
+    files.sed(sshd_config, before='\s*#\s*PasswordAuthentication\s*(yes|no)', after='PasswordAuthentication no',use_sudo=True)
     files.sed(sshd_config, before='\s*PasswordAuthentication\s*yes', after='PasswordAuthentication no',use_sudo=True)
     sys_etc_git_commit('Disable password authentication')
     sys_reload_service('ssh');

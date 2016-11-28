@@ -54,11 +54,11 @@ def sys_redis_configure_db_file(path='/var/lib/redis', dump='redis.rdb'):
     """ Configure redis-server dumpfile - Ex: (cmd:[path],[file]) """
     redis_conf = '/etc/redis/redis.conf'
     if path:
-        sudo('sed -i /\s*\dir\s*.*/d {}'.format(redis_conf))
+        sudo('sed -i /\s*dir\s*.*/d {}'.format(redis_conf))
         sudo('echo "dir {}" >> {}'.format(path, redis_conf))
         # sudo('sed -i \"1idir = \'{}\'\" {}'.format(path, redis_conf))
     if dump:
-        sudo('sed -i /\s*\dbfilename\s*.*/d {}'.format(redis_conf))
+        sudo('sed -i /\s*dbfilename\s*.*/d {}'.format(redis_conf))
         sudo('echo "dir {}" >> {}'.format(dump, redis_conf))
         # sudo('sed -i \"1idbfilename = \'{}\'\" {}'.format(dump, redis_conf))
     sys_etc_git_commit('Configured redis-server (dir={}, dumpflie={}/)'.format(path, dump))

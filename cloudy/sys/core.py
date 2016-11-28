@@ -73,7 +73,7 @@ def sys_git_configure(user, name, email):
 def sys_add_hosts(host, ip):
     """ Add ip:host to /etc/hosts - Ex: (cmd:<host>,<ip>)"""
     host_file = '/etc/hosts'
-    sudo('sed -i /\s*\{}\s*.*/d {}'.format(host, host_file))
+    sudo('sed -i /\s*{}\s*.*/d {}'.format(host, host_file))
     sudo('sed -i \'1i{}\t{}\' {}'.format(ip, host, host_file))
     sys_etc_git_commit('Added host:{}, ip:{} to: {}'.format(host, ip, host_file))
 
@@ -145,7 +145,7 @@ def sys_unhold_package(package):
 def sys_set_ipv4_precedence():
     """ Set IPv4 to precede for site where they prefer it = Ex: (cmd) """
     get_address_info_config = '/etc/gai.conf'
-    pattern_before = '\s*#\s*\precedence\s*::ffff:0:0/96\s*100'
+    pattern_before = '\s*#\s*precedence\s*::ffff:0:0/96\s*100'
     pattern_after = 'precedence ::ffff:0:0/96 100'
     files.sed(get_address_info_config, before=pattern_before, after=pattern_after, use_sudo=True)
 

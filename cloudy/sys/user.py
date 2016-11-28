@@ -41,7 +41,7 @@ def sys_user_add_sudoer(username):
 
 def sys_user_remove_sudoer(username):
     """ Remove user from sudoer - Ex: (cmd:<user>)"""
-    sudo('sed -i /\s*\{}\s*.*/d {}'.format(username, '/etc/sudoers'))
+    sudo('sed -i /\s*{}\s*.*/d {}'.format(username, '/etc/sudoers'))
     sys_etc_git_commit('Removed user from sudoers - ({})'.format(username))
 
 
@@ -68,7 +68,7 @@ def sys_user_remove_from_group(username, group):
 def sys_user_set_group_umask(username, umask='0002'):
     """ Set user umask - Ex: (cmd:<username>[umask])"""
     bashrc = '/home/{}/.bashrc'.format(username)
-    sudo('sed -i /\s*\umask\s*.*/d {}'.format(bashrc))
+    sudo('sed -i /\s*umask\s*.*/d {}'.format(bashrc))
     sudo('sed -i \'1iumask {}\' {}'.format(str(umask), bashrc))
     sys_etc_git_commit('Added umask ({}) to user ({})'.format(umask, username))
 
@@ -86,7 +86,7 @@ def sys_user_set_pip_cache_dir(username):
     sudo('mkdir -p {}'.format(cache_dir))
     sudo('chown -R :www-data {}'.format(cache_dir))
     sudo('chmod -R ug+wrx {}'.format(cache_dir))
-    sudo('sed -i /\s*\PIP_DOWNLOAD_CACHE\s*.*/d {}'.format(bashrc))
+    sudo('sed -i /\s*PIP_DOWNLOAD_CACHE\s*.*/d {}'.format(bashrc))
     sudo('sed -i \'1iexport PIP_DOWNLOAD_CACHE={}\' {}'.format(cache_dir, bashrc))
 
 
