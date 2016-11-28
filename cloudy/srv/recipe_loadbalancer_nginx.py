@@ -29,5 +29,9 @@ def srv_setup_lb(cfg_files):
     if certificate_path:
         web_nginx_copy_ssl(domain_name, certificate_path)
         protocol = 'https'
-    webserver_private_port = cfg.get_variable('webserver', 'private-port', 8181)
-    web_nginx_setup_domain(domain_name, protocol, webserver_private_port)
+
+    binding_address = cfg.get_variable('webserver', 'binding-address', '*')
+    upstream_address = cfg.get_variable('webserver', 'upstream-address')
+    upstream_port = cfg.get_variable('webserver', 'upstream-port', 8181)
+    if upstream_address and upstream_port:
+        web_nginx_setup_domain(domain_name, protocol, binding_address, upstream_address, upstream_port)

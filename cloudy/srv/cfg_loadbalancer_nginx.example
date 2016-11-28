@@ -37,6 +37,6 @@ hostname                = example-lb
 [WEBSERVER]
 
 ### Private Web Servers - Proxy forward request to
-web-private-ips         = 192.168.111.111, 192.168.111.222
-private-port            = 8181
-domain-name             = example.com
+upstream-address            = 192.168.111.111
+upstream-port               = 8181
+domain-name                 = example.com

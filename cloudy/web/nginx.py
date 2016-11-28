@@ -16,7 +16,7 @@ from fabric.utils import abort, warn
 
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.ports import sys_show_next_available_port
-from cloudy.util.common import sys_start_service, sys_reload_service
+from cloudy.util.common import sys_start_service, sys_reload_service, sys_restart_service
 
 
 def web_nginx_install():
@@ -67,7 +67,7 @@ def web_nginx_copy_ssl(domain, crt_dir='~/.ssh/certificates/'):
     remotekey = '/etc/ssl/nginx/key/{}.key'.format(domain)
     put(localkey, remotekey, use_sudo=True)
 
-def web_nginx_setup_domain(domain, proto='http', port='', interface='*'):
+def web_nginx_setup_domain(domain, proto='http', interface='*', upstream_address='', upstream_port=''):
     """ Setup Nginx config file for a domain - Ex: (cmd:<domain>,[protocol],[port])"""
     if 'https' in proto or 'ssl' in proto:
         proto = 'https'
@@ -84,10 +84,11 @@ def web_nginx_setup_domain(domain, proto='http', port='', interface='*'):
     remotecfg = '{}/{}.{}'.format(nginx_avail_dir, proto, domain)
     sudo('rm -rf ' + remotecfg)
     put(localcfg, remotecfg, use_sudo=True)
-    if not port:
-        port = sys_show_next_available_port()
 
-    sudo('sed -i "s/port_num/{}/g" {}'.format(port, remotecfg))
+    if upstream_address and upstream_port:
+        sudo('sed -i "s/upstream_address/{}/g" {}'.format(upstream_address, remotecfg))
+        sudo('sed -i "s/upstream_port/{}/g" {}'.format(upstream_port, remotecfg))
+
     sudo('sed -i "s/public_interface/{}/g" {}'.format(interface, remotecfg))
     sudo('sed -i "s/example\.com/{}/g" {}'.format(domain.replace('.', '\.'), remotecfg))
     sudo('chown -R root:root {}'.format(nginx_avail_dir))
