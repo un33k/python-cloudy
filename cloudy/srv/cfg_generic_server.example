@@ -21,7 +21,7 @@ ssh-key-path            = ~/.ssh/id_rsa.pub
 
 
 ### Server name
-hostname                = example-1
+hostname                = example-generic
 
 ### Python
 python-version          = 3.4

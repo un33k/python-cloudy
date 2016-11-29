@@ -55,6 +55,7 @@ def sys_install_common():
         'vim',
         'less',
         'sudo',
+        'redis-tools',
     ])
 
     # install requirements
