@@ -17,6 +17,7 @@ from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.ports import sys_show_next_available_port
 from cloudy.util.common import sys_restart_service
 from cloudy.util.common import sys_reload_service
+from cloudy.sys.core import sys_add_default_startup
 
 
 def web_supervisor_install():
@@ -43,6 +44,7 @@ def web_supervisor_bootstrap():
     sudo('mkdir -p /etc/supervisor/sites-enabled')
     sudo('chown -R root:root /etc/supervisor')
     sudo('chmod -R 644 /etc/supervisor')
+    sys_add_default_startup('supervisor')
     sys_restart_service('supervisor')
 
 
