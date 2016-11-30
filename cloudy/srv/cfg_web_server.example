@@ -36,3 +36,7 @@ pgis-version            = 2.2
 db-host                 = db-host
 db-port                 = 5432
 listen-address          = 192.168.189.111
+
+[CACHESERVER]
+cache-host:             = cache-host
+listen-address          = 192.168.141.111

@@ -41,6 +41,12 @@ def srv_setup_web(cfg_files):
     webserver_port = cfg.get_variable('webserver', 'webserver-port')
     sys_firewall_allow_incoming_port(webserver_port)
 
+    # hostname, cache server
+    cache_host = cfg.get_variable('cacheserver', 'cache-host')
+    cache_listen_address = cfg.get_variable('cacheserver', 'listen-address')
+    if cache_host and cache_listen_address:
+        sys_add_hosts(cache_host, cache_listen_address)
+
     # create db related
     pg_version = cfg.get_variable('dbserver', 'pg-version')
     db_psql_install(pg_version)
