@@ -67,7 +67,7 @@ def web_supervisor_setup_domain(domain, port, intrerface='0.0.0.0', worker_num=3
     sudo('chmod -R 755 {}'.format(supervisor_avail_dir))
     with cd(supervisor_enabled_dir):
         sudo('ln -sf {}'.format(remotecfg))
-    sudo('sytemctl supervisor force-reload')
+    sys_restart_service('supervisor')
     sudo('supervisorctl restart {}'.format(domain))
     sys_etc_git_commit('Setup Supervisor Config for Domain {}'.format(domain))
 
