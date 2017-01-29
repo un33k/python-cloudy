@@ -9,7 +9,7 @@ def srv_setup_generic_server(cfg_files):
     """
     Setup a generic server with the required packages - Ex: (cmd:[cfg-file])
     """
-    cfg = CloudyConfig(filenames=cfg_files)
+    cfg = CloudyConfig(filenames=cfg_files, generic=True)
 
     hostname = cfg.get_variable('common', 'hostname')
     if hostname:

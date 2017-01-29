@@ -10,13 +10,14 @@ from cloudy.util import *
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 
 
-def srv_setup_cache_redis(cfg_files):
+def srv_setup_cache_redis(cfg_files, generic=True):
     """
     Setup a cache server - Ex: (cmd:[cfg-file])
     """
     cfg = CloudyConfig(filenames=cfg_files)
 
-    srv_setup_generic_server(cfg_files)
+    if generic:
+        srv_setup_generic_server(cfg_files)
 
     redis_address = cfg.get_variable('CACHESERVER', 'redis-address', '0.0.0.0')
     redis_port = cfg.get_variable('CACHESERVER', 'redis-port', 6379)
