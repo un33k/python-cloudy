@@ -36,7 +36,6 @@ def srv_setup_sta(cfg_files):
     db_psql_create_cluster(pg_version, pg_cluster, pg_encoding, pg_data_dir)
     db_psql_set_permission(pg_version, pg_cluster)
     db_psql_configure(version=pg_version, port=pg_port, interface=pg_listen_address, restart=True)
-    sys_firewall_allow_incoming_port(pg_port)
 
     # change postgres' db user password
     postgres_user_pass = cfg.get_variable('dbserver', 'postgres-pass')
@@ -79,9 +78,6 @@ def srv_setup_sta(cfg_files):
 
     # create web directory
     web_create_data_directory()
-
-    webserver_port = cfg.get_variable('webserver', 'webserver-port')
-    sys_firewall_allow_incoming_port(webserver_port)
 
     # hostname, cache server
     cache_host = cfg.get_variable('cacheserver', 'cache-host')
