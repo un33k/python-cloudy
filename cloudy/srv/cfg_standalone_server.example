@@ -19,21 +19,25 @@ ssh-enable-password     = YES
 ssh-port                = 12034
 ssh-key-path            = ~/.ssh/id_rsa.pub
 
-### Server name
-hostname                = example-cache
-
-### Python
-#python-version          = 3.4
-
-### Swap
-#swap-size              = 512
-
 ### Shared github/bitbucket read-only keys
 #shared-key-path         = ~/.ssh/shared/ssh
 
-### SSL certificate (https://example.com)
-#certificate-path        = ~/.ssh/certificates/
+hostname                = example-web
+python-version          = 3.5
+
+[WEBSERVER]
+webserver               = gunicorn
+webserver-port          = 8181
+domain-name             = simplyfound.com
+
+[DBSERVER]
+postgres-admin          = postgres
+postgres-pass           = pass4postgres
+postgres-sys-pass       = pass4postgres
+db-host                 = db-host
+db-port                 = 5432
+listen-address          = 192.168.189.111
 
 [CACHESERVER]
-redis-address            = 192.168.141.111
-redis-port               = 6379
+cache-host:             = cache-host
+listen-address          = 192.168.141.111

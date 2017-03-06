@@ -16,7 +16,7 @@ admin-group             = admin
 ### Security
 ssh-disable-root        = YES
 ssh-enable-password     = YES
-ssh-port                = 11011
+ssh-port                = 12034
 ssh-key-path            = ~/.ssh/id_rsa.pub
 
 ### Shared github/bitbucket read-only keys

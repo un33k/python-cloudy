@@ -52,7 +52,7 @@ def srv_setup_web(cfg_files):
     db_psql_install(pg_version)
     pgis_version = cfg.get_variable('dbserver', 'pgis-version')
     db_pgis_install(pg_version, pgis_version)
-    sys_remove_default_startup('postgresql')
+    # sys_remove_default_startup('postgresql')
 
     db_pgpool2_install()
     db_host = cfg.get_variable('dbserver', 'db-host')
