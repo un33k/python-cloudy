@@ -29,6 +29,9 @@ python-version          = 3.5
 webserver               = gunicorn
 webserver-port          = 8181
 domain-name             = simplyfound.com
+upstream-address        = 192.168.111.111
+upstream-port           = 8181
+
 
 [DBSERVER]
 postgres-admin          = postgres
