@@ -94,4 +94,3 @@ def srv_setup_sta(cfg_files):
     web_geoip_install_maxmind_api()
     web_geoip_install_maxmind_country()
     web_geoip_install_maxmind_city()
-

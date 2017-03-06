@@ -10,13 +10,14 @@ from cloudy.util import *
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 
 
-def srv_setup_lb(cfg_files):
+def srv_setup_lb(cfg_files, generic=True):
     """
     Setup a loadbalancer - Ex: (cmd:[cfg-file])
     """
     cfg = CloudyConfig(filenames=cfg_files)
 
-    srv_setup_generic_server(cfg_files)
+    if generic:
+        srv_setup_generic_server(cfg_files)
 
     sys_firewall_allow_incoming_http()
     sys_firewall_allow_incoming_https()
