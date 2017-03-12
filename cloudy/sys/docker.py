@@ -34,6 +34,7 @@ def sys_docker_config():
     remotecfg = '/etc/docker/daemon.json'
     sudo('rm -rf ' + remotecfg)
     put(localcfg, remotecfg, use_sudo=True)
+    sys_mkdir('/docker')
     sys_etc_git_commit('Configured docker')
     sys_restart_service('docker')
 
