@@ -56,6 +56,8 @@ def sys_install_common():
         'less',
         'sudo',
         'redis-tools',
+        'software-properties-common',
+        'python-software-properties',
     ])
 
     # install requirements
