@@ -26,6 +26,7 @@ def sys_docker_install():
     sudo('systemctl enable docker')
     sys_etc_git_commit('Installed docker (ce)')
 
+
 def sys_docker_config():
     """ docker-server config - Ex: (cmd:)"""
     cfgdir = os.path.join(os.path.dirname( __file__), '../cfg')
@@ -35,6 +36,7 @@ def sys_docker_config():
     put(localcfg, remotecfg, use_sudo=True)
     sys_etc_git_commit('Configured docker')
     sys_restart_service('docker')
+
 
 def sys_docker_user_group(username):
     with settings(hide('warnings'), warn_only=True):
