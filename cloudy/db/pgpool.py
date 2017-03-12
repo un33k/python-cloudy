@@ -28,7 +28,7 @@ def db_pgpool2_install():
     ])
 
     # install requirements
-    sudo('apt-get -y install {}'.format(requirements))
+    sudo('apt -y install {}'.format(requirements))
     sys_etc_git_commit('Installed pgpool2')
 
 

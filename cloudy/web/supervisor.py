@@ -27,7 +27,7 @@ def web_supervisor_install():
     ])
 
     # install requirements
-    sudo('apt-get -y install {}'.format(requirements))
+    sudo('apt -y install {}'.format(requirements))
     web_supervisor_bootstrap()
     sys_etc_git_commit('Installed Supervisor')
 

@@ -20,7 +20,7 @@ from cloudy.util.common import sys_restart_service
 
 def sys_redis_install():
     """ Install redis-server - Ex: (cmd)"""
-    sudo('apt-get -y install redis-server')
+    sudo('apt -y install redis-server')
     sys_etc_git_commit('Installed redis-server')
     sys_restart_service('redis-server')
 

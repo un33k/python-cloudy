@@ -54,7 +54,7 @@ def db_mysql_server_install(version=''):
     ])
 
     # install requirements
-    sudo('DEBIAN_FRONTEND=noninteractive apt-get -y install {}'.format(requirements))
+    sudo('DEBIAN_FRONTEND=noninteractive apt -y install {}'.format(requirements))
     sys_etc_git_commit('Installed MySQL Server ({})'.format(version))
 
 
@@ -70,7 +70,7 @@ def db_mysql_client_install(version=''):
     ])
 
     # install requirements
-    sudo('DEBIAN_FRONTEND=noninteractive apt-get -y install {}'.format(requirements))
+    sudo('DEBIAN_FRONTEND=noninteractive apt -y install {}'.format(requirements))
     sys_etc_git_commit('Installed MySQL Client ({})'.format(version))
 
 

@@ -26,7 +26,7 @@ def db_pgbouncer_install():
     ])
 
     # install requirements
-    sudo('apt-get -y install {}'.format(requirements))
+    sudo('apt -y install {}'.format(requirements))
     sys_etc_git_commit('Installed pgbouncer')
 
 

@@ -49,8 +49,8 @@ def db_pgis_install(psql_version='', pgis_version=''):
     ])
 
     # install requirements
-    sudo('apt-get -y purge postgis')
-    sudo('apt-get -y install {}'.format(requirements))
+    sudo('apt -y purge postgis')
+    sudo('apt -y install {}'.format(requirements))
     sys_start_service('postgresql');
     sys_etc_git_commit('Installed postgis for pqsl ({})'.format(psql_version))
 

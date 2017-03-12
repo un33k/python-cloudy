@@ -40,7 +40,7 @@ def sys_python_install_common(py_version='3.5'):
         'tcl8.5-dev',
         'tk8.5-dev',
     ])
-    sudo('apt-get -y install {}'.format(requirements))
+    sudo('apt -y install {}'.format(requirements))
     if major == '2':
         sudo('pip install pillow')
     else:

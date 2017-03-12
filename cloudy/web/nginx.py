@@ -26,7 +26,7 @@ def web_nginx_install():
     ])
 
     # install requirements
-    sudo('apt-get -y install {}'.format(requirements))
+    sudo('apt -y install {}'.format(requirements))
     web_nginx_bootstrap()
     sys_restart_service('nginx')
     sys_etc_git_commit('Installed Nginx')

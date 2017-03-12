@@ -16,7 +16,7 @@ from cloudy.sys.etc import sys_etc_git_commit
 
 def sys_firewall_install():
     """ Install filrewall application - Ex: (cmd)"""
-    sudo('apt-get -y install ufw')
+    sudo('apt -y install ufw')
     sys_etc_git_commit('Installed firewall (ufw)')
 
 

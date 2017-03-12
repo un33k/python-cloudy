@@ -16,20 +16,20 @@ from cloudy.sys.etc import sys_etc_git_commit
 
 def sys_update():
     """ Update package repositories - Ex: (cmd)"""
-    sudo('apt-get -y update')
+    sudo('apt -y update')
     sys_etc_git_commit('Updated package repositories')
 
 
 def sys_upgrade():
     """ Perform a upgrade - Ex: (cmd)"""
-    sudo('apt-get update')
+    sudo('apt update')
     sudo('DEBIAN_FRONTEND=noninteractive aptitude -y upgrade')
     sudo('shutdown -r now')
     sys_etc_git_commit('Upgraded the system')
 
 def sys_safe_upgrade():
     """ Perform a safe upgrade - Ex: (cmd)"""
-    sudo('apt-get upgrade')
+    sudo('apt upgrade')
     sudo('DEBIAN_FRONTEND=noninteractive aptitude -y safe-upgrade')
     sys_etc_git_commit('Upgraded the system safely')
     sudo('shutdown -r now')
@@ -38,11 +38,11 @@ def sys_git_install():
     """
     Install the latest version of git.
     """
-    sudo('apt-get update')
-    sudo('apt-get -y install git')
+    sudo('apt update')
+    sudo('apt -y install git')
 
 def sys_install_upstart():
-    sudo('yes | apt-get -y install upstart')
+    sudo('yes | apt -y install upstart')
 
 def sys_install_common():
     """ Install common application - Ex: (cmd)"""
@@ -56,17 +56,20 @@ def sys_install_common():
         'less',
         'sudo',
         'redis-tools',
+        'curl',
+        'apt-transport-https',
+        'ca-certificates',
         'software-properties-common',
         'python-software-properties',
     ])
 
     # install requirements
-    sudo('apt-get -y install {}'.format(requirements))
+    sudo('apt -y install {}'.format(requirements))
     sys_install_upstart()
 
 def sys_git_configure(user, name, email):
     """ Configure git for a given user - Ex: (cmd:<user>,<name>,<email>)"""
-    sudo('apt-get install -y git-core')
+    sudo('apt install -y git-core')
     with settings(warn_only=True):
         sudo('sudo -u {} git config --global user.name \"{}\"'.format(user, name))
         sudo('sudo -u {} git config --global user.email \"{}\"'.format(user, email))

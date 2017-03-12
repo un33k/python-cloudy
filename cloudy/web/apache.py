@@ -24,7 +24,7 @@ def web_apache_install():
     ])
 
     # install requirements
-    sudo('apt-get -y install {}'.format(requirements))
+    sudo('apt -y install {}'.format(requirements))
     web_apache2_install_mods()
     util_apache2_bootstrap()
     sys_etc_git_commit('Installed apache2')
@@ -61,7 +61,7 @@ def web_apache2_install_mods(py_version='2.7'):
     ])
 
     # install requirements
-    sudo('apt-get -y install {}'.format(requirements))
+    sudo('apt -y install {}'.format(requirements))
     sys_etc_git_commit('Installed apache2 and related packages')
 
 

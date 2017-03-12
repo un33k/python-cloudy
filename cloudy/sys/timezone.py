@@ -22,7 +22,7 @@ def sys_time_install_common():
     ])
 
     # install requirements
-    sudo('apt-get -y install {}'.format(requirements))
+    sudo('apt -y install {}'.format(requirements))
     sys_configure_ntp()
     sys_etc_git_commit('Installed time / zone related system packages')
 

@@ -19,13 +19,13 @@ from cloudy.sys.etc import sys_etc_git_commit
 
 def sys_memcached_install():
     """ Install memcached - Ex: (cmd)"""
-    sudo('apt-get -y install memcached')
+    sudo('apt -y install memcached')
     sys_etc_git_commit('Installed memcached')
     sys_restart_service('memcached')
 
 def sys_memcached_libdev_install():
     """ Install libmemcached-dev required by pylibmc - Ex: (cmd)"""
-    sudo('apt-get -y install libmemcached-dev')
+    sudo('apt -y install libmemcached-dev')
 
 def sys_memcached_configure_memory(memory=''):
     """ Configure memcached - Ex: (cmd:[RAM-MB]) """

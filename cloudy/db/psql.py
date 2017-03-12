@@ -23,7 +23,7 @@ def db_psql_install_postgres_repo():
     """
     sudo('echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list')
     sudo('wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -')
-    sudo('apt-get update')
+    sudo('apt update')
 
 def db_psql_latest_version():
     """ Get the latest available postgres version - Ex: (cmd)"""
@@ -87,7 +87,7 @@ def db_psql_install(version=''):
     ])
 
     # install requirements
-    sudo('apt-get -y install {}'.format(requirements))
+    sudo('apt -y install {}'.format(requirements))
     sys_etc_git_commit('Installed postgres ({})'.format(version))
 
 def db_psql_client_install(version=''):
@@ -103,7 +103,7 @@ def db_psql_client_install(version=''):
     ])
 
     # install requirements
-    sudo('apt-get -y install {}'.format(requirements))
+    sudo('apt -y install {}'.format(requirements))
     sys_etc_git_commit('Installed postgres ({})'.format(version))
 
 

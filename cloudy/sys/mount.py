@@ -50,7 +50,7 @@ def util_mount_validate_vars(device, mount_point, filesystem='xfs'):
         abort('Device ({}) missing or not attached'.format(device))
 
     if filesystem == 'xfs':
-        sudo('apt-get install -y xfsprogs')
+        sudo('apt install -y xfsprogs')
 
     sudo('grep -q {} /proc/filesystems || modprobe {}'.format(filesystem))
 
