@@ -63,6 +63,7 @@ def sys_openvpn_docker_conf(domain, port=1194, proto='udp'):
 def sys_openvpn_docker_create_client(client_name, domain, datadir='/docker/openvpn', repo='kylemanna/openvpn'):
     """ docker openvpn create client - Ex: (cmd:)"""
     docker_data = '{data}/{domain}'.format(data=datadir, domain=domain)
+
     cmd = "docker run --rm -v {data}:/etc/openvpn  -it {repo} easyrsa build-client-full {client} nopass"
     run(cmd.format(data=docker_data, repo=repo, client=client_name))
 
@@ -73,3 +74,17 @@ def sys_openvpn_docker_create_client(client_name, domain, datadir='/docker/openv
     local_file = "./{client}.ovpn".format(client=client_name)
     get(remote_file, local_file)
 
+
+def sys_openvpn_docker_install(client_name, domain, port=1194, proto='udp', datadir='/docker/openvpn', repo='kylemanna/openvpn'):
+    """ docker openvpn revoke client - Ex: (cmd:)"""
+    docker_data = '{data}/{domain}'.format(data=datadir, domain=domain)
+    docker_name = "{proto}{port}{domain}".format(domain=domain, port=port, proto=proto)
+
+    cmd = "docker run --rm -it -v {data}:/etc/openvpn {repo} easyrsa revoke {client}"
+    with settings(prompts={'Continue with revocation: ': 'yes'}):
+        run(cmd.format(data=docker_data, repo=repo, client=client_name))
+
+    cmd = "docker run --rm -it -v {data}:/etc/openvpn {repo} easyrsa gen-crl"
+    run(cmd.format(data=docker_data, repo=repo, client=client_name))
+
+    run("docker restart {name}".format(name=docker_name))
