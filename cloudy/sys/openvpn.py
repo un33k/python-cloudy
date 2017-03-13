@@ -19,10 +19,11 @@ from cloudy.util.common import sys_restart_service
 
 def sys_openvpn_docker_install(domain, port=1194, proto='udp', datadir="/docker/openvpn", repo='kylemanna/openvpn'):
     docker_name = "{proto}{port}{domain}".format(domain=domain, port=port, proto=proto)
+    docker_data = '{data}/{domain}'.format(data=datadir, domain=domain)
 
-    sys_mkdir(datadir)
+    sys_mkdir(docker_data)
     cmd = "docker run --rm -v {data}:/etc/openvpn {repo} ovpn_genconfig -u {proto}://{domain}:{port}"
-    run(cmd.format(data=datadir, repo=repo, proto=proto, domain=domain, port=port))
+    run(cmd.format(data=docker_data, repo=repo, proto=proto, domain=domain, port=port))
 
     cmd = "docker run --rm -v {data}:/etc/openvpn -it {repo} ovpn_initpki nopass"
     prompts = {
@@ -30,10 +31,10 @@ def sys_openvpn_docker_install(domain, port=1194, proto='udp', datadir="/docker/
         'Common Name (eg: your user, host, or server name) [Easy-RSA CA]:': docker_name
     }
     with settings(prompts=prompts):
-        run(cmd.format(data=datadir, repo=repo))
+        run(cmd.format(data=docker_data, repo=repo))
 
     cmd = "docker run -v {data}:/etc/openvpn --name {name} -d -p {port}:1194/{proto} --cap-add=NET_ADMIN {repo}"
-    run(cmd.format(data=datadir, repo=repo, proto=proto, port=port, name=docker_name))
+    run(cmd.format(data=docker_data, repo=repo, proto=proto, port=port, name=docker_name))
 
     cmd = "docker update --restart=always {name}".format(name=docker_name)
     run(cmd)
@@ -50,6 +51,7 @@ def sys_openvpn_docker_conf(domain, port=1194, proto='udp'):
     put(localcfg, remotecfg, use_sudo=True)
     files.sed(remotecfg, before='docker_port', after='{port}'.format(port=port), use_sudo=True)
     files.sed(remotecfg, before='docker_proto', after='{proto}'.format(proto=proto), use_sudo=True)
+    files.sed(remotecfg, before='docker_domain', after='{domain}'.format(domain=domain), use_sudo=True)
     files.sed(remotecfg, before='docker_image_name', after='{name}'.format(name=docker_name), use_sudo=True)
     sys_etc_git_commit('Configured {name} docker'.format(name=docker_name))
     sudo('systemctl daemon-reload')
