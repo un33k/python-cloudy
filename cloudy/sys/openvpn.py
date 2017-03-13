@@ -69,7 +69,7 @@ def sys_openvpn_docker_create_client(client, domain,  passphrase=None, datadir='
     """ docker openvpn create client - Ex: (cmd:)"""
     docker_data = '{data}/{domain}'.format(data=datadir, domain=domain)
 
-    cmd = "docker run --rm -v {data}:/etc/openvpn  -it {repo} easyrsa build-client-full {client}"
+    cmd = "docker run --rm -v {data}:/etc/openvpn  -it {repo} easyrsa build-client-full {client} nopass"
     prompts = {
         'Enter PEM pass phrase:': passphrase,
         'Verifying - Enter PEM pass phrase:': passphrase,
