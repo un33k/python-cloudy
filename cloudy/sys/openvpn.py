@@ -103,7 +103,7 @@ def sys_openvpn_docker_revoke_client(client_name, domain, port=1194, proto='udp'
         'Enter pass phrase for /etc/openvpn/pki/private/ca.key:': passphrase,
     }
     with settings(prompts=prompts, warn_only=True):
-        run(cmd.format(data=docker_data, repo=repo, client=client_name))
+        sudo(cmd.format(data=docker_data, repo=repo, client=client_name))
 
     oldfiles = [
         'pki/reqs/{client}.req'.format(client=client_name),
