@@ -20,7 +20,7 @@ def srv_setup_vpn(cfg_files, generic=True):
     if generic:
         srv_setup_generic_server(cfg_files)
 
-    install docker
+    #install docker
     admin_user = cfg.get_variable('common', 'admin-user')
     sys_docker_install()
     sys_docker_config()
