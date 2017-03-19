@@ -17,14 +17,14 @@ def srv_setup_vpn(cfg_files, generic=True):
     """
     cfg = CloudyConfig(filenames=cfg_files)
 
-    # if generic:
-    #     srv_setup_generic_server(cfg_files)
+    if generic:
+        srv_setup_generic_server(cfg_files)
 
-    # install docker
-    # admin_user = cfg.get_variable('common', 'admin-user')
-    # sys_docker_install()
-    # sys_docker_config()
-    # sys_docker_user_group(admin_user)
+    install docker
+    admin_user = cfg.get_variable('common', 'admin-user')
+    sys_docker_install()
+    sys_docker_config()
+    sys_docker_user_group(admin_user)
 
     domain = cfg.get_variable('VPNSERVER', 'vpn-domain')
     if not domain:
@@ -40,14 +40,14 @@ def srv_setup_vpn(cfg_files, generic=True):
     primary_proto = cfg.get_variable('VPNSERVER', 'primary-proto', 'udp')
 
     if primary_port and primary_proto:
-        # sys_openvpn_docker_install(
-        #     domain=domain,
-        #     port=primary_port,
-        #     proto=primary_proto,
-        #     passphrase=passphrase,
-        #     datadir=datadir,
-        #     repo=repository
-        # )
+        sys_openvpn_docker_install(
+            domain=domain,
+            port=primary_port,
+            proto=primary_proto,
+            passphrase=passphrase,
+            datadir=datadir,
+            repo=repository
+        )
         sys_openvpn_docker_conf(domain, primary_port, primary_proto)
         sys_firewall_allow_incoming_port_proto(primary_port, primary_proto)
 
@@ -56,13 +56,13 @@ def srv_setup_vpn(cfg_files, generic=True):
     secondary_proto = cfg.get_variable('VPNSERVER', 'secondary-proto', 'tcp')
 
     if secondary_port and secondary_port:
-        # sys_openvpn_docker_install(
-        #     domain=domain,
-        #     port=secondary_port,
-        #     proto=secondary_proto,
-        #     passphrase=passphrase,
-        #     datadir=datadir,
-        #     repo=repository
-        # )
+        sys_openvpn_docker_install(
+            domain=domain,
+            port=secondary_port,
+            proto=secondary_proto,
+            passphrase=passphrase,
+            datadir=datadir,
+            repo=repository
+        )
         sys_openvpn_docker_conf(domain, secondary_port, secondary_proto)
         sys_firewall_allow_incoming_port_proto(secondary_port, secondary_proto)
