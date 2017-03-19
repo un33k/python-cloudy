@@ -18,21 +18,23 @@ from cloudy.sys.core import sys_mkdir
 from cloudy.util.common import sys_restart_service
 
 
-def sys_openvpn_docker_install(domain, port=1194, proto='udp', datadir='/docker/openvpn', repo='kylemanna/openvpn'):
-    docker_name = "{proto}{port}{domain}".format(domain=domain, port=port, proto=proto)
-    docker_data = '{data}/{domain}'.format(data=datadir, domain=domain)
+def sys_openvpn_docker_install(domain, port=1194, proto='udp', passphrase='nopass', datadir='/docker/openvpn', repo='kylemanna/openvpn'):
+    docker_name = "{proto}-{port}.{domain}".format(domain=domain, port=port, proto=proto)
+    docker_data = '{data}/{docker_name}'.format(data=datadir, docker_name=docker_name)
 
     sys_mkdir(docker_data)
     cmd = "docker run --rm -v {data}:/etc/openvpn {repo} ovpn_genconfig -u {proto}://{domain}:{port}"
     run(cmd.format(data=docker_data, repo=repo, proto=proto, domain=domain, port=port))
 
-    cmd = "docker run --rm -v {data}:/etc/openvpn -it {repo} ovpn_initpki nopass"
+    cmd = "docker run --rm -v {data}:/etc/openvpn -it {repo} ovpn_initpki {phrase}"
     prompts = {
         'Confirm removal: ': 'yes',
-        'Common Name (eg: your user, host, or server name) [Easy-RSA CA]:': docker_name
+        'Common Name (eg: your user, host, or server name) [Easy-RSA CA]:': docker_name,
+        'Enter pass phrase for /etc/openvpn/pki/private/ca.key:': passphrase,
+        'Enter PEM pass phrase:': passphrase
     }
     with settings(prompts=prompts):
-        run(cmd.format(data=docker_data, repo=repo))
+        run(cmd.format(data=docker_data, repo=repo, phrase=passphrase))
 
     cmd = "docker run -v {data}:/etc/openvpn --name {name} -d -p {port}:1194/{proto} --cap-add=NET_ADMIN {repo}"
     run(cmd.format(data=docker_data, repo=repo, proto=proto, port=port, name=docker_name))
@@ -43,7 +45,7 @@ def sys_openvpn_docker_install(domain, port=1194, proto='udp', datadir='/docker/
 
 def sys_openvpn_docker_conf(domain, port=1194, proto='udp'):
     """ docker openvpn config - Ex: (cmd:)"""
-    docker_name = "{proto}{port}{domain}".format(domain=domain, port=port, proto=proto)
+    docker_name = "{proto}-{port}.{domain}".format(domain=domain, port=port, proto=proto)
 
     cfgdir = os.path.join(os.path.dirname( __file__), '../cfg')
     localcfg = os.path.expanduser(os.path.join(cfgdir, 'openvpn/docker-systemd.cfg'))
@@ -60,12 +62,13 @@ def sys_openvpn_docker_conf(domain, port=1194, proto='udp'):
     sudo('systemctl start docker-{name}.service'.format(name=docker_name))
 
 
-def sys_openvpn_docker_create_client(client_name, domain, datadir='/docker/openvpn', repo='kylemanna/openvpn'):
+def sys_openvpn_docker_create_client(client_name, domain, passphrase='nopass', datadir='/docker/openvpn', repo='kylemanna/openvpn'):
     """ docker openvpn create client - Ex: (cmd:)"""
-    docker_data = '{data}/{domain}'.format(data=datadir, domain=domain)
+    docker_name = "{proto}-{port}.{domain}".format(domain=domain, port=port, proto=proto)
+    docker_data = '{data}/{docker_name}'.format(data=datadir, docker_name=docker_name)
 
-    cmd = "docker run --rm -v {data}:/etc/openvpn  -it {repo} easyrsa build-client-full {client} nopass"
-    run(cmd.format(data=docker_data, repo=repo, client=client_name))
+    cmd = "docker run --rm -v {data}:/etc/openvpn  -it {repo} easyrsa build-client-full {client} {phrase}"
+    run(cmd.format(data=docker_data, repo=repo, client=client_name, phrase=passphrase))
 
     cmd = "docker run --rm -v {data}:/etc/openvpn {repo} ovpn_getclient {client} > /tmp/{client}.ovpn"
     run(cmd.format(data=docker_data, repo=repo, client=client_name))
@@ -75,10 +78,10 @@ def sys_openvpn_docker_create_client(client_name, domain, datadir='/docker/openv
     get(remote_file, local_file)
 
 
-def sys_openvpn_docker_install(client_name, domain, port=1194, proto='udp', datadir='/docker/openvpn', repo='kylemanna/openvpn'):
+def sys_openvpn_docker_revoke_client(client_name, domain, port=1194, proto='udp', datadir='/docker/openvpn', repo='kylemanna/openvpn'):
     """ docker openvpn revoke client - Ex: (cmd:)"""
-    docker_data = '{data}/{domain}'.format(data=datadir, domain=domain)
-    docker_name = "{proto}{port}{domain}".format(domain=domain, port=port, proto=proto)
+    docker_name = "{proto}-{port}.{domain}".format(domain=domain, port=port, proto=proto)
+    docker_data = '{data}/{docker_name}'.format(data=datadir, docker_name=docker_name)
 
     cmd = "docker run --rm -it -v {data}:/etc/openvpn {repo} easyrsa revoke {client}"
     with settings(prompts={'Continue with revocation: ': 'yes'}):
