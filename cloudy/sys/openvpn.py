@@ -81,7 +81,7 @@ def sys_openvpn_docker_create_client(client_name, domain, port=1194, proto='udp'
         'Enter pass phrase for /etc/openvpn/pki/private/ca.key:': passphrase,
     }
     with settings(prompts=prompts):
-        run(cmd.format(data=docker_data, repo=repo, client=client_name, phrase=passphrase))
+        sudo(cmd.format(data=docker_data, repo=repo, client=client_name, phrase=passphrase))
 
     cmd = "docker run --rm -v {data}:/etc/openvpn {repo} ovpn_getclient {client} > /tmp/{client}.ovpn"
     run(cmd.format(data=docker_data, repo=repo, client=client_name))
