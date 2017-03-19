@@ -89,7 +89,7 @@ def sys_openvpn_docker_create_client(client_name, domain, port=1194, proto='udp'
     remote_file = "/tmp/{client}.ovpn".format(client=client_name)
     local_file = "/tmp/{client}.ovpn".format(client=client_name)
     get(remote_file, local_file)
-    sudo('rm {remote}'.format(remote=remote_file))
+    run('rm {remote}'.format(remote=remote_file))
 
 
 def sys_openvpn_docker_revoke_client(client_name, domain, port=1194, proto='udp', passphrase='nopass', datadir='/docker/openvpn', repo='kylemanna/openvpn'):
@@ -102,8 +102,17 @@ def sys_openvpn_docker_revoke_client(client_name, domain, port=1194, proto='udp'
         'Continue with revocation: ': 'yes',
         'Enter pass phrase for /etc/openvpn/pki/private/ca.key:': passphrase,
     }
-    with settings(prompts=prompts):
+    with settings(prompts=prompts, warn_only=True):
         run(cmd.format(data=docker_data, repo=repo, client=client_name))
+
+    oldfiles = [
+        'pki/reqs/{client}.req'.format(client=client_name),
+        'pki/private/{client}.key'.format(client=client_name),
+        'pki/issued/{client}.crt'.format(client=client_name)
+    ]
+    for file in oldfiles:
+        with settings(warn_only=True):
+            sudo('rm {path}/{file}'.format(path=docker_data, file=file))
 
     cmd = "docker run --rm -it -v {data}:/etc/openvpn {repo} easyrsa gen-crl"
     with settings(prompts=prompts):
