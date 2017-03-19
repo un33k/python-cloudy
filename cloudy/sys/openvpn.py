@@ -26,7 +26,11 @@ def sys_openvpn_docker_install(domain, port=1194, proto='udp', passphrase='nopas
     cmd = "docker run --rm -v {data}:/etc/openvpn {repo} ovpn_genconfig -u {proto}://{domain}:{port}"
     run(cmd.format(data=docker_data, repo=repo, proto=proto, domain=domain, port=port))
 
-    cmd = "docker run --rm -v {data}:/etc/openvpn -it {repo} ovpn_initpki {phrase}"
+    if passphrase == 'nopass':
+        cmd = "docker run --rm -v {data}:/etc/openvpn -it {repo} ovpn_initpki nopass"
+    else:
+        cmd = "docker run --rm -v {data}:/etc/openvpn -it {repo} ovpn_initpki"
+
     prompts = {
         'Confirm removal: ': 'yes',
         'Common Name (eg: your user, host, or server name) [Easy-RSA CA]:': docker_name,
@@ -62,20 +66,30 @@ def sys_openvpn_docker_conf(domain, port=1194, proto='udp'):
     sudo('systemctl start docker-{name}.service'.format(name=docker_name))
 
 
-def sys_openvpn_docker_create_client(client_name, domain, passphrase='nopass', datadir='/docker/openvpn', repo='kylemanna/openvpn'):
+def sys_openvpn_docker_create_client(client_name, domain, port=1194, proto='udp', passphrase='nopass', datadir='/docker/openvpn', repo='kylemanna/openvpn'):
     """ docker openvpn create client - Ex: (cmd:)"""
     docker_name = "{proto}-{port}.{domain}".format(domain=domain, port=port, proto=proto)
     docker_data = '{data}/{docker_name}'.format(data=datadir, docker_name=docker_name)
 
-    cmd = "docker run --rm -v {data}:/etc/openvpn  -it {repo} easyrsa build-client-full {client} {phrase}"
-    run(cmd.format(data=docker_data, repo=repo, client=client_name, phrase=passphrase))
+    if passphrase == 'nopass':
+        cmd = "docker run --rm -v {data}:/etc/openvpn  -it {repo} easyrsa build-client-full {client} nopass"
+    else:
+        cmd = "docker run --rm -v {data}:/etc/openvpn  -it {repo} easyrsa build-client-full {client}"
+
+    prompts = {
+        'Enter PEM pass phrase:': passphrase,
+        'Enter pass phrase for /etc/openvpn/pki/private/ca.key:': passphrase,
+    }
+    with settings(prompts=prompts):
+        run(cmd.format(data=docker_data, repo=repo, client=client_name, phrase=passphrase))
 
     cmd = "docker run --rm -v {data}:/etc/openvpn {repo} ovpn_getclient {client} > /tmp/{client}.ovpn"
     run(cmd.format(data=docker_data, repo=repo, client=client_name))
 
     remote_file = "/tmp/{client}.ovpn".format(client=client_name)
-    local_file = "./{client}.ovpn".format(client=client_name)
+    local_file = "/tmp/{client}.ovpn".format(client=client_name)
     get(remote_file, local_file)
+    sudo('rm {remote}'.format(remote=remote_file))
 
 
 def sys_openvpn_docker_revoke_client(client_name, domain, port=1194, proto='udp', datadir='/docker/openvpn', repo='kylemanna/openvpn'):
