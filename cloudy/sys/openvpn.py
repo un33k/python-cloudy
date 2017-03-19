@@ -106,6 +106,7 @@ def sys_openvpn_docker_revoke_client(client_name, domain, port=1194, proto='udp'
         run(cmd.format(data=docker_data, repo=repo, client=client_name))
 
     cmd = "docker run --rm -it -v {data}:/etc/openvpn {repo} easyrsa gen-crl"
-    run(cmd.format(data=docker_data, repo=repo, client=client_name))
+    with settings(prompts=prompts):
+        run(cmd.format(data=docker_data, repo=repo, client=client_name))
 
     run("docker restart {name}".format(name=docker_name))
