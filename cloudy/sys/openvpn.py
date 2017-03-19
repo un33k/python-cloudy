@@ -105,14 +105,14 @@ def sys_openvpn_docker_revoke_client(client_name, domain, port=1194, proto='udp'
     with settings(prompts=prompts, warn_only=True):
         sudo(cmd.format(data=docker_data, repo=repo, client=client_name))
 
-    oldfiles = [
-        'pki/reqs/{client}.req'.format(client=client_name),
-        'pki/private/{client}.key'.format(client=client_name),
-        'pki/issued/{client}.crt'.format(client=client_name)
-    ]
-    for file in oldfiles:
-        with settings(warn_only=True):
-            sudo('rm {path}/{file}'.format(path=docker_data, file=file))
+    # oldfiles = [
+    #     'pki/reqs/{client}.req'.format(client=client_name),
+    #     'pki/private/{client}.key'.format(client=client_name),
+    #     'pki/issued/{client}.crt'.format(client=client_name)
+    # ]
+    # for file in oldfiles:
+    #     with settings(warn_only=True):
+    #         sudo('rm {path}/{file}'.format(path=docker_data, file=file))
 
     cmd = "docker run --rm -it -v {data}:/etc/openvpn {repo} easyrsa gen-crl"
     with settings(prompts=prompts):
