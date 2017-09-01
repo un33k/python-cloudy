@@ -86,10 +86,12 @@ def srv_setup_sta(cfg_files):
         sys_add_hosts(cache_host, cache_listen_address)
 
     # geoIP
-    web_geoip_install_requirements()
-    web_geoip_install_maxmind_api()
-    web_geoip_install_maxmind_country()
-    web_geoip_install_maxmind_city()
+    geo_ip = cfg.get_variable('webserver', 'geo-ip')
+    if geo_ip:
+        web_geoip_install_requirements()
+        web_geoip_install_maxmind_api()
+        web_geoip_install_maxmind_country()
+        web_geoip_install_maxmind_city()
 
     # ====== Load Balancer Server =========
     sys_firewall_allow_incoming_http()

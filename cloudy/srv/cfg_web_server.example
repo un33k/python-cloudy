@@ -29,6 +29,7 @@ python-version          = 3.5
 webserver               = gunicorn
 webserver-port          = 8181
 domain-name             = simplyfound.com
+geo-ip                  = YES
 
 [DBSERVER]
 pg-version              = 9.6
