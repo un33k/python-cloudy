@@ -39,6 +39,7 @@ def sys_python_install_common(py_version='3.5'):
         'libwebp-dev',
         'tcl8.5-dev',
         'tk8.5-dev',
+        'gettext',
     ])
     sudo('apt -y install {}'.format(requirements))
     if major == '2':
