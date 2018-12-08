@@ -18,41 +18,41 @@ from cloudy.sys.etc import sys_etc_git_commit
 
 def sys_mount_device_format(device, mount_point, filesystem='xfs'):
     """ Mount a device which survives a reboot - Ex: (cmd:<device>,<mountpoint>,[filesystem]) """
-    
+
     if util_mount_is_mounted(device):
-        abort('Device ({0}) is already mounted'.format(device)) 
+        abort('Device ({}) is already mounted'.format(device))
     util_mount_validate_vars(device, mount_point, filesystem)
-    sudo('mkfs.{0} -f {1}'.format(filesystem, device))
+    sudo('mkfs.{} -f {}'.format(filesystem, device))
     sys_mount_device(device, mount_point, filesystem)
     sys_mount_fstab_add(device, mount_point, filesystem)
-    sys_etc_git_commit('Mounted {0} on {1} using {2}'.format(device, mount_point, filesystem))
+    sys_etc_git_commit('Mounted {} on {} using {}'.format(device, mount_point, filesystem))
 
 def sys_mount_device(device, mount_point, filesystem='xfs'):
     """ Mount a device - Ex: (cmd:<device>,<mountpoint>,[filesystem]) """
 
     if util_mount_is_mounted(device):
-        abort('Device ({0}) is already mounted'.format(device)) 
+        abort('Device ({}) is already mounted'.format(device))
     util_mount_validate_vars(device, mount_point, filesystem)
-    sudo('mount -t {0} {1} {2}'.format(filesystem, device, mount_point))
+    sudo('mount -t {} {} {}'.format(filesystem, device, mount_point))
 
 def sys_mount_fstab_add(device, mount_point, filesystem='xfs'):
     """ Add a mount record into fstab - Ex: (cmd:<device>,<mountpoint>,[filesystem]) """
     util_mount_validate_vars(device, mount_point, filesystem)
-    # sudo('sed -i /\s*{0}\s*/d {1}'.format(device.replace('/', '\\\\/'), '/etc/fstab'))
-    sudo('echo "{0}  {1}   {2} noatime 0 0" | sudo tee -a /etc/fstab'.format(device, mount_point, filesystem))
+    # sudo('sed -i /\s*{}\s*/d {}'.format(device.replace('/', '\\\\/'), '/etc/fstab'))
+    sudo('echo "{}  {}   {} noatime 0 0" | sudo tee -a /etc/fstab'.format(device, mount_point, filesystem))
 
 def util_mount_validate_vars(device, mount_point, filesystem='xfs'):
     """ Check system for device and mount point and file system"""
-    
+
     if not files.exists(mount_point):
-        sudo('mkdir -p {0}'.format(mount_point))
+        sudo('mkdir -p {}'.format(mount_point))
     if not files.exists(device):
-        abort('Device ({0}) missing or not attached'.format(device))
-    
+        abort('Device ({}) missing or not attached'.format(device))
+
     if filesystem == 'xfs':
-        sudo('apt-get install -y xfsprogs')
-    
-    sudo('grep -q {0} /proc/filesystems || modprobe {0}'.format(filesystem))
+        sudo('apt install -y xfsprogs')
+
+    sudo('grep -q {} /proc/filesystems || modprobe {}'.format(filesystem))
 
 def util_mount_is_mounted(device):
     with settings(
@@ -61,4 +61,4 @@ def util_mount_is_mounted(device):
         if device in ret:
             return True
     return False
-    
+

@@ -23,7 +23,7 @@ def is_git_installed():
 
 def sys_etc_git_init():
     """ Track changes in /etc/ - Ex: (cmd) """
-    
+
     if not is_git_installed():
         return
     if not files.exists('/etc/.git', use_sudo=True):
@@ -40,10 +40,10 @@ def sys_etc_git_commit(msg):
 
     sys_etc_git_init()
     with cd('/etc'):
-        with settings(warn_only=True):
+        with settings(hide('warnings'), warn_only=True):
             sudo('git add .')
-            with settings(warn_only=True):
-                sudo('git commit -a -m "{0}"'.format(msg))
+            with settings(hide('warnings'), warn_only=True):
+                sudo('git commit -a -m "{}"'.format(msg))
 
 
 

@@ -16,15 +16,15 @@ from cloudy.sys.etc import sys_etc_git_commit
 
 def sys_firewall_install():
     """ Install filrewall application - Ex: (cmd)"""
-    sudo('apt-get -y install ufw')
+    sudo('apt -y install ufw')
     sys_etc_git_commit('Installed firewall (ufw)')
 
 
-def sys_firewall_secure_server():
+def sys_firewall_secure_server(ssh_port=22):
     """ Secure the server right away - Ex: (cmd)"""
     sudo('ufw logging on')
     sudo('ufw default deny incoming; ufw default allow outgoing')
-    sudo('ufw allow ssh')
+    sudo('ufw allow {}'.format(ssh_port))
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
     sys_etc_git_commit('Server is secured down')
 
@@ -33,7 +33,7 @@ def sys_firewall_wideopen():
     """ Open up firewall, the server will be wide open - Ex: (cmd)"""
     sudo('ufw default allow incoming; ufw default allow outgoing')
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
-    
+
 
 def sys_firewall_disable():
     """ Disable firewall, the server will be wide open - Ex: (cmd)"""
@@ -78,29 +78,40 @@ def sys_firewall_disallow_incoming_postgresql():
 
 def sys_firewall_allow_incoming_port(port):
     """ Allow requests on specific port to this server - Ex: (cmd:<port>)"""
-    sudo('ufw allow {0}}'.format(port))
+    sudo('ufw allow {}'.format(port))
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
 
 
 def sys_firewall_disallow_incoming_port(port):
     """ Disallow requests to this server on specific port - Ex: (cmd:<port>)"""
-    sudo('ufw delete allow {0}'.format(port))
+    sudo('ufw delete allow {}'.format(port))
     with settings(warn_only=False):
-        sudo('ufw delete allow {0}/tcp'.format(port))
-        sudo('ufw delete allow {0}/udp'.format(port))
+        sudo('ufw delete allow {}/tcp'.format(port))
+        sudo('ufw delete allow {}/udp'.format(port))
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
 
 
 def sys_firewall_allow_incoming_port_proto(port, proto):
     """ Allow requests on specific port to this server - Ex: (cmd:<port>,<proto>)"""
-    sudo('ufw allow {0}/{1}'.format(port, proto))
+    sudo('ufw allow {}/{}'.format(port, proto))
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
 
 
 def sys_firewall_disallow_incoming_port_proto(port, proto):
     """ Disallow requests to this server on specific port - Ex: (cmd:<port>,<proto>)"""
-    sudo('ufw delete allow {0}/{1}'.format(port, proto))
+    sudo('ufw delete allow {}/{}'.format(port, proto))
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
+
+def sys_firewall_allow_incoming_host_port(host, port):
+    """ Allow requests from specific host on specific port to this server - Ex: (cmd:<host>,<port>)"""
+    sudo('ufw allow from {} to any port {}'.format(host, port))
+    sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
+
+def sys_firewall_disallow_incoming_host_port(host, port):
+    """ Allow requests from specific host on specific port to this server - Ex: (cmd:<host>,<port>)"""
+    sudo('ufw delete allow from {} to any port {}'.format(host, port))
+    sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
+
 
 
 

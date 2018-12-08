@@ -26,8 +26,8 @@ from libcloud.compute.base import Node
 def util_print_node(node):
     if node:
         print >> sys.stderr, ', '.join([
-                        'name: ' + node.name, 
-                        'status: ' + util_get_state2string(node.state), 
+                        'name: ' + node.name,
+                        'status: ' + util_get_state2string(node.state),
                         'image: '  + node.extra['imageId'],
                         'zone: ' + node.extra['availability'],
                         'key: '  + node.extra['keyname'],
@@ -105,7 +105,7 @@ def aws_get_size(size):
             if str(i.ram) == size or i.id == size:
                 print >> sys.stderr, ' - '.join([i.id, str(i.ram), str(i.price)])
                 return i
-    
+
     return None
 
 
@@ -216,25 +216,25 @@ def aws_create_node(name, image, size, security, key, timeout=30):
     conn = util_get_connection()
 
     if aws_get_node(name):
-        abort('Node already exists ({0})'.format(name))
+        abort('Node already exists ({})'.format(name))
 
     size = aws_get_size(size)
     if not size:
-        abort('Invalid size ({0})'.format(size))
+        abort('Invalid size ({})'.format(size))
 
     if not aws_security_group_found(security):
-        abort('Invalid security group ({0})'.format(security))
-        
+        abort('Invalid security group ({})'.format(security))
+
     if not aws_keypair_found(key):
-        abort('Invalid key ({0})'.format(key))
+        abort('Invalid key ({})'.format(key))
 
     image = aws_get_image(image)
     if not image:
-        abort('Invalid image ({0})'.format(image))
+        abort('Invalid image ({})'.format(image))
 
     node = conn.create_node(name=name, image=image, size=size, ex_securitygroup=security, ex_keyname=key)
     if not node:
-        abort('Failed to create node (name:{0}, image:{1}, size:{2})'.format(name, image, size))
+        abort('Failed to create node (name:{}, image:{}, size:{})'.format(name, image, size))
 
     node = util_wait_till_node_running(name)
     util_print_node(node)
@@ -246,26 +246,26 @@ def aws_destroy_node(name, timeout=30):
 
     node = aws_get_node(name)
     if not node:
-        abort('Node does not exist or terminiated ({0})'.format(name))
+        abort('Node does not exist or terminiated ({})'.format(name))
 
     if node.destroy():
         node = util_wait_till_node_destroyed(name, timeout)
         if node:
-            print >> sys.stderr, 'Node is destroyed ({0})'.format(name)
+            print >> sys.stderr, 'Node is destroyed ({})'.format(name)
         else:
-            print >> sys.stderr, 'Node is bein destroyed ({0})'.format(name)
+            print >> sys.stderr, 'Node is bein destroyed ({})'.format(name)
     else:
-        abort('Failed to destroy node ({0})'.format(name))
+        abort('Failed to destroy node ({})'.format(name))
 
 
 def aws_create_volume(name, size, location, snapshot=None):
     """ Create a volume of a given size in a given zone - Ex: (cmd:<name>,<size>,[location],[snapshot])"""
-    
+
     conn = util_get_connection()
     loc = aws_get_location(location)
     if not loc:
-        abort('Location does not exist ({0})'.format(location))
-    
+        abort('Location does not exist ({})'.format(location))
+
     volume = conn.create_volume(name=name, size=size, location=loc, snapshot=snapshot)
     return volume
 
@@ -283,6 +283,6 @@ def aws_list_volumes():
     conn = EC2Connection(ACCESS_ID, SECRET_KEY)
     volumes = [v for v in conn.get_all_volumes()]
     print volumes
-    
 
-    
+
+
