@@ -1,5 +1,5 @@
 import os
-import ConfigParser
+import configparser
 import logging
 
 LOG_LEVEL = logging.INFO
@@ -16,7 +16,7 @@ class CloudyConfig(object):
 
         self.log = logging.getLogger(os.path.basename(__file__))
         self.log.setLevel(log_level)
-        self.cfg = ConfigParser.ConfigParser()
+        self.cfg = configparser.ConfigParser()
 
         paths = []
         if isinstance(filenames, basestring):
@@ -29,7 +29,7 @@ class CloudyConfig(object):
         
         try:
             self.cfg.read(paths)
-        except Exception, e:
+        except Exception as e:
             self.log.error("Unable to open config file(s) (%s)" % e)
         else:
             for section in self.cfg.sections():
@@ -65,7 +65,7 @@ class CloudyConfig(object):
         """ Given a config section / variable, set environment variable """
         try:
             var = self.cfg_grid[section][variable]
-        except Exception, e:
+        except Exception as e:
             self.log.warn("Failed to set environment variable (%s)" % e)
         else:
             if var:

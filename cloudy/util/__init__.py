@@ -1,1 +1,1 @@
-from conf import CloudyConfig
+from cloudy.util.conf import CloudyConfig

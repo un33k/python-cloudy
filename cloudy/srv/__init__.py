@@ -24,7 +24,7 @@ for fname in os.listdir(module_dir):
                     continue
 
                 # matched! bring into the module namespace.
-                exec '{} = item'.format(name)
+                exec('{} = item'.format(name))
                 functions.append(name)
 
 # Only reveal the functions with match prefix and hide everything else from this module.
