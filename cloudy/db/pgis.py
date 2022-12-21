@@ -80,7 +80,7 @@ def db_pgis_get_latest_version(pg_version=''):
     except:
         pass
 
-    print >> sys.stderr, 'Latest available postgis is: [{}]'.format(latest_version)
+    print('Latest available postgis is: [{}]'.format(latest_version), file=sys.stderr)
     return latest_version
 
 def db_pgis_get_latest_libgeos_version():
@@ -105,7 +105,7 @@ def db_pgis_get_latest_libgeos_version():
     except:
         pass
 
-    print >> sys.stderr, 'Latest available libgeos is: [{}]'.format(latest_version)
+    print('Latest available libgeos is: [{}]'.format(latest_version), file=sys.stderr)
     return latest_version
 
 

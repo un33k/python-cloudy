@@ -49,7 +49,7 @@ def db_psql_latest_version():
     except:
         pass
 
-    print >> sys.stderr, 'Latest available postgresql is: [{}]'.format(latest_version)
+    print('Latest available postgresql is: [{}]'.format(latest_version), file=sys.stderr)
     return latest_version
 
 
@@ -66,7 +66,7 @@ def db_psql_default_installed_version():
     if ver:
         default_version = ver.group(2)[:3]
 
-    print >> sys.stderr, 'Default installed postgresql is: [{}]'.format(default_version)
+    print('Default installed postgresql is: [{}]'.format(default_version), file=sys.stderr)
     return default_version
 
 def db_psql_install(version=''):
@@ -196,7 +196,7 @@ def db_psql_delete_user(username):
     if username != 'postgres':
         sudo('echo "DROP ROLE {};" | sudo -u postgres psql'.format(username))
     else:
-        print >> sys.stderr, "Cannot drop user 'postgres'"
+        print("Cannot drop user 'postgres'", file=sys.stderr)
 
 
 def db_psql_list_users():

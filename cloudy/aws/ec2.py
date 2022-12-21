@@ -25,14 +25,14 @@ from libcloud.compute.base import Node
 
 def util_print_node(node):
     if node:
-        print >> sys.stderr, ', '.join([
+        print(', '.join([
                         'name: ' + node.name,
                         'status: ' + util_get_state2string(node.state),
                         'image: '  + node.extra['imageId'],
                         'zone: ' + node.extra['availability'],
                         'key: '  + node.extra['keyname'],
                         'size: ' + node.extra['instancetype'],
-                        'pub ip: ' + str(node.public_ips)]
+                        'pub ip: ' + str(node.public_ips)], file=sys.stderr)
                     )
 
 def util_get_state2string(state):
@@ -84,7 +84,7 @@ def util_wait_till_node_running(name, timeout=15):
 def util_list_instances():
     conn = util_get_connection()
     nodes = conn.list_nodes()
-    print >> sys.stderr, nodes
+    print(nodes, file=sys.stderr)
     return nodes
 
 
@@ -93,7 +93,7 @@ def aws_list_sizes():
     conn = util_get_connection()
     sizes = sorted([i for i in conn.list_sizes()])
     for i in sizes:
-        print >> sys.stderr, ' - '.join([i.id, str(i.ram), str(i.price)])
+        print(' - '.join([i.id, str(i.ram), str(i.price)]), file=sys.stderr)
 
 
 def aws_get_size(size):
@@ -103,7 +103,7 @@ def aws_get_size(size):
     if size:
         for i in sizes:
             if str(i.ram) == size or i.id == size:
-                print >> sys.stderr, ' - '.join([i.id, str(i.ram), str(i.price)])
+                print(' - '.join([i.id, str(i.ram), str(i.price)]), file=sys.stderr)
                 return i
 
     return None
@@ -114,7 +114,7 @@ def aws_list_images():
     conn = util_get_connection()
     images = sorted([i for i in conn.list_images()])
     for i in images:
-        print >> sys.stderr, ' - '.join([i.id, i.name])
+        print(' - '.join([i.id, i.name]), file=sys.stderr)
 
 
 def aws_get_image(name):
@@ -124,7 +124,7 @@ def aws_get_image(name):
     if name:
         for i in images:
             if name == i.id:
-                print >> sys.stderr, ' - '.join([i.id, i.name])
+                print(' - '.join([i.id, i.name]), file=sys.stderr)
                 return i
     return None
 
@@ -134,7 +134,7 @@ def aws_list_locations():
     conn = util_get_connection()
     locations = sorted([i for i in conn.list_locations()])
     for i in locations:
-        print >> sys.stderr, ' - '.join([i.availability_zone.name, i.id, i.name, i.country])
+        print(' - '.join([i.availability_zone.name, i.id, i.name, i.country]), file=sys.stderr)
 
 
 def aws_get_location(name):
@@ -144,7 +144,7 @@ def aws_get_location(name):
     if name:
         for i in locations:
             if name == i.availability_zone.name:
-                print >> sys.stderr, ' - '.join([i.availability_zone.name, i.id, i.name, i.country])
+                print(' - '.join([i.availability_zone.name, i.id, i.name, i.country]), file=sys.stderr)
                 return i
     return None
 
@@ -154,7 +154,7 @@ def aws_list_security_groups():
     conn = util_get_connection()
     groups = sorted([i for i in conn.ex_list_security_groups()])
     for i in groups:
-        print >> sys.stderr, i
+        print(i, file=sys.stderr)
 
 
 def aws_security_group_found(name):
@@ -164,7 +164,7 @@ def aws_security_group_found(name):
     if name:
         for i in groups:
             if i == name:
-                print >> sys.stderr, i
+                print(i, file=sys.stderr)
                 return True
     return False
 
@@ -174,7 +174,7 @@ def aws_list_keypairs():
     conn = util_get_connection()
     nodes = sorted([i for i in conn.ex_describe_all_keypairs()])
     for i in nodes:
-        print i
+        print(i, file=sys.stderr)
 
 
 def aws_keypair_found(name):
@@ -184,7 +184,7 @@ def aws_keypair_found(name):
     keys = sorted([i for i in conn.ex_describe_all_keypairs()])
     for i in keys:
         if i == name:
-            print i
+            print(i, file=sys.stderr)
             return True
 
     return False
@@ -251,9 +251,9 @@ def aws_destroy_node(name, timeout=30):
     if node.destroy():
         node = util_wait_till_node_destroyed(name, timeout)
         if node:
-            print >> sys.stderr, 'Node is destroyed ({})'.format(name)
+            print('Node is destroyed ({})'.format(name), file=sys.stderr)
         else:
-            print >> sys.stderr, 'Node is bein destroyed ({})'.format(name)
+            print('Node is bein destroyed ({})'.format(name), file=sys.stderr)
     else:
         abort('Failed to destroy node ({})'.format(name))
 
@@ -282,7 +282,7 @@ def aws_list_volumes():
 
     conn = EC2Connection(ACCESS_ID, SECRET_KEY)
     volumes = [v for v in conn.get_all_volumes()]
-    print volumes
+    print(volumes, file=sys.stderr)
 
 
 

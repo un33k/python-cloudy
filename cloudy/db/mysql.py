@@ -38,7 +38,7 @@ def db_mysql_latest_version():
     except:
         pass
 
-    print >> sys.stderr, 'Latest available mysql is: [{}]'.format(latest_version)
+    print('Latest available mysql is: [{}]'.format(latest_version), file=sys.stderr)
     return latest_version
 
 
@@ -77,7 +77,7 @@ def db_mysql_client_install(version=''):
 def db_mysql_set_root_password(password):
     """ Set MySQL Root Password - Ex: (cmd:<mypass>)"""
     if not password:
-        print >> sys.stderr, 'Password required for mysql root'
+        print('Password required for mysql root', file=sys.stderr)
     else:
         sudo('mysqladmin -u root password {}'.format(password))
         sys_etc_git_commit('Set MySQL Root Password')

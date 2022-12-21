@@ -34,7 +34,7 @@ def sys_configure_timezone(zone='Canada/Eastern'):
         sudo('ln -sf {} /etc/localtime'.format(zone))
         sys_etc_git_commit('Updated system timezone to ({})'.format(zone))
     else:
-        print >> sys.stderr, 'Zone not found {}'.format(zone)
+        print('Zone not found {}'.format(zone), file=sys.stderr)
 
 
 def sys_configure_ntp():

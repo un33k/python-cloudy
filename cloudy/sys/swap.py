@@ -26,4 +26,4 @@ def sys_swap_configure(size='512'):
         sudo('echo "{} swap  swap  defaults  0 0" | sudo tee -a /etc/fstab'.format(swap_file))
         sys_etc_git_commit('Added swap file ({})'.format(swap_file))
     else:
-        print >> sys.stderr, 'Swap file ({}) Exists'.format(swap_file)
+        print('Swap file ({}) Exists'.format(swap_file), file=sys.stderr)
