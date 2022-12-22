@@ -14,7 +14,7 @@ from fabric.contrib import files
 from fabric.utils import abort
 
 def is_git_installed():
-    """ Determin if git is installed on host """
+    """ Determine if git is installed on host """
     with settings(warn_only=True):
         git = run('which git')
         if git.strip():

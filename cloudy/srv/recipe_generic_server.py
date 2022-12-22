@@ -17,7 +17,6 @@ def srv_setup_generic_server():
         sys_add_hosts(hostname, '127.0.0.1')
 
     sys_set_ipv4_precedence()
-    sys_update()
 
     # git info
     sys_git_install()
@@ -26,6 +25,7 @@ def srv_setup_generic_server():
     if git_user_full_name and git_user_email:
         sys_git_configure('root', git_user_full_name, git_user_email)
 
+    sys_update()
     sys_install_common()
     sys_time_install_common()
 
