@@ -13,7 +13,7 @@ url = 'https://github.com/un33k/python-cloudy'
 author = 'Val Neekman'
 author_email = 'info@neekware.com'
 license = 'BSD'
-install_requires = ['Fabric>=1.4.3','apache-libcloud>=0.11.3','s3cmd>=1.1.0-beta3']
+install_requires = ['Fabric3>=1.14.post1','apache-libcloud>=3.6.1','s3cmd>=2.3.0']
 classifiers = [
     'Development Status :: 3 - Alpha',
     'Intended Audience :: Developers',
