@@ -10,6 +10,13 @@ def srv_setup_generic_server():
     Setup a generic server with the required packages - Ex: (cmd:[cfg-file])
     """
     cfg = CloudyConfig()
+    
+    # git info
+    sys_git_install()
+    git_user_full_name = cfg.get_variable('common', 'git-user-full-name')
+    git_user_email = cfg.get_variable('common', 'git-user-email')
+    if git_user_full_name and git_user_email:
+        sys_git_configure('root', git_user_full_name, git_user_email)
 
     hostname = cfg.get_variable('common', 'hostname')
     if hostname:
@@ -17,13 +24,6 @@ def srv_setup_generic_server():
         sys_add_hosts(hostname, '127.0.0.1')
 
     sys_set_ipv4_precedence()
-
-    # git info
-    sys_git_install()
-    git_user_full_name = cfg.get_variable('common', 'git-user-full-name')
-    git_user_email = cfg.get_variable('common', 'git-user-email')
-    if git_user_full_name and git_user_email:
-        sys_git_configure('root', git_user_full_name, git_user_email)
 
     sys_update()
     sys_install_common()
