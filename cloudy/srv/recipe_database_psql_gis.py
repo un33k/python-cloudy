@@ -23,7 +23,7 @@ def srv_setup_db(cfg_files, generic=True):
     if dbaddress and '*' not in dbaddress:
         sys_add_hosts('db-host', dbaddress)
 
-    # posgresql: version, cluster, data_dir
+    # postgresql: version, cluster, data_dir
     pg_version = cfg.get_variable('dbserver', 'pg-version')
     pg_listen_address = cfg.get_variable('dbserver', 'listen-address', '*')
     pg_port = cfg.get_variable('dbserver', 'pg-port', 5432)

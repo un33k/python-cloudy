@@ -163,7 +163,7 @@ def db_psql_configure(version='', cluster='main', port='5432', interface='*', re
     if not version:
         version = db_psql_default_installed_version()
 
-    """ Configures posgresql configuration files """
+    """ Configures postgresql configuration files """
     conf_dir = '/etc/postgresql/{}/{}'.format(version, cluster)
     postgresql_conf = os.path.abspath(os.path.join(conf_dir, 'postgresql.conf'))
     sudo('sed -i "s/#listen_addresses\s\+=\s\+\'localhost\'/listen_addresses = \'{}\'/g" {}'.format(interface+',127.0.0.1', postgresql_conf))
