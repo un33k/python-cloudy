@@ -15,10 +15,10 @@ def srv_setup_vpn(cfg_files, generic=True):
     """
     Setup a vpn server(s) - Ex: (cmd:[cfg-file])
     """
-    cfg = CloudyConfig(filenames=cfg_files)
+    cfg = CloudyConfig()
 
     if generic:
-        srv_setup_generic_server(cfg_files)
+        srv_setup_generic_server()
 
     #install docker
     admin_user = cfg.get_variable('common', 'admin-user')

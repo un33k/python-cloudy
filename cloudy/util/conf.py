@@ -19,7 +19,7 @@ class CloudyConfig(object):
         self.cfg = configparser.ConfigParser()
 
         paths = []
-        if isinstance(filenames, basestring):
+        if isinstance(filenames, str):
             filenames = [filenames]
         for f in filenames:
             p = os.path.expanduser(f)

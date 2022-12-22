@@ -12,10 +12,10 @@ from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 def srv_setup_web(cfg_files, generic=True):
     """ Setup a webserver database server - Ex: (cmd:[cfg-file])"""
 
-    cfg = CloudyConfig(filenames=cfg_files)
+    cfg = CloudyConfig()
 
     if generic:
-        srv_setup_generic_server(cfg_files)
+        srv_setup_generic_server()
 
     # hostname, ips
     hostname = cfg.get_variable('common', 'hostname')

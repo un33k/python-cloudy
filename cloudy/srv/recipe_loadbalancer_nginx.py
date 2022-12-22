@@ -14,10 +14,10 @@ def srv_setup_lb(cfg_files, generic=True):
     """
     Setup a loadbalancer - Ex: (cmd:[cfg-file])
     """
-    cfg = CloudyConfig(filenames=cfg_files)
+    cfg = CloudyConfig()
 
     if generic:
-        srv_setup_generic_server(cfg_files)
+        srv_setup_generic_server()
 
     sys_firewall_allow_incoming_http()
     sys_firewall_allow_incoming_https()

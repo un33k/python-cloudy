@@ -14,10 +14,10 @@ def srv_setup_db(cfg_files, generic=True):
     """
     Setup a database - Ex: (cmd:[cfg-file])
     """
-    cfg = CloudyConfig(filenames=cfg_files)
+    cfg = CloudyConfig()
 
     if generic:
-        srv_setup_generic_server(cfg_files)
+        srv_setup_generic_server()
 
     dbaddress = cfg.get_variable('dbserver', 'listen-address')
     if dbaddress and '*' not in dbaddress:

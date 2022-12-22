@@ -9,13 +9,13 @@ from cloudy.util import *
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 
 
-def srv_setup_sta(cfg_files):
+def srv_setup_sta():
     """ Setup a standalone database server - Ex: (cmd:[cfg-file])"""
 
-    cfg = CloudyConfig(filenames=cfg_files)
+    cfg = CloudyConfig()
 
     # ====== Generic Server =========
-    srv_setup_generic_server(cfg_files)
+    srv_setup_generic_server()
 
     # ====== Database Server =========
     dbaddress = cfg.get_variable('dbserver', 'listen-address')

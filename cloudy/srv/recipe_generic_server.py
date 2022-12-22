@@ -5,11 +5,11 @@ from cloudy.util import *
 from fabric.api import env
 
 
-def srv_setup_generic_server(cfg_files):
+def srv_setup_generic_server():
     """
     Setup a generic server with the required packages - Ex: (cmd:[cfg-file])
     """
-    cfg = CloudyConfig(filenames=cfg_files)
+    cfg = CloudyConfig()
 
     hostname = cfg.get_variable('common', 'hostname')
     if hostname:
