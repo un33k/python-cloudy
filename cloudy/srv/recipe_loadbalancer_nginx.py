@@ -10,7 +10,7 @@ from cloudy.util import *
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 
 
-def srv_setup_lb(cfg_files, generic=True):
+def srv_setup_lb(generic=True):
     """
     Setup a loadbalancer - Ex: (cmd:[cfg-file])
     """

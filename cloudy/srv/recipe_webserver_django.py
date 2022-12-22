@@ -9,7 +9,7 @@ from cloudy.util import *
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 
 
-def srv_setup_web(cfg_files, generic=True):
+def srv_setup_web(generic=True):
     """ Setup a webserver database server - Ex: (cmd:[cfg-file])"""
 
     cfg = CloudyConfig()

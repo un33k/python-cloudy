@@ -11,7 +11,7 @@ from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 from cloudy.sys.core import sys_mkdir
 
 
-def srv_setup_vpn(cfg_files, generic=True):
+def srv_setup_vpn(generic=True):
     """
     Setup a vpn server(s) - Ex: (cmd:[cfg-file])
     """

@@ -10,7 +10,7 @@ from cloudy.util import *
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 
 
-def srv_setup_db(cfg_files, generic=True):
+def srv_setup_db(generic=True):
     """
     Setup a database - Ex: (cmd:[cfg-file])
     """
