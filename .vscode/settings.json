@@ -1,4 +1,4 @@
 {
   "python.linting.enabled": false,
-  "cSpell.words": ["noninteractive"]
+  "cSpell.words": ["needrestart", "noninteractive", "nrconf", "unhold"]
 }

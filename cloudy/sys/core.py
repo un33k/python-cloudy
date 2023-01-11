@@ -14,6 +14,13 @@ from fabric.utils import abort
 
 from cloudy.sys.etc import sys_etc_git_commit
 
+def sys_init():
+    """ List the services that need restart and move on - Ex: (cmd)"""
+    sys_git_install()
+    sudo('echo "$nrconf{restart} = \'l\';" >> /etc/needrestart/needrestart.conf')
+    sys_etc_git_commit('Git Install, Service Restart to noninteractive')
+
+
 def sys_update():
     """ Update package repositories - Ex: (cmd)"""
     sudo('apt -y update')
