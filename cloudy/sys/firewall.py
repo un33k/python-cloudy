@@ -15,7 +15,7 @@ from fabric.utils import abort
 from cloudy.sys.etc import sys_etc_git_commit
 
 def sys_firewall_install():
-    """ Install filrewall application - Ex: (cmd)"""
+    """ Install firewall application - Ex: (cmd)"""
     sudo('apt -y install ufw')
     sys_etc_git_commit('Installed firewall (ufw)')
 
@@ -29,7 +29,7 @@ def sys_firewall_secure_server(ssh_port=22):
     sys_etc_git_commit('Server is secured down')
 
 
-def sys_firewall_wideopen():
+def sys_firewall_wide_open():
     """ Open up firewall, the server will be wide open - Ex: (cmd)"""
     sudo('ufw default allow incoming; ufw default allow outgoing')
     sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
