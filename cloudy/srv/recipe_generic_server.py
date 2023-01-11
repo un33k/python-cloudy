@@ -12,7 +12,7 @@ def srv_setup_generic_server():
     cfg = CloudyConfig()
     
     # git info
-    sys_git_install()
+    sys_init()
     git_user_full_name = cfg.get_variable('common', 'git-user-full-name')
     git_user_email = cfg.get_variable('common', 'git-user-email')
     if git_user_full_name and git_user_email:
