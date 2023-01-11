@@ -22,6 +22,7 @@ def sys_update():
 
 def sys_upgrade():
     """ Perform a upgrade - Ex: (cmd)"""
+    sudo('apt install aptitude')
     sudo('apt update')
     sudo('DEBIAN_FRONTEND=noninteractive aptitude -y upgrade')
     sudo('shutdown -r now')
@@ -29,6 +30,7 @@ def sys_upgrade():
 
 def sys_safe_upgrade():
     """ Perform a safe upgrade - Ex: (cmd)"""
+    sudo('apt install aptitude')
     sudo('apt upgrade')
     sudo('DEBIAN_FRONTEND=noninteractive aptitude -y safe-upgrade')
     sys_etc_git_commit('Upgraded the system safely')
