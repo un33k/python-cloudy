@@ -64,7 +64,8 @@ def sys_install_common():
         'apt-transport-https',
         'ca-certificates',
         'software-properties-common',
-        'net-tools'
+        'net-tools',
+        'ntp',
     ])
 
     # install requirements
