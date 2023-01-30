@@ -18,6 +18,7 @@ from cloudy.sys.etc import sys_etc_git_commit
 def sys_time_install_common():
     """ Install common time / zone related - Ex: (cmd)"""
     requirements = '%s' % ' '.join([
+        'ntp',
         'ntpdate',
     ])
 
