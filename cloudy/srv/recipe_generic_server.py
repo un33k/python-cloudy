@@ -13,6 +13,8 @@ def srv_setup_generic_server():
     
     # git info
     sys_init()
+    sys_update()
+
     git_user_full_name = cfg.get_variable('common', 'git-user-full-name')
     git_user_email = cfg.get_variable('common', 'git-user-email')
     if git_user_full_name and git_user_email:
@@ -25,7 +27,6 @@ def srv_setup_generic_server():
 
     sys_set_ipv4_precedence()
 
-    sys_update()
     sys_install_common()
     sys_time_install_common()
 
