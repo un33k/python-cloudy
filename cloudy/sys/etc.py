@@ -32,10 +32,11 @@ def sys_etc_git_init():
             sudo('git add .')
             sudo('git commit -a -m "Initial Submission"')
 
-def sys_etc_git_commit(msg):
+def sys_etc_git_commit(msg, print_only=True):
     """ Add/Remove files from git and commit changes - Ex: (cmd:<"some message">) """
 
-    if not is_git_installed():
+    if print_only or not is_git_installed():
+        print(msg)
         return
 
     sys_etc_git_init()
