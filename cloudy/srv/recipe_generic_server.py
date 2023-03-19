@@ -55,7 +55,7 @@ def srv_setup_generic_server():
         sys_user_add_sudoer(admin_user)
         sys_user_set_group_umask(admin_user)
         sys_user_create_groups(admin_groups)
-        sys_user_add_to_group(admin_user, admin_groups)
+        sys_user_add_to_groups(admin_user, admin_groups)
 
         shared_key_dir = cfg.get_variable('common', 'shared-key-path')
         if shared_key_dir:
@@ -70,8 +70,8 @@ def srv_setup_generic_server():
         sys_user_change_password(auto_user, auto_pass)
         sys_user_add_sudoer(auto_user)
         sys_user_set_group_umask(auto_user)
-        sys_user_create_group(auto_groups)
-        sys_user_add_to_group(auto_user, auto_groups)
+        sys_user_create_groups(auto_groups)
+        sys_user_add_to_groups(auto_user, auto_groups)
         
         shared_key_dir = cfg.get_variable('common', 'shared-key-path')
         if shared_key_dir:
