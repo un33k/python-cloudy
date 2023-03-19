@@ -1,4 +1,12 @@
 {
   "python.linting.enabled": false,
-  "cSpell.words": ["needrestart", "noninteractive", "nrconf", "unhold"]
+  "cSpell.words": [
+    "addgroup",
+    "deluser",
+    "needrestart",
+    "noninteractive",
+    "nrconf",
+    "unhold",
+    "usermod"
+  ]
 }

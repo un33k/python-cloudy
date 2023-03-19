@@ -52,11 +52,23 @@ def sys_user_add_to_group(username, group):
     sys_etc_git_commit('Added user ({}) to group ({})'.format(username, group))
 
 
+def sys_user_add_to_groups(username, groups):
+    """ Add user to existing groups - Ex: (cmd:<user>,<group>)"""
+    group_tokens = [group.strip() for group in groups.split(',')]
+    for group in group_tokens:
+        sys_user_add_to_group(username, group)
+
 def sys_user_create_group(group):
     """ Create a new group - Ex: (cmd:<group>)"""
     with settings(warn_only=True):
         sudo('sudo addgroup {}'.format(group))
     sys_etc_git_commit('Created a new group ({})'.format(group))
+
+def sys_user_create_groups(groups):
+    """ Create a new group - Ex: (cmd:<group>)"""
+    group_tokens = [group.strip() for group in groups.split(',')]
+    for group in group_tokens:
+        sys_user_create_group(group)
 
 
 def sys_user_remove_from_group(username, group):

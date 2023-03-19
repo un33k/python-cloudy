@@ -11,7 +11,7 @@ locale                  = en_US.UTF-8
 ### User & Group
 admin-user              = jdole
 admin-pass              = pass4jdole
-admin-group             = admin
+admin-groups            = admin,www-data
 
 ### Security
 ssh-disable-root        = YES

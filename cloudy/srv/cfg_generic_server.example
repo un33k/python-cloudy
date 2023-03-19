@@ -11,7 +11,7 @@ locale                  = en_US.UTF-8
 ### User & Group
 admin-user              = jdole
 admin-pass              = pass4jdole
-admin-group             = admin
+admin-groups            = admin,www-data
 
 ### Security
 ssh-disable-root        = YES
@@ -19,6 +19,11 @@ ssh-enable-password     = YES
 ssh-port                = 12034
 ssh-key-path            = ~/.ssh/id_rsa.pub
 
+[AUTO]
+
+### User & Group
+auto-user              = jdole
+auto-groups             = admin,www-data,docker
 
 ### Server name
 hostname                = example-generic

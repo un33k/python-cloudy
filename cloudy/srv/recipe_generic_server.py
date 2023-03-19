@@ -1,4 +1,5 @@
 import os
+import uuid
 from cloudy.db import *
 from cloudy.sys import *
 from cloudy.util import *
@@ -44,23 +45,37 @@ def srv_setup_generic_server():
     if swap:
         sys_swap_configure(swap)
 
-    # users & passwords
+    # primary users & passwords
     admin_user = cfg.get_variable('common', 'admin-user')
     admin_pass = cfg.get_variable('common', 'admin-pass')
-    admin_group = cfg.get_variable('common', 'admin-group', 'admin')
+    admin_groups = cfg.get_variable('common', 'admin-groups', 'admin,www-data')
     if admin_user and admin_pass:
         sys_user_add(admin_user)
         sys_user_change_password(admin_user, admin_pass)
         sys_user_add_sudoer(admin_user)
         sys_user_set_group_umask(admin_user)
-        sys_user_create_group(admin_group)
-        sys_user_add_to_group(admin_user, admin_group)
-        sys_user_create_group('www-data')
-        sys_user_add_to_group(admin_user, 'www-data')
+        sys_user_create_groups(admin_groups)
+        sys_user_add_to_group(admin_user, admin_groups)
 
         shared_key_dir = cfg.get_variable('common', 'shared-key-path')
         if shared_key_dir:
             sys_ssh_push_server_shared_keys(admin_user, shared_key_dir)
+
+    # automation users & passwords
+    auto_user = cfg.get_variable('common', 'auto-user')
+    auto_pass = cfg.get_variable('common', 'auto-pass', uuid.uuid4().hex)
+    auto_groups = cfg.get_variable('common', 'auto-groups', 'admin,www-data')
+    if auto_user and auto_pass:
+        sys_user_add(auto_user)
+        sys_user_change_password(auto_user, auto_pass)
+        sys_user_add_sudoer(auto_user)
+        sys_user_set_group_umask(auto_user)
+        sys_user_create_group(auto_groups)
+        sys_user_add_to_group(auto_user, auto_groups)
+        
+        shared_key_dir = cfg.get_variable('common', 'shared-key-path')
+        if shared_key_dir:
+            sys_ssh_push_server_shared_keys(auto_user, shared_key_dir)
 
     # ssh stuff
     sys_firewall_install()
