@@ -16,7 +16,8 @@ from cloudy.sys.etc import sys_etc_git_commit
 
 def sys_init():
     """ List the services that need restart and move on - Ex: (cmd)"""
-    sudo('apt remove needrestart -y')
+    with settings(warn_only=True):
+        sudo('apt remove needrestart -y')
 
 
 def sys_update():
