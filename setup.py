@@ -13,9 +13,9 @@ author = 'Val Neekman'
 author_email = 'info@neekware.com'
 license = 'BSD'
 install_requires = [
-    'fabric>=2.7',
-    'apache-libcloud>=3.6.1',
-    's3cmd>=2.3.0'
+    'fabric>=3.2.2',
+    'apache-libcloud>=3.8.0',
+    's3cmd>=2.4.0'
 ]
 classifiers = [
     'Development Status :: 3 - Alpha',
