@@ -12,8 +12,8 @@ def web_nginx_install():
     """Install Nginx and bootstrap configuration."""
     sudo('apt -y install nginx')
     web_nginx_bootstrap()
-    sys_restart_service('nginx')
-    sys_etc_git_commit('Installed Nginx')
+    sys_restart_service(c, 'nginx')
+    sys_etc_git_commit(c, 'Installed Nginx')
 
 
 def web_nginx_bootstrap():
@@ -81,8 +81,8 @@ def web_nginx_setup_domain(domain, proto='http', interface='*', upstream_address
     with cd(nginx_enabled_dir):
         sudo(f'ln -sf {remotecfg}')
     time.sleep(2)
-    sys_reload_service('nginx')
-    sys_etc_git_commit(f'Setup Nginx Config for Domain {domain}')
+    sys_reload_service(c, 'nginx')
+    sys_etc_git_commit(c, f'Setup Nginx Config for Domain {domain}')
 
 
 

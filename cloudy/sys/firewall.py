@@ -1,125 +1,108 @@
-import os
-import re
-import sys
-
-from fabric.api import run
-from fabric.api import task
-from fabric.api import sudo, settings
-from fabric.api import put
-from fabric.api import env
-from fabric.api import hide
-from fabric.contrib import files
-from fabric.utils import abort
-
+from fabric import Connection, task
 from cloudy.sys.etc import sys_etc_git_commit
 
-def _reload_ufw():
+def _reload_ufw(c: Connection) -> None:
     """Helper to reload and show UFW status."""
-    sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
+    c.sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
 
-def sys_firewall_install():
+@task
+def fw_install(c: Connection) -> None:
     """Install UFW firewall."""
-    sudo('apt -y install ufw')
-    sys_etc_git_commit('Installed firewall (ufw)')
+    c.sudo('apt -y install ufw')
+    sys_etc_git_commit(c, 'Installed firewall (ufw)')
 
-
-def sys_firewall_secure_server(ssh_port=22):
+@task
+def fw_secure_server(c: Connection, ssh_port: str = '22') -> None:
     """Secure the server: deny all incoming, allow outgoing, allow SSH."""
-    sudo('ufw logging on')
-    sudo('ufw default deny incoming')
-    sudo('ufw default allow outgoing')
-    sudo(f'ufw allow {ssh_port}')
-    _reload_ufw()
-    sys_etc_git_commit('Server is secured down')
+    c.sudo('ufw logging on')
+    c.sudo('ufw default deny incoming')
+    c.sudo('ufw default allow outgoing')
+    c.sudo(f'ufw allow {ssh_port}')
+    _reload_ufw(c)
+    sys_etc_git_commit(c, 'Server is secured down')
 
-
-def sys_firewall_wide_open():
+@task
+def fw_wide_open(c: Connection) -> None:
     """Open up firewall: allow all incoming and outgoing."""
-    sudo('ufw default allow incoming')
-    sudo('ufw default allow outgoing')
-    _reload_ufw()
+    c.sudo('ufw default allow incoming')
+    c.sudo('ufw default allow outgoing')
+    _reload_ufw(c)
 
-
-def sys_firewall_disable():
+@task
+def fw_disable(c: Connection) -> None:
     """Disable firewall."""
-    sudo('ufw disable; sudo ufw status verbose')
+    c.sudo('ufw disable; sudo ufw status verbose')
 
-
-def sys_firewall_allow_incoming_http():
+@task
+def fw_allow_incoming_http(c: Connection) -> None:
     """Allow HTTP (port 80) requests."""
-    sudo('ufw allow http')
-    _reload_ufw()
+    c.sudo('ufw allow http')
+    _reload_ufw(c)
 
-
-def sys_firewall_disallow_incoming_http():
+@task
+def fw_disallow_incoming_http(c: Connection) -> None:
     """Disallow HTTP (port 80) requests."""
-    sudo('ufw delete allow http')
-    _reload_ufw()
+    c.sudo('ufw delete allow http')
+    _reload_ufw(c)
 
-
-def sys_firewall_allow_incoming_https():
+@task
+def fw_allow_incoming_https(c: Connection) -> None:
     """Allow HTTPS (port 443) requests."""
-    sudo('ufw allow https')
-    _reload_ufw()
+    c.sudo('ufw allow https')
+    _reload_ufw(c)
 
-
-def sys_firewall_disallow_incoming_https():
+@task
+def fw_disallow_incoming_https(c: Connection) -> None:
     """Disallow HTTPS (port 443) requests."""
-    sudo('ufw delete allow https')
-    _reload_ufw()
+    c.sudo('ufw delete allow https')
+    _reload_ufw(c)
 
-
-def sys_firewall_allow_incoming_postgresql():
+@task
+def fw_allow_incoming_postgresql(c: Connection) -> None:
     """Allow PostgreSQL (port 5432) requests."""
-    sudo('ufw allow postgresql')
-    _reload_ufw()
+    c.sudo('ufw allow postgresql')
+    _reload_ufw(c)
 
-
-def sys_firewall_disallow_incoming_postgresql():
+@task
+def fw_disallow_incoming_postgresql(c: Connection) -> None:
     """Disallow PostgreSQL (port 5432) requests."""
-    sudo('ufw delete allow postgresql')
-    _reload_ufw()
+    c.sudo('ufw delete allow postgresql')
+    _reload_ufw(c)
 
-
-def sys_firewall_allow_incoming_port(port):
+@task
+def fw_allow_incoming_port(c: Connection, port: int) -> None:
     """Allow requests on a specific port."""
-    sudo(f'ufw allow {port}')
-    _reload_ufw()
+    c.sudo(f'ufw allow {port}')
+    _reload_ufw(c)
 
-
-def sys_firewall_disallow_incoming_port(port):
+@task
+def fw_disallow_incoming_port(c: Connection, port: int) -> None:
     """Disallow requests on a specific port."""
-    sudo(f'ufw delete allow {port}')
-    with settings(warn_only=False):
-        sudo(f'ufw delete allow {port}/tcp')
-        sudo(f'ufw delete allow {port}/udp')
-    _reload_ufw()
+    c.sudo(f'ufw delete allow {port}')
+    c.sudo(f'ufw delete allow {port}/tcp', warn=True)
+    c.sudo(f'ufw delete allow {port}/udp', warn=True)
+    _reload_ufw(c)
 
-
-def sys_firewall_allow_incoming_port_proto(port, proto):
+@task
+def fw_allow_incoming_port_proto(c: Connection, port: int, proto: str) -> None:
     """Allow requests on a specific port/protocol."""
-    sudo(f'ufw allow {port}/{proto}')
-    _reload_ufw()
+    c.sudo(f'ufw allow {port}/{proto}')
+    _reload_ufw(c)
 
-
-def sys_firewall_disallow_incoming_port_proto(port, proto):
+@task
+def fw_disallow_incoming_port_proto(c: Connection, port: int, proto: str) -> None:
     """Disallow requests on a specific port/protocol."""
-    sudo(f'ufw delete allow {port}/{proto}')
-    _reload_ufw()
+    c.sudo(f'ufw delete allow {port}/{proto}')
+    _reload_ufw(c)
 
-
-def sys_firewall_allow_incoming_host_port(host, port):
+@task
+def fw_allow_incoming_host_port(c: Connection, host: str, port: int) -> None:
     """Allow requests from a specific host on a specific port."""
-    sudo(f'ufw allow from {host} to any port {port}')
-    _reload_ufw()
+    c.sudo(f'ufw allow from {host} to any port {port}')
+    _reload_ufw(c)
 
-
-def sys_firewall_disallow_incoming_host_port(host, port):
+@task
+def fw_disallow_incoming_host_port(c: Connection, host: str, port: int) -> None:
     """Disallow requests from a specific host on a specific port."""
-    sudo(f'ufw delete allow from {host} to any port {port}')
-    _reload_ufw()
-
-
-
-
-
+    c.sudo(f'ufw delete allow from {host} to any port {port}')
+    _reload_ufw(c)

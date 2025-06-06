@@ -1,22 +1,21 @@
 import time
-from fabric.api import sudo, settings
+from fabric import Connection, task
 
-def sys_start_service(service: str) -> None:
+def sys_start_service(c: Connection, service: str) -> None:
     """Start a systemd service."""
-    sudo(f'systemctl start {service}')
+    c.sudo(f'systemctl start {service}')
 
-def sys_stop_service(service: str) -> None:
+def sys_stop_service(c: Connection, service: str) -> None:
     """Stop a systemd service."""
-    sudo(f'systemctl stop {service}')
+    c.sudo(f'systemctl stop {service}')
 
-def sys_reload_service(service: str) -> None:
+def sys_reload_service(c: Connection, service: str) -> None:
     """Reload a systemd service."""
-    sudo(f'systemctl reload {service}')
+    c.sudo(f'systemctl reload {service}')
 
-def sys_restart_service(service: str) -> None:
+def sys_restart_service(c: Connection, service: str) -> None:
     """Restart a systemd service safely."""
-    with settings(warn_only=True):
-        sudo(f'systemctl stop {service}')
+    c.sudo(f'systemctl stop {service}', warn=True)
     time.sleep(2)
-    sudo(f'systemctl start {service}')
+    c.sudo(f'systemctl start {service}')
     time.sleep(2)

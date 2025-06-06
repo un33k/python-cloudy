@@ -1,97 +1,99 @@
 import os
 import uuid
-from cloudy.db import *
-from cloudy.sys import *
+from fabric import Connection, task
+
+# Import all needed sys/db modules explicitly as modules
+from cloudy.sys import core, timezone, swap, postfix, vim, ssh, firewall, user
 from cloudy.util import CloudyConfig
 
-
-def srv_setup_generic_server():
+@task
+def srv_setup_generic_server(c: Connection) -> None:
     """
     Setup a generic server with the required packages - Ex: (cmd:[cfg-file])
     """
     cfg = CloudyConfig()
     
     # git info
-    sys_init()
-    sys_update()
+    core.sys_init(c)
+    core.sys_update(c)
 
     git_user_full_name = cfg.get_variable('common', 'git-user-full-name')
     git_user_email = cfg.get_variable('common', 'git-user-email')
     if git_user_full_name and git_user_email:
-        sys_git_configure('root', git_user_full_name, git_user_email)
+        core.sys_git_configure(c, 'root', git_user_full_name, git_user_email)
 
     hostname = cfg.get_variable('common', 'hostname')
     if hostname:
-        sys_hostname_configure(hostname)
-        sys_add_hosts(hostname, '127.0.0.1')
+        core.sys_hostname_configure(c, hostname)
+        core.sys_add_hosts(c, hostname, '127.0.0.1')
 
-    sys_set_ipv4_precedence()
-    sys_install_common()
-    sys_time_install_common()
-    sys_install_postfix()
-    sys_set_default_editor()
+    core.sys_set_ipv4_precedence(c)
+    core.sys_install_common(c)
+    timezone.sys_time_install_common(c)
+    postfix.sys_install_postfix(c)
+    vim.sys_set_default_editor(c)
 
     # timezone and locale
-    timezone = cfg.get_variable('common', 'timezone', 'America/New_York')
-    sys_configure_timezone(timezone)
-    locale = cfg.get_variable('common', 'locale', 'en_US.UTF-8')
-    sys_locale_configure(locale)
+    tz = cfg.get_variable('common', 'timezone', 'America/New_York')
+    timezone.sys_configure_timezone(c, tz)
+    locale_val = cfg.get_variable('common', 'locale', 'en_US.UTF-8')
+    core.sys_locale_configure(c, locale_val)
 
     # swap
-    swap = cfg.get_variable('common', 'swap-size')
-    if swap:
-        sys_swap_configure(swap)
+    swap_size = cfg.get_variable('common', 'swap-size')
+    if swap_size:
+        swap.sys_swap_configure(c, swap_size)
 
     # primary users & passwords
     admin_user = cfg.get_variable('common', 'admin-user')
     admin_pass = cfg.get_variable('common', 'admin-pass')
     admin_groups = cfg.get_variable('common', 'admin-groups', 'admin,www-data')
     if admin_user and admin_pass:
-        sys_user_add(admin_user)
-        sys_user_change_password(admin_user, admin_pass)
-        sys_user_add_sudoer(admin_user)
-        sys_user_set_group_umask(admin_user)
-        sys_user_create_groups(admin_groups)
-        sys_user_add_to_groups(admin_user, admin_groups)
+        user.sys_user_add(c, admin_user)
+        user.sys_user_change_password(c, admin_user, admin_pass)
+        user.sys_user_add_sudoer(c, admin_user)
+        user.sys_user_set_group_umask(c, admin_user)
+        user.sys_user_create_groups(c, admin_groups)
+        user.sys_user_add_to_groups(c, admin_user, admin_groups)
         shared_key_dir = cfg.get_variable('common', 'shared-key-path')
         if shared_key_dir:
-            sys_ssh_push_server_shared_keys(admin_user, shared_key_dir)
+            ssh.sys_ssh_push_server_shared_keys(c, admin_user, shared_key_dir)
 
     # automation users & passwords
     auto_user = cfg.get_variable('common', 'auto-user')
     auto_pass = cfg.get_variable('common', 'auto-pass', uuid.uuid4().hex)
     auto_groups = cfg.get_variable('common', 'auto-groups', 'admin,www-data')
     if auto_user and auto_pass:
-        sys_user_add(auto_user)
-        sys_user_change_password(auto_user, auto_pass)
-        sys_user_add_sudoer(auto_user)
-        sys_user_set_group_umask(auto_user)
-        sys_user_create_groups(auto_groups)
-        sys_user_add_to_groups(auto_user, auto_groups)
+        user.sys_user_add(c, auto_user)
+        user.sys_user_change_password(c, auto_user, auto_pass)
+        user.sys_user_add_sudoer(c, auto_user)
+        user.sys_user_set_group_umask(c, auto_user)
+        user.sys_user_create_groups(c, auto_groups)
+        user.sys_user_add_to_groups(c, auto_user, auto_groups)
         shared_key_dir = cfg.get_variable('common', 'shared-key-path')
         if shared_key_dir:
-            sys_ssh_push_server_shared_keys(auto_user, shared_key_dir)
+            ssh.sys_ssh_push_server_shared_keys(c, auto_user, shared_key_dir)
 
     # ssh stuff
-    sys_firewall_install()
-    ssh_port = cfg.get_variable('common', 'ssh-port', 22)
+    firewall.fw_install(c)
+    ssh_port = cfg.get_variable('common', 'ssh-port', '22')
     if ssh_port:
-        sys_ssh_set_port(ssh_port)
-        sys_firewall_secure_server(ssh_port)
+        ssh.sys_ssh_set_port(c, ssh_port)
+        firewall.fw_secure_server(c, ssh_port)
 
     disable_root = cfg.get_variable('common', 'ssh-disable-root')
     if disable_root and disable_root.upper() == 'YES':
-        sys_ssh_disable_root_login()
+        ssh.sys_ssh_disable_root_login(c)
 
     enable_password = cfg.get_variable('common', 'ssh-enable-password')
     if enable_password and enable_password.upper() == 'YES':
-        sys_ssh_enable_password_authentication()
+        ssh.sys_ssh_enable_password_authentication(c)
 
     pub_key = cfg.get_variable('common', 'ssh-key-path')
     if pub_key:
         pub_key = os.path.expanduser(pub_key)
         if os.path.exists(pub_key) and admin_user:
-            sys_ssh_push_public_key(admin_user, pub_key)
+            ssh.sys_ssh_push_public_key(c, admin_user, pub_key)
 
 
 

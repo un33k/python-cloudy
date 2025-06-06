@@ -25,7 +25,7 @@ def web_geoip_install_requirements():
         'libtool',
     ]
     sudo(f'apt -y install {" ".join(requirements)}')
-    sys_etc_git_commit('Installed GeoIP requirements')
+    sys_etc_git_commit(c, 'Installed GeoIP requirements')
 
 def web_geoip_install_maxmind_api():
     """Install Maxmind C API."""
@@ -39,7 +39,7 @@ def web_geoip_install_maxmind_api():
             sudo('./configure')
             sudo('make')
             sudo('make install')
-    sys_etc_git_commit('Installed Maxmind C API')
+    sys_etc_git_commit(c, 'Installed Maxmind C API')
 
 def web_geoip_install_maxmind_country(dest_dir='/srv/www/shared/geoip'):
     """Install Maxmind Country Lite database."""

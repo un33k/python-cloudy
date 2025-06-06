@@ -1,41 +1,25 @@
-import os
-import re
 import sys
-from operator import itemgetter
-import datetime
 import time
 
-from fabric.api import run
-from fabric.api import task
-from fabric.api import sudo
-from fabric.api import put
-from fabric.api import env
-from fabric.api import settings
-from fabric.api import hide
-from fabric.contrib import files
-from fabric.utils import abort
-
-from libcloud.compute.types import Provider
-from libcloud.compute.providers import get_driver
-
-from cloudy.sys.etc import sys_etc_git_commit
+from fabric import Connection, task
 from cloudy.util.conf import CloudyConfig
-from libcloud.compute.types import NodeState
+from libcloud.compute.types import Provider, NodeState
+from libcloud.compute.providers import get_driver
 from libcloud.compute.base import Node
 
-def util_print_node(node):
+def util_print_node(node: Node | None) -> None:
     if node:
         print(', '.join([
-                        'name: ' + node.name,
-                        'status: ' + util_get_state2string(node.state),
-                        'image: '  + node.extra['imageId'],
-                        'zone: ' + node.extra['availability'],
-                        'key: '  + node.extra['keyname'],
-                        'size: ' + node.extra['instancetype'],
-                        'pub ip: ' + str(node.public_ips)], file=sys.stderr)
-                    )
+            'name: ' + node.name,
+            'status: ' + util_get_state2string(node.state),
+            'image: '  + node.extra.get('imageId', ''),
+            'zone: ' + node.extra.get('availability', ''),
+            'key: '  + node.extra.get('keyname', ''),
+            'size: ' + node.extra.get('instancetype', ''),
+            'pub ip: ' + str(node.public_ips)
+        ]), file=sys.stderr)
 
-def util_get_state2string(state):
+def util_get_state2string(state: NodeState) -> str:
     compute_state_map = {
         NodeState.RUNNING: 'running',
         NodeState.REBOOTING: 'rebooting',
@@ -43,83 +27,77 @@ def util_get_state2string(state):
         NodeState.PENDING: 'pending',
         NodeState.UNKNOWN: 'unknown',
     }
-    if state in compute_state_map:
-        return compute_state_map[state]
+    return compute_state_map.get(state, 'unknown')
 
-
-def util_get_connection():
+def util_get_connection(c: Connection):
     try:
-        c = CloudyConfig()
-        ACCESS_ID = c.cfg_grid['AWS']['access_id'].strip()
-        SECRET_KEY = c.cfg_grid['AWS']['secret_key'].strip()
-    except:
-        abort('Unable to read ACCESS_ID, SECRET_KEY')
+        cfg = CloudyConfig()
+        ACCESS_ID = (cfg.cfg_grid['AWS']['access_id'] or '').strip()
+        SECRET_KEY = (cfg.cfg_grid['AWS']['secret_key'] or '').strip()
+    except Exception:
+        c.abort('Unable to read ACCESS_ID, SECRET_KEY')
 
     Driver = get_driver(Provider.EC2)
     conn = Driver(ACCESS_ID, SECRET_KEY)
     return conn
 
-
-def util_wait_till_node(name, state, timeout=10):
+def util_wait_till_node(c: Connection, name: str, state: NodeState, timeout: int = 10) -> Node | None:
     node = None
     elapsed = 0
     frequency = 5
     while elapsed < timeout:
-        node = aws_get_node(name)
-        if node:
-            if node.state == state:
-                break
+        node = aws_get_node(c, name)
+        if node and node.state == state:
+            break
         time.sleep(frequency)
-        elapsed = elapsed + frequency
+        elapsed += frequency
     return node
 
-def util_wait_till_node_destroyed(name, timeout=15):
-    return util_wait_till_node(name, NodeState.TERMINATED, timeout)
+def util_wait_till_node_destroyed(c: Connection, name: str, timeout: int = 15) -> Node | None:
+    return util_wait_till_node(c, name, NodeState.TERMINATED, timeout)
 
+def util_wait_till_node_running(c: Connection, name: str, timeout: int = 15) -> Node | None:
+    return util_wait_till_node(c, name, NodeState.RUNNING, timeout)
 
-def util_wait_till_node_running(name, timeout=15):
-    return util_wait_till_node(name, NodeState.RUNNING, timeout)
-
-
-def util_list_instances():
-    conn = util_get_connection()
+@task
+def util_list_instances(c: Connection):
+    conn = util_get_connection(c)
     nodes = conn.list_nodes()
     print(nodes, file=sys.stderr)
     return nodes
 
-
-def aws_list_sizes():
+@task
+def aws_list_sizes(c: Connection):
     """ List node sizes - Ex: (cmd)"""
-    conn = util_get_connection()
-    sizes = sorted([i for i in conn.list_sizes()])
+    conn = util_get_connection(c)
+    sizes = sorted([i for i in conn.list_sizes()], key=lambda x: x.ram)
     for i in sizes:
         print(' - '.join([i.id, str(i.ram), str(i.price)]), file=sys.stderr)
 
-
-def aws_get_size(size):
+@task
+def aws_get_size(c: Connection, size: str) -> object | None:
     """ Get Node Size - Ex: (cmd:<size>)"""
-    conn = util_get_connection()
+    conn = util_get_connection(c)
     sizes = [i for i in conn.list_sizes()]
     if size:
         for i in sizes:
             if str(i.ram) == size or i.id == size:
                 print(' - '.join([i.id, str(i.ram), str(i.price)]), file=sys.stderr)
                 return i
-
     return None
 
-
-def aws_list_images():
+@task
+def aws_list_images(c: Connection):
     """ List available images - Ex: (cmd)"""
-    conn = util_get_connection()
-    images = sorted([i for i in conn.list_images()])
+    conn = util_get_connection(c)
+    images = sorted([i for i in conn.list_images()], key=lambda x: x.id)
     for i in images:
         print(' - '.join([i.id, i.name]), file=sys.stderr)
 
-
-def aws_get_image(name):
+@task
+def aws_get_image(c: Connection, name: str) -> object | None:
     """ Confirm if a node exists - Ex: (cmd:<image>)"""
-    conn = util_get_connection()
+    conn = util_get_connection(c)
     images = [i for i in conn.list_images()]
     if name:
         for i in images:
@@ -128,38 +106,38 @@ def aws_get_image(name):
                 return i
     return None
 
-
-def aws_list_locations():
+@task
+def aws_list_locations(c: Connection):
     """ List available locations - Ex: (cmd) """
-    conn = util_get_connection()
-    locations = sorted([i for i in conn.list_locations()])
+    conn = util_get_connection(c)
+    locations = sorted([i for i in conn.list_locations()], key=lambda x: x.id)
     for i in locations:
-        print(' - '.join([i.availability_zone.name, i.id, i.name, i.country]), file=sys.stderr)
+        print(' - '.join([getattr(i, "availability_zone", type('', (), {"name": ""})()).name, i.id, i.name, i.country]), file=sys.stderr)
 
-
-def aws_get_location(name):
+@task
+def aws_get_location(c: Connection, name: str) -> object | None:
     """ Confirm if a location exists - Ex: (cmd:<location>)"""
-    conn = util_get_connection()
-    locations = sorted([i for i in conn.list_locations()])
+    conn = util_get_connection(c)
+    locations = sorted([i for i in conn.list_locations()], key=lambda x: x.id)
     if name:
         for i in locations:
-            if name == i.availability_zone.name:
-                print(' - '.join([i.availability_zone.name, i.id, i.name, i.country]), file=sys.stderr)
+            if getattr(i, "availability_zone", type('', (), {"name": ""})()).name == name:
+                print(' - '.join([getattr(i, "availability_zone", type('', (), {"name": ""})()).name, i.id, i.name, i.country]), file=sys.stderr)
                 return i
     return None
 
-
-def aws_list_security_groups():
+@task
+def aws_list_security_groups(c: Connection):
     """ List available security groups - Ex: (cmd)"""
-    conn = util_get_connection()
+    conn = util_get_connection(c)
     groups = sorted([i for i in conn.ex_list_security_groups()])
     for i in groups:
         print(i, file=sys.stderr)
 
-
-def aws_security_group_found(name):
+@task
+def aws_security_group_found(c: Connection, name: str) -> bool:
     """ Confirm if a security group exists - Ex: (cmd:<name>) """
-    conn = util_get_connection()
+    conn = util_get_connection(c)
     groups = sorted([i for i in conn.ex_list_security_groups()])
     if name:
         for i in groups:
@@ -168,117 +146,119 @@ def aws_security_group_found(name):
                 return True
     return False
 
-
-def aws_list_keypairs():
-    """ List all available keyparis - Ex: (cmd)"""
-    conn = util_get_connection()
+@task
+def aws_list_keypairs(c: Connection):
+    """ List all available keypairs - Ex: (cmd)"""
+    conn = util_get_connection(c)
     nodes = sorted([i for i in conn.ex_describe_all_keypairs()])
     for i in nodes:
         print(i, file=sys.stderr)
 
-
-def aws_keypair_found(name):
+@task
+def aws_keypair_found(c: Connection, name: str) -> bool:
     """ Confirm if a keypair exists - Ex: (cmd:<name>) """
-
-    conn = util_get_connection()
+    conn = util_get_connection(c)
     keys = sorted([i for i in conn.ex_describe_all_keypairs()])
     for i in keys:
         if i == name:
             print(i, file=sys.stderr)
             return True
-
     return False
 
-
-def aws_list_nodes():
+@task
+def aws_list_nodes(c: Connection):
     """ List all available computing nodes - Ex: (cmd)"""
-
-    conn = util_get_connection()
-    nodes = sorted([i for i in conn.list_nodes()])
+    conn = util_get_connection(c)
+    nodes = sorted([i for i in conn.list_nodes()], key=lambda x: x.name)
     for i in nodes:
         util_print_node(i)
 
-
-def aws_get_node(name):
+@task
+def aws_get_node(c: Connection, name: str) -> Node | None:
     """ Confirm if a computing node exists - Ex: (cmd:<name>) """
-
-    conn = util_get_connection()
-    nodes = sorted([i for i in conn.list_nodes()])
+    conn = util_get_connection(c)
+    nodes = sorted([i for i in conn.list_nodes()], key=lambda x: x.name)
     for i in nodes:
         if i.name == name:
             util_print_node(i)
             return i
     return None
 
+@task
+def aws_create_node(
+    c: Connection,
+    name: str,
+    image: str,
+    size: str,
+    security: str,
+    key: str,
+    timeout: int = 30
+) -> Node | None:
+    """ Create a node - Ex: (cmd:<name>,<image>,<size>,[security],[key],[timeout]) """
+    conn = util_get_connection(c)
 
-def aws_create_node(name, image, size, security, key, timeout=30):
-    """ Create a node - Ex: (cmd:<name>,<image>,<size>,[secuirty],[key],[timeout]) """
-    conn = util_get_connection()
+    if aws_get_node(c, name):
+        c.abort(f'Node already exists ({name})')
 
-    if aws_get_node(name):
-        abort('Node already exists ({})'.format(name))
+    size_obj = aws_get_size(c, size)
+    if not size_obj:
+        c.abort(f'Invalid size ({size})')
 
-    size = aws_get_size(size)
-    if not size:
-        abort('Invalid size ({})'.format(size))
+    if not aws_security_group_found(c, security):
+        c.abort(f'Invalid security group ({security})')
 
-    if not aws_security_group_found(security):
-        abort('Invalid security group ({})'.format(security))
+    if not aws_keypair_found(c, key):
+        c.abort(f'Invalid key ({key})')
 
-    if not aws_keypair_found(key):
-        abort('Invalid key ({})'.format(key))
+    image_obj = aws_get_image(c, image)
+    if not image_obj:
+        c.abort(f'Invalid image ({image})')
 
-    image = aws_get_image(image)
-    if not image:
-        abort('Invalid image ({})'.format(image))
-
-    node = conn.create_node(name=name, image=image, size=size, ex_securitygroup=security, ex_keyname=key)
+    node = conn.create_node(name=name, image=image_obj, size=size_obj, ex_securitygroup=security, ex_keyname=key)
     if not node:
-        abort('Failed to create node (name:{}, image:{}, size:{})'.format(name, image, size))
+        c.abort(f'Failed to create node (name:{name}, image:{image}, size:{size})')
 
-    node = util_wait_till_node_running(name)
+    node = util_wait_till_node_running(c, name)
     util_print_node(node)
     return node
 
-
-def aws_destroy_node(name, timeout=30):
-    """ Destory a computing node - Ex (cmd:<name>)"""
-
-    node = aws_get_node(name)
+@task
+def aws_destroy_node(c: Connection, name: str, timeout: int = 30) -> None:
+    """ Destroy a computing node - Ex (cmd:<name>)"""
+    node = aws_get_node(c, name)
     if not node:
-        abort('Node does not exist or terminiated ({})'.format(name))
+        c.abort(f'Node does not exist or terminated ({name})')
 
     if node.destroy():
-        node = util_wait_till_node_destroyed(name, timeout)
+        node = util_wait_till_node_destroyed(c, name, timeout)
         if node:
-            print('Node is destroyed ({})'.format(name), file=sys.stderr)
+            print(f'Node is destroyed ({name})', file=sys.stderr)
         else:
-            print('Node is bein destroyed ({})'.format(name), file=sys.stderr)
+            print(f'Node is being destroyed ({name})', file=sys.stderr)
     else:
-        abort('Failed to destroy node ({})'.format(name))
+        c.abort(f'Failed to destroy node ({name})')
 
-
-def aws_create_volume(name, size, location, snapshot=None):
+@task
+def aws_create_volume(c: Connection, name: str, size: int, location: str, snapshot: str = None) -> object:
     """ Create a volume of a given size in a given zone - Ex: (cmd:<name>,<size>,[location],[snapshot])"""
-
-    conn = util_get_connection()
-    loc = aws_get_location(location)
+    conn = util_get_connection(c)
+    loc = aws_get_location(c, location)
     if not loc:
-        abort('Location does not exist ({})'.format(location))
+        c.abort(f'Location does not exist ({location})')
 
     volume = conn.create_volume(name=name, size=size, location=loc, snapshot=snapshot)
     return volume
 
-
-def aws_list_volumes():
+@task
+def aws_list_volumes(c: Connection) -> None:
     from boto.ec2.connection import EC2Connection
     from boto.utils import get_instance_metadata
     try:
-        c = CloudyConfig()
-        ACCESS_ID = c.cfg_grid['AWS']['access_id'].strip()
-        SECRET_KEY = c.cfg_grid['AWS']['secret_key'].strip()
-    except:
-        abort('Unable to read ACCESS_ID, SECRET_KEY')
+        cfg = CloudyConfig()
+        ACCESS_ID = (cfg.cfg_grid['AWS']['access_id'] or '').strip()
+        SECRET_KEY = (cfg.cfg_grid['AWS']['secret_key'] or '').strip()
+    except Exception:
+        c.abort('Unable to read ACCESS_ID, SECRET_KEY')
 
     conn = EC2Connection(ACCESS_ID, SECRET_KEY)
     volumes = [v for v in conn.get_all_volumes()]

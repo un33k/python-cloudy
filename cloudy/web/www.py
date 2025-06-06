@@ -72,7 +72,7 @@ def web_deploy(domain):
             run('pip install -r env/deploy_reqs.txt')
             run('bin/manage.py collectstatic --noinput')
             run('bin/manage.py migrate')
-            sys_reload_service('nginx')
+            sys_reload_service(c, 'nginx')
             sudo(f'supervisorctl restart {domain}')
 
 

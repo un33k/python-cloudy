@@ -15,7 +15,7 @@ def srv_setup_db(generic=True):
     cfg = CloudyConfig()
 
     if generic:
-        srv_setup_generic_server()
+        srv_setup_generic_server(c)
 
     dbaddress = cfg.get_variable('dbserver', 'listen-address')
     if dbaddress and '*' not in dbaddress:

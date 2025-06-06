@@ -10,7 +10,7 @@ def web_supervisor_install():
     """Install Supervisor and bootstrap configuration."""
     sudo('apt -y install supervisor')
     web_supervisor_bootstrap()
-    sys_etc_git_commit('Installed Supervisor')
+    sys_etc_git_commit(c, 'Installed Supervisor')
 
 
 def web_supervisor_bootstrap():
@@ -26,7 +26,7 @@ def web_supervisor_bootstrap():
     sudo('chown -R root:root /etc/supervisor')
     sudo('chmod -R 644 /etc/supervisor')
     sys_add_default_startup('supervisor')
-    sys_restart_service('supervisor')
+    sys_restart_service(c, 'supervisor')
 
 
 def web_supervisor_setup_domain(domain, port=None, interface='0.0.0.0', worker_num=3):
@@ -49,9 +49,9 @@ def web_supervisor_setup_domain(domain, port=None, interface='0.0.0.0', worker_n
     sudo(f'chmod -R 755 {supervisor_avail_dir}')
     with cd(supervisor_enabled_dir):
         sudo(f'ln -sf {remotecfg}')
-    sys_restart_service('supervisor')
+    sys_restart_service(c, 'supervisor')
     sudo(f'supervisorctl restart {domain}')
-    sys_etc_git_commit(f'Setup Supervisor Config for Domain {domain}')
+    sys_etc_git_commit(c, f'Setup Supervisor Config for Domain {domain}')
 
 
 

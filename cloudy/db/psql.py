@@ -2,26 +2,27 @@ import os
 import re
 import sys
 import datetime
-from fabric.api import run, sudo, put, settings, hide
-from fabric.contrib import files
+from typing import Optional
+from fabric import Connection, task
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.util.common import sys_start_service
 
 
-def db_psql_install_postgres_repo():
+@task
+def db_psql_install_postgres_repo(c: Connection) -> None:
     """Install the official postgres repository."""
-    sudo('echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list')
-    sudo('wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -')
-    sudo('apt update')
+    c.sudo('echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list')
+    c.sudo('wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -')
+    c.sudo('apt update')
 
-def db_psql_latest_version():
+@task
+def db_psql_latest_version(c: Connection) -> str:
     """Get the latest available postgres version."""
-    db_psql_install_postgres_repo()
-    latest_version = ''
-    with settings(hide('warnings', 'running', 'stdout', 'stderr'), warn_only=True):
-        ret = run('apt-cache search --names-only postgresql-client')
+    db_psql_install_postgres_repo(c)
+    latest_version: str = ''
+    result = c.run('apt-cache search --names-only postgresql-client', hide=True, warn=True)
     version_re = re.compile(r'postgresql-client-([0-9.]*)\s-')
-    versions = [ver.group(1) for line in ret.split('\n') if (ver := version_re.search(line.lower()))]
+    versions = [ver.group(1) for line in result.stdout.split('\n') if (ver := version_re.search(line.lower()))]
     versions.sort(reverse=True)
     try:
         latest_version = versions[0]
@@ -30,23 +31,23 @@ def db_psql_latest_version():
     print(f'Latest available postgresql is: [{latest_version}]', file=sys.stderr)
     return latest_version
 
-def db_psql_default_installed_version():
+def db_psql_default_installed_version(c: Connection) -> str:
     """Get the default installed postgres version."""
-    default_version = ''
-    with settings(hide('warnings', 'running', 'stdout', 'stderr'), warn_only=True):
-        ret = run('psql --version | head -1')
+    default_version: str = ''
+    result = c.run('psql --version | head -1', hide=True, warn=True)
     version_re = re.compile(r'(.*)\s([0-9.]*)')
-    ver = version_re.search(ret.lower())
+    ver = version_re.search(result.stdout.lower())
     if ver:
         default_version = ver.group(2)[:3]
     print(f'Default installed postgresql is: [{default_version}]', file=sys.stderr)
     return default_version
 
-def db_psql_install(version=''):
+@task
+def db_psql_install(c: Connection, version: str = '') -> None:
     """Install postgres of a given version or the latest version."""
-    db_psql_install_postgres_repo()
+    db_psql_install_postgres_repo(c)
     if not version:
-        version = db_psql_latest_version()
+        version = db_psql_latest_version(c)
     requirements = ' '.join([
         f'postgresql-{version}',
         f'postgresql-client-{version}',
@@ -54,144 +55,177 @@ def db_psql_install(version=''):
         f'postgresql-server-dev-{version}',
         'postgresql-client-common'
     ])
-    sudo(f'apt -y install {requirements}')
-    sys_etc_git_commit(f'Installed postgres ({version})')
+    c.sudo(f'apt -y install {requirements}')
+    sys_etc_git_commit(c, f'Installed postgres ({version})')
 
-def db_psql_client_install(version=''):
+@task
+def db_psql_client_install(c: Connection, version: str = '') -> None:
     """Install postgres client of a given version or the latest version."""
     if not version:
-        version = db_psql_latest_version()
+        version = db_psql_latest_version(c)
     requirements = ' '.join([
         f'postgresql-client-{version}',
         f'postgresql-server-dev-{version}',
     ])
-    sudo(f'apt -y install {requirements}')
-    sys_etc_git_commit(f'Installed postgres client ({version})')
+    c.sudo(f'apt -y install {requirements}')
+    sys_etc_git_commit(c, f'Installed postgres client ({version})')
 
-def db_psql_make_data_dir(version='', data_dir='/var/lib/postgresql'):
+def db_psql_make_data_dir(c: Connection, version: str = '', data_dir: str = '/var/lib/postgresql') -> str:
     """Make data directory for the postgres cluster."""
     if not version:
-        version = db_psql_latest_version()
+        version = db_psql_latest_version(c)
     data_dir = os.path.abspath(os.path.join(data_dir, f'{version}'))
-    sudo(f'mkdir -p {data_dir}')
+    c.sudo(f'mkdir -p {data_dir}')
     return data_dir
 
-def db_psql_remove_cluster(version, cluster):
+def db_psql_remove_cluster(c: Connection, version: str, cluster: str) -> None:
     """Remove a cluster if exists."""
-    with settings(warn_only=True):
-        sudo(f'pg_dropcluster --stop {version} {cluster}')
-    sys_etc_git_commit(f'Removed postgres cluster ({version} {cluster})')
+    c.run(f'pg_dropcluster --stop {version} {cluster}', warn=True)
+    sys_etc_git_commit(c, f'Removed postgres cluster ({version} {cluster})')
 
-def db_psql_create_cluster(version='', cluster='main', encoding='UTF-8', data_dir='/var/lib/postgresql'):
+@task
+def db_psql_create_cluster(
+    c: Connection,
+    version: str = '',
+    cluster: str = 'main',
+    encoding: str = 'UTF-8',
+    data_dir: str = '/var/lib/postgresql'
+) -> None:
     """Make a new postgresql cluster."""
     if not version:
-        version = db_psql_default_installed_version() or db_psql_latest_version()
-    db_psql_remove_cluster(version, cluster)
-    data_dir = db_psql_make_data_dir(version, data_dir)
-    sudo(f'chown -R postgres {data_dir}')
-    sudo(f'pg_createcluster --start -e {encoding} {version} {cluster} -d {data_dir}')
-    sys_start_service('postgresql')
-    sys_etc_git_commit(f'Created new postgres cluster ({version} {cluster})')
+        version = db_psql_default_installed_version(c) or db_psql_latest_version(c)
+    db_psql_remove_cluster(c, version, cluster)
+    data_dir = db_psql_make_data_dir(c, version, data_dir)
+    c.sudo(f'chown -R postgres {data_dir}')
+    c.sudo(f'pg_createcluster --start -e {encoding} {version} {cluster} -d {data_dir}')
+    sys_start_service(c, 'postgresql')
+    sys_etc_git_commit(c, f'Created new postgres cluster ({version} {cluster})')
 
-def db_psql_set_permission(version='', cluster='main'):
+@task
+def db_psql_set_permission(
+    c: Connection, version: str = '', cluster: str = 'main'
+) -> None:
     """Set default permission for postgresql."""
     if not version:
-        version = db_psql_default_installed_version()
+        version = db_psql_default_installed_version(c)
     cfgdir = os.path.join(os.path.dirname(__file__), '../cfg')
     localcfg = os.path.expanduser(os.path.join(cfgdir, 'postgresql/pg_hba.conf'))
     remotecfg = f'/etc/postgresql/{version}/{cluster}/pg_hba.conf'
-    sudo(f'rm -rf {remotecfg}')
-    put(localcfg, remotecfg, use_sudo=True)
-    sudo(f'chown postgres:postgres {remotecfg}')
-    sudo(f'chmod 644 {remotecfg}')
-    sys_start_service('postgresql')
-    sys_etc_git_commit(f'Set default postgres access for cluster ({version} {cluster})')
+    c.sudo(f'rm -rf {remotecfg}')
+    c.put(localcfg, remotecfg)
+    c.sudo(f'chown postgres:postgres {remotecfg}')
+    c.sudo(f'chmod 644 {remotecfg}')
+    sys_start_service(c, 'postgresql')
+    sys_etc_git_commit(c, f'Set default postgres access for cluster ({version} {cluster})')
 
-def db_psql_configure(version='', cluster='main', port='5432', interface='*', restart=False):
+@task
+def db_psql_configure(
+    c: Connection,
+    version: str = '',
+    cluster: str = 'main',
+    port: str = '5432',
+    interface: str = '*',
+    restart: bool = False
+) -> None:
     """Configure postgres."""
     if not version:
-        version = db_psql_default_installed_version()
+        version = db_psql_default_installed_version(c)
     conf_dir = f'/etc/postgresql/{version}/{cluster}'
     postgresql_conf = os.path.abspath(os.path.join(conf_dir, 'postgresql.conf'))
-    sudo(f'sed -i "s/#listen_addresses\s\+=\s\+\'localhost\'/listen_addresses = \'{interface},127.0.0.1\'/g" {postgresql_conf}')
-    sys_etc_git_commit(f'Configured postgres cluster ({version} {cluster})')
+    c.sudo(fr"sed -i \"s/#listen_addresses\s\+=\s\+'localhost'/listen_addresses = '{interface},127.0.0.1'/g\" {postgresql_conf}")
+    sys_etc_git_commit(c, f'Configured postgres cluster ({version} {cluster})')
     if restart:
-        sys_start_service('postgresql')
+        sys_start_service(c, 'postgresql')
 
-def db_psql_create_adminpack():
+@task
+def db_psql_create_adminpack(c: Connection) -> None:
     """Install admin pack."""
-    sudo('echo "CREATE EXTENSION adminpack;" | sudo -u postgres psql')
+    c.sudo('echo "CREATE EXTENSION adminpack;" | sudo -u postgres psql')
 
-def db_psql_user_password(username, password):
+@task
+def db_psql_user_password(c: Connection, username: str, password: str) -> None:
     """Change password for a postgres user."""
-    sudo(f'echo "ALTER USER {username} WITH ENCRYPTED PASSWORD \'{password}\';" | sudo -u postgres psql')
+    c.sudo(f'echo "ALTER USER {username} WITH ENCRYPTED PASSWORD \'{password}\';" | sudo -u postgres psql')
 
-def db_psql_create_user(username, password):
+@task
+def db_psql_create_user(c: Connection, username: str, password: str) -> None:
     """Create postgresql user."""
-    sudo(f'echo "CREATE ROLE {username} WITH NOSUPERUSER NOCREATEDB NOCREATEROLE LOGIN ENCRYPTED PASSWORD \'{password}\';" | sudo -u postgres psql')
+    c.sudo(f'echo "CREATE ROLE {username} WITH NOSUPERUSER NOCREATEDB NOCREATEROLE LOGIN ENCRYPTED PASSWORD \'{password}\';" | sudo -u postgres psql')
 
-def db_psql_delete_user(username):
+@task
+def db_psql_delete_user(c: Connection, username: str) -> None:
     """Delete postgresql user."""
     if username != 'postgres':
-        sudo(f'echo "DROP ROLE {username};" | sudo -u postgres psql')
+        c.sudo(f'echo "DROP ROLE {username};" | sudo -u postgres psql')
     else:
         print("Cannot drop user 'postgres'", file=sys.stderr)
 
-def db_psql_list_users():
+@task
+def db_psql_list_users(c: Connection) -> None:
     """List postgresql users."""
-    sudo('sudo -u postgres psql -d template1 -c "SELECT * from pg_user;"')
+    c.sudo('sudo -u postgres psql -d template1 -c "SELECT * from pg_user;"')
 
-def db_psql_list_databases():
+@task
+def db_psql_list_databases(c: Connection) -> None:
     """List postgresql databases."""
-    sudo('sudo -u postgres psql -l')
+    c.sudo('sudo -u postgres psql -l')
 
-def db_psql_create_database(dbname, dbowner):
+@task
+def db_psql_create_database(c: Connection, dbname: str, dbowner: str) -> None:
     """Create a postgres database for an existing user."""
-    sudo(f'sudo -u postgres createdb -E UTF8 {dbname}')
-    db_psql_grant_database_privileges(dbname, dbowner)
+    c.sudo(f'sudo -u postgres createdb -E UTF8 {dbname}')
+    db_psql_grant_database_privileges(c, dbname, dbowner)
 
-def db_psql_add_gis_extension_to_database(dbname):
+@task
+def db_psql_add_gis_extension_to_database(c: Connection, dbname: str) -> None:
     """Add gis extension to an existing database."""
-    with settings(warn_only=True):
-        sudo(f'sudo -u postgres psql -d {dbname} -c "CREATE EXTENSION postgis;"')
+    c.sudo(f'sudo -u postgres psql -d {dbname} -c "CREATE EXTENSION postgis;"', warn=True)
 
-def db_psql_add_gis_topology_extension_to_database(dbname):
+@task
+def db_psql_add_gis_topology_extension_to_database(c: Connection, dbname: str) -> None:
     """Add gis topology extension to an existing database."""
-    with settings(warn_only=True):
-        sudo(f'sudo -u postgres psql -d {dbname} -c "CREATE EXTENSION postgis_topology;"')
+    c.sudo(f'sudo -u postgres psql -d {dbname} -c "CREATE EXTENSION postgis_topology;"', warn=True)
 
-def db_psql_create_gis_database_from_template(dbname, dbowner):
+@task
+def db_psql_create_gis_database_from_template(c: Connection, dbname: str, dbowner: str) -> None:
     """Create a postgres GIS database from template for an existing user."""
-    sudo(f'sudo -u postgres createdb -T template_postgis {dbname}')
-    db_psql_grant_database_privileges(dbname, dbowner)
+    c.sudo(f'sudo -u postgres createdb -T template_postgis {dbname}')
+    db_psql_grant_database_privileges(c, dbname, dbowner)
 
-def db_psql_create_gis_database(dbname, dbowner):
+@task
+def db_psql_create_gis_database(c: Connection, dbname: str, dbowner: str) -> None:
     """Create a postgres GIS database for an existing user."""
-    db_psql_create_database(dbname, dbowner)
-    db_psql_add_gis_extension_to_database(dbname)
-    db_psql_add_gis_topology_extension_to_database(dbname)
+    db_psql_create_database(c, dbname, dbowner)
+    db_psql_add_gis_extension_to_database(c, dbname)
+    db_psql_add_gis_topology_extension_to_database(c, dbname)
 
-def db_psql_delete_database(dbname):
+@task
+def db_psql_delete_database(c: Connection, dbname: str) -> None:
     """Delete (drop) a database."""
-    sudo(f'echo "DROP DATABASE {dbname};" | sudo -u postgres psql')
+    c.sudo(f'echo "DROP DATABASE {dbname};" | sudo -u postgres psql')
 
-def db_psql_grant_database_privileges(dbname, dbuser):
+@task
+def db_psql_grant_database_privileges(c: Connection, dbname: str, dbuser: str) -> None:
     """Grant all privileges on database for an existing user."""
-    sudo(f'echo "GRANT ALL PRIVILEGES ON DATABASE {dbname} to {dbuser};" | sudo -u postgres psql')
+    c.sudo(f'echo "GRANT ALL PRIVILEGES ON DATABASE {dbname} to {dbuser};" | sudo -u postgres psql')
 
-def db_psql_dump_database(dump_dir, db_name, dump_name=''):
+@task
+def db_psql_dump_database(c: Connection, dump_dir: str, db_name: str, dump_name: Optional[str] = None) -> None:
     """Backup (dump) a database and save into a given directory."""
-    if not files.exists(dump_dir):
-        sudo(f'mkdir -p {dump_dir}')
+    # Check if directory exists, create if not
+    result = c.run(f'test -d {dump_dir}', warn=True)
+    if result.failed:
+        c.sudo(f'mkdir -p {dump_dir}')
     if not dump_name:
         now = datetime.datetime.now()
         dump_name = f"{db_name}_{now.year}_{now.month}_{now.day}_{now.hour}_{now.second}.psql.gz"
     dump_name = os.path.join(dump_dir, dump_name)
     pg_dump = '/usr/bin/pg_dump'
-    if not files.exists(pg_dump):
-        pg_dump = run('which pg_dump')
-    if files.exists(pg_dump):
-        sudo(f'sudo -u postgres {pg_dump} --no-owner --no-acl -h localhost {db_name} | gzip > {dump_name}')
+    result = c.run(f'test -x {pg_dump}', warn=True)
+    if result.failed:
+        pg_dump = c.run('which pg_dump', hide=True).stdout.strip()
+    if pg_dump:
+        c.sudo(f'sudo -u postgres {pg_dump} --no-owner --no-acl -h localhost {db_name} | gzip > {dump_name}')
 
 
 

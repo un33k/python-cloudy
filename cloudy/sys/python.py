@@ -1,34 +1,19 @@
 import os
-import re
-import sys
-
-from fabric.api import run
-from fabric.api import task
-from fabric.api import sudo
-from fabric.api import put
-from fabric.api import env
-from fabric.api import settings
-from fabric.api import hide
-from fabric.contrib import files
-from fabric.utils import abort
-
+from fabric import Connection, task
 from cloudy.sys.etc import sys_etc_git_commit
 
-def sys_python_install_common(py_version='3.8'):
-    """ Install common python application - Ex: (cmd) """
-
+@task
+def sys_python_install_common(c: Connection, py_version: str = '3.8') -> None:
+    """Install common python application packages."""
     major = py_version.split('.')[0]
     if major == '2':
         major = ''
-    requirements = '%s' % ' '.join([
-        'python{}-dev'.format(major),
-        'python{}-setuptools'.format(major),
-        'python{}-psycopg2'.format(major),
-        # 'python{}-imaging'.format(major),
-        'python{}-pip'.format(major),
-        'python{}-pil'.format(major),
-
-        # 'virtualenvwrapper',
+    requirements = ' '.join([
+        f'python{major}-dev',
+        f'python{major}-setuptools',
+        f'python{major}-psycopg2',
+        f'python{major}-pip',
+        f'python{major}-pil',
         'python-dev',
         'python-virtualenv',
         'libfreetype6-dev',
@@ -41,12 +26,12 @@ def sys_python_install_common(py_version='3.8'):
         'tk8.5-dev',
         'gettext',
     ])
-    sudo('apt -y install {}'.format(requirements))
+    c.sudo(f'apt -y install {requirements}')
     if major == '2':
-        sudo('pip install pillow')
+        c.sudo('pip install pillow')
     else:
-        sudo('pip3 install pillow')
-    sys_etc_git_commit('Installed common python packages')
+        c.sudo('pip3 install pillow')
+    sys_etc_git_commit(c, 'Installed common python packages')
 
 
 

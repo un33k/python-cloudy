@@ -9,7 +9,7 @@ def web_apache_install():
     sudo('apt -y install apache2')
     web_apache2_install_mods()
     util_apache2_bootstrap()
-    sys_etc_git_commit('Installed apache2')
+    sys_etc_git_commit(c, 'Installed apache2')
 
 def util_apache2_bootstrap():
     """Bootstrap Apache2 configuration from local templates."""
@@ -33,15 +33,15 @@ def web_apache2_install_mods(py_version='3'):
     mod_wsgi = 'libapache2-mod-wsgi-py3' if '3' in py_version else 'libapache2-mod-wsgi'
     requirements = [mod_wsgi, 'libapache2-mod-rpaf']
     sudo(f'apt -y install {" ".join(requirements)}')
-    sys_etc_git_commit('Installed apache2 and related packages')
+    sys_etc_git_commit(c, 'Installed apache2 and related packages')
 
 def web_apache2_set_port(port=''):
     """Setup Apache2 to listen to a new port."""
     remotecfg = '/etc/apache2/ports.conf'
     port = sys_show_next_available_port(port)
     sudo(f'echo "Listen 127.0.0.1:{port}" >> {remotecfg}')
-    sys_reload_service('apache2')
-    sys_etc_git_commit(f'Apache now listens on port {port}')
+    sys_reload_service(c, 'apache2')
+    sys_etc_git_commit(c, f'Apache now listens on port {port}')
 
 def web_apache2_setup_domain(domain, port):
     """Setup Apache2 config file for a domain."""
@@ -57,7 +57,7 @@ def web_apache2_setup_domain(domain, port):
     sudo(f'chmod -R 755 {apache_avail_dir}')
     sudo(f'a2ensite {domain}')
     web_apache2_set_port(port)
-    sys_reload_service('apache2')
-    sys_etc_git_commit(f'Setup Apache Config for Domain {domain}')
+    sys_reload_service(c, 'apache2')
+    sys_etc_git_commit(c, f'Setup Apache Config for Domain {domain}')
 
 

@@ -1,40 +1,41 @@
 import os
 import re
 import sys
+from typing import Optional
+from fabric import Connection, task
 
-from fabric.api import run, sudo, cd, settings, hide
-from fabric.contrib import files
-
-def is_git_installed() -> bool:
+def is_git_installed(c: Connection) -> bool:
     """Check if git is installed on the host."""
-    with settings(warn_only=True):
-        git = run('which git')
-        return bool(git.strip())
+    result = c.run('which git', hide=True, warn=True)
+    return bool(result.stdout.strip())
 
-def sys_etc_git_init() -> None:
+def sys_etc_git_init(c: Connection) -> None:
     """Initialize git tracking in /etc if not already present."""
-    if not is_git_installed():
+    if not is_git_installed(c):
         return
-    if not files.exists('/etc/.git', use_sudo=True):
-        with cd('/etc'):
-            sudo('git init')
-            sudo('git add .')
-            sudo('git commit -a -m "Initial Submission"')
+    result = c.run('test -d /etc/.git', warn=True)
+    if result.failed:
+        with c.cd('/etc'):
+            c.sudo('git init')
+            c.sudo('git add .')
+            c.sudo('git commit -a -m "Initial Submission"')
 
-def sys_etc_git_commit(msg: str, print_only: bool = True) -> None:
+def sys_etc_git_commit(c: Connection, msg: str, print_only: bool = True) -> None:
     """
     Add/remove files from git and commit changes in /etc.
     If print_only is True or git is not installed, just print the message.
     """
-    if print_only or not is_git_installed():
+    if print_only or not is_git_installed(c):
         print(msg)
         return
 
-    sys_etc_git_init()
-    with cd('/etc'):
-        with settings(hide('warnings'), warn_only=True):
-            sudo('git add .')
-            sudo(f'git commit -a -m "{msg}"')
+    sys_etc_git_init(c)
+    with c.cd('/etc'):
+        try:
+            c.sudo('git add .')
+            c.sudo(f'git commit -a -m "{msg}"', warn=True, hide=True)
+        except Exception as e:
+            print(f"Git commit failed: {e}", file=sys.stderr)
 
 
 

@@ -12,14 +12,14 @@ class CloudyConfig:
     CloudyConfig loads and manages configuration from multiple files.
     The last file in the list has the highest precedence.
     """
-    def __init__(self, filenames: Any = '~/.cloudy', log_level: int = logging.WARNING):
+    def __init__(self, filenames: Any = '~/.cloudy', log_level: int = logging.WARNING) -> None:
         self.log = logging.getLogger(os.path.basename(__file__))
         self.log.setLevel(log_level)
         self.cfg = configparser.ConfigParser()
-        self.cfg_grid: Dict[str, Dict[str, str]] = {}
+        self.cfg_grid: Dict[str, Dict[str, Optional[str]]] = {}
 
         # Prepare config file paths
-        paths = []
+        paths: list[str] = []
         if isinstance(filenames, str):
             filenames = [filenames]
         for f in filenames:
@@ -40,9 +40,9 @@ class CloudyConfig:
             for section in self.cfg.sections():
                 self.cfg_grid[section.upper()] = self._section_map(section)
 
-    def _section_map(self, section: str) -> Dict[str, str]:
+    def _section_map(self, section: str) -> Dict[str, Optional[str]]:
         """Create a dict of options for a section."""
-        valid = {}
+        valid: Dict[str, Optional[str]] = {}
         options = self.cfg.options(section)
         for option in options:
             try:
@@ -61,7 +61,8 @@ class CloudyConfig:
         Section is case-insensitive.
         """
         try:
-            return self.cfg_grid[section.upper()][variable].strip()
+            value = self.cfg_grid[section.upper()][variable]
+            return value.strip() if value else fallback
         except Exception:
             return fallback
 

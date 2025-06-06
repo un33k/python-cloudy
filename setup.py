@@ -35,7 +35,10 @@ def get_version(package):
     Return package version as listed in `__version__` in `__init__.py`.
     """
     init_py = open(os.path.join(package, '__init__.py'), encoding='utf-8').read()
-    return re.search(r"^__version__ = ['\"]([^'\"]+)['\"]", init_py, re.MULTILINE).group(1)
+    match = re.search(r"^__version__ = ['\"]([^'\"]+)['\"]", init_py, re.MULTILINE)
+    if match:
+        return match.group(1)
+    raise RuntimeError("Unable to find version string in {}.".format(os.path.join(package, '__init__.py')))
 
 def get_packages(package):
     """

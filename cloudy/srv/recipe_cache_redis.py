@@ -1,33 +1,29 @@
-import os
-
-from fabric.api import env
-
-from cloudy.db import *
-from cloudy.sys import *
-from cloudy.web import *
+from fabric import Connection, task
+from cloudy.sys import redis, firewall
 from cloudy.util import CloudyConfig
 
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 
 
-def srv_setup_cache_redis(generic=True):
+@task
+def srv_setup_cache_redis(c: Connection, generic: bool = True) -> None:
     """
     Setup a cache server - Ex: (cmd:[cfg-file])
     """
     cfg = CloudyConfig()
 
     if generic:
-        srv_setup_generic_server()
+        srv_setup_generic_server(c)
 
-    redis_address = cfg.get_variable('CACHESERVER', 'redis-address', '0.0.0.0')
-    redis_port = cfg.get_variable('CACHESERVER', 'redis-port', 6379)
+    redis_address: str = cfg.get_variable('CACHESERVER', 'redis-address', '0.0.0.0')
+    redis_port: int = int(cfg.get_variable('CACHESERVER', 'redis-port', '6379'))
 
     # Install and configure redis
-    sys_redis_install()
-    sys_redis_config()
-    sys_redis_configure_memory('', 2)
-    sys_redis_configure_interface(redis_address)
-    sys_redis_configure_port(redis_port)
+    redis.sys_redis_install(c)
+    redis.sys_redis_config(c)
+    redis.sys_redis_configure_memory(c, 0, 2)
+    redis.sys_redis_configure_interface(c, redis_address)
+    redis.sys_redis_configure_port(c, redis_port)
 
     # Allow incoming requests
-    sys_firewall_allow_incoming_port_proto(redis_port, 'tcp')
+    firewall.sys_firewall_allow_incoming_port_proto(c, redis_port, 'tcp')
