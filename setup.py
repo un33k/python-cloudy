@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from setuptools import setup
 import re
@@ -83,7 +83,7 @@ setup(
     package_data=get_package_data(package),
     install_requires=install_requires,
     classifiers=classifiers,
-    python_requires='>=3.7',
+    python_requires='>=3.8',
 )
 
 
