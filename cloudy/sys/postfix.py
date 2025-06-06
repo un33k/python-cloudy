@@ -17,13 +17,17 @@ from cloudy.util.common import sys_restart_service
 from cloudy.sys.etc import sys_etc_git_commit
 
 
-def sys_install_postfix():
-    """ Install postfix for outgoing email (loopback) - Ex: (cmd)"""
-    sudo('echo \"postfix postfix/main_mailer_type select Internet Site\" | debconf-set-selections')
-    sudo('echo \"postfix postfix/mailname string localhost\" | debconf-set-selections')
-    sudo('echo \"postfix postfix/destinations string localhost.localdomain, localhost\" | debconf-set-selections')
+def sys_install_postfix() -> None:
+    """Install postfix for outgoing email (loopback only)."""
+    selections = [
+        'postfix postfix/main_mailer_type select Internet Site',
+        'postfix postfix/mailname string localhost',
+        'postfix postfix/destinations string localhost.localdomain, localhost'
+    ]
+    for sel in selections:
+        sudo(f'echo "{sel}" | debconf-set-selections')
     sudo('apt -y install postfix')
-    sudo('/usr/sbin/postconf -e \"inet_interfaces = loopback-only\"')
+    sudo('/usr/sbin/postconf -e "inet_interfaces = loopback-only"')
     sys_etc_git_commit('Installed postfix on loopback for outgoing mail')
     sys_restart_service('postfix')
 

@@ -1,31 +1,26 @@
 import os
 import re
 import types
+import importlib
 
 PACKAGE = 'cloudy.sys'
-MODULE_RE = r"^.*.py$"
+MODULE_RE = r"^[^.].*\.py$"
 PREFIX = ['sys_']
-SKIP = ['.', '..', '__init__.py']
+SKIP = {'__init__.py'}
 
-# Examine every file inside this module
 functions = []
-module_dir = os.path.dirname( __file__)
-for fname in os.listdir(module_dir):
-    if fname not in SKIP and re.match(MODULE_RE, fname):
-        module = __import__('{}.{}'.format(PACKAGE, fname[:-3]), {}, {}, fname[:-3])
-        for name in dir(module):
-            try:
-                prefix = name.split('_')[0]+'_'
-            except:
-                continue
-            if prefix in PREFIX:
-                item = getattr(module, name)
-                if not isinstance(item, (type, types.FunctionType)):
-                    continue
+module_dir = os.path.dirname(__file__)
 
-                # matched! bring into the module namespace.
-                exec('{} = item'.format(name))
+for fname in os.listdir(module_dir):
+    if fname in SKIP or not re.match(MODULE_RE, fname):
+        continue
+    mod_name = fname[:-3]
+    module = importlib.import_module(f'{PACKAGE}.{mod_name}')
+    for name in dir(module):
+        if any(name.startswith(p) for p in PREFIX):
+            item = getattr(module, name)
+            if isinstance(item, types.FunctionType):
+                globals()[name] = item
                 functions.append(name)
 
-# Only reveal the functions with match prefix and hide everything else from this module.
 __all__ = functions

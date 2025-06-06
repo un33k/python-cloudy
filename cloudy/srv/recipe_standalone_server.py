@@ -2,16 +2,13 @@ from fabric.api import env
 
 from cloudy.db import *
 from cloudy.sys import *
-from cloudy.aws import *
-from cloudy.srv import *
 from cloudy.web import *
-from cloudy.util import *
+from cloudy.util import CloudyConfig
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 
 
 def srv_setup_sta():
-    """ Setup a standalone database server - Ex: (cmd:[cfg-file])"""
-
+    """Setup a standalone database/web/loadbalancer server - Ex: (cmd:[cfg-file])"""
     cfg = CloudyConfig()
 
     # ====== Generic Server =========
@@ -22,7 +19,6 @@ def srv_setup_sta():
     if dbaddress and '*' not in dbaddress:
         sys_add_hosts('db-host', dbaddress)
 
-    # postgresql: version, cluster, data_dir
     pg_version = cfg.get_variable('dbserver', 'pg-version')
     pg_listen_address = cfg.get_variable('dbserver', 'listen-address', '*')
     pg_port = cfg.get_variable('dbserver', 'pg-port', 5432)
@@ -62,21 +58,17 @@ def srv_setup_sta():
         if db_listen_address:
             sys_add_hosts(db_host, db_listen_address)
 
-
     # ====== Web Server =========
-    # setup python stuff
     py_version = cfg.get_variable('common', 'python-version')
     sys_python_install_common(py_version)
 
-    # install webserver
     webserver = cfg.get_variable('webserver', 'webserver')
-    if webserver.lower() == 'apache':
+    if webserver and webserver.lower() == 'apache':
         web_apache_install()
         web_apache2_install_mods()
-    elif webserver.lower() == 'gunicorn':
+    elif webserver and webserver.lower() == 'gunicorn':
         web_supervisor_install()
 
-    # create web directory
     web_create_data_directory()
 
     # hostname, cache server
@@ -97,7 +89,6 @@ def srv_setup_sta():
     sys_firewall_allow_incoming_http()
     sys_firewall_allow_incoming_https()
 
-    # install nginx
     web_nginx_install()
     protocol = 'http'
     domain_name = cfg.get_variable('webserver', 'domain-name', 'example.com')

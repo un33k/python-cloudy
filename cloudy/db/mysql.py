@@ -1,101 +1,79 @@
-import os
 import re
 import sys
 from operator import itemgetter
-import datetime
-
-from fabric.api import run
-from fabric.api import task
-from fabric.api import sudo
-from fabric.api import put
-from fabric.api import env
-from fabric.api import settings
-from fabric.api import hide
+from fabric.api import run, sudo, settings, hide
 from fabric.contrib import files
-
 from cloudy.sys.etc import sys_etc_git_commit
 
 
 def db_mysql_latest_version():
-    """ Get the latest available mysql version - Ex: (cmd)"""
+    """Get the latest available MySQL version."""
 
     latest_version = ''
-    with settings(
-        hide('warnings', 'running', 'stdout', 'stderr'), warn_only=True):
-            ret = run('apt-cache search --names-only mysql-client')
+    with settings(hide('warnings', 'running', 'stdout', 'stderr'), warn_only=True):
+        ret = run('apt-cache search --names-only mysql-client')
 
-    version_re = re.compile('mysql-client-([0-9.]*)\s-')
-    lines = ret.split('\n')
-    versions = []
-    for line in lines:
-        ver = version_re.search(line.lower())
-        if ver:
-            versions.append(ver.group(1))
-
-    versions.sort(key = itemgetter(2), reverse = True)
+    version_re = re.compile(r'mysql-client-([0-9.]+)\s-')
+    versions = [ver.group(1) for line in ret.split('\n') if (ver := version_re.search(line.lower()))]
+    versions.sort(reverse=True)
     try:
         latest_version = versions[0]
-    except:
+    except IndexError:
         pass
 
-    print('Latest available mysql is: [{}]'.format(latest_version), file=sys.stderr)
+    print(f'Latest available mysql is: [{latest_version}]', file=sys.stderr)
     return latest_version
 
 
 def db_mysql_server_install(version=''):
-    """ Install MySQL Server - Ex: (cmd:[5.7])"""
+    """Install MySQL Server."""
 
     if not version:
         version = db_mysql_latest_version()
 
-    # requirements
-    requirements = '%s' % ' '.join([
-        'mysql-server-{}'.format(version),
-    ])
-
-    # install requirements
-    sudo('DEBIAN_FRONTEND=noninteractive apt -y install {}'.format(requirements))
-    sys_etc_git_commit('Installed MySQL Server ({})'.format(version))
+    requirements = f'mysql-server-{version}'
+    sudo(f'DEBIAN_FRONTEND=noninteractive apt -y install {requirements}')
+    sys_etc_git_commit(f'Installed MySQL Server ({version})')
 
 
 def db_mysql_client_install(version=''):
-    """ Install MySQL Client - Ex: (cmd:[5.7])"""
+    """Install MySQL Client."""
 
     if not version:
         version = db_mysql_latest_version()
 
-    # requirements
-    requirements = '%s' % ' '.join([
-        'mysql-client-{}'.format(version),
-    ])
-
-    # install requirements
-    sudo('DEBIAN_FRONTEND=noninteractive apt -y install {}'.format(requirements))
-    sys_etc_git_commit('Installed MySQL Client ({})'.format(version))
+    requirements = f'mysql-client-{version}'
+    sudo(f'DEBIAN_FRONTEND=noninteractive apt -y install {requirements}')
+    sys_etc_git_commit(f'Installed MySQL Client ({version})')
 
 
 def db_mysql_set_root_password(password):
-    """ Set MySQL Root Password - Ex: (cmd:<mypass>)"""
+    """Set MySQL root password."""
+
     if not password:
         print('Password required for mysql root', file=sys.stderr)
-    else:
-        sudo('mysqladmin -u root password {}'.format(password))
-        sys_etc_git_commit('Set MySQL Root Password')
+        return
+
+    sudo(f'mysqladmin -u root password {password}')
+    sys_etc_git_commit('Set MySQL Root Password')
 
 
 def db_mysql_create_database(root_pass, db_name):
-    """ Change password for user: mysql - Ex: (cmd:<root_pass>,<db_name>)"""
-    sudo('echo "CREATE DATABASE {} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" | sudo mysql -u root -p{}'.format(db_name, root_pass))
+    """Create a new MySQL database."""
+
+    sudo(f'echo "CREATE DATABASE {db_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" | sudo mysql -u root -p{root_pass}')
 
 
 def db_mysql_create_user(root_pass, user, user_pass):
-    """ Change password for user: mysql - Ex: (cmd:<root_pass>,<db_name>)"""
-    sudo('echo "CREATE USER \'{}\'@\'localhost\' IDENTIFIED BY \'{}\';" | sudo mysql -u root -p{}'.format(user, user_pass, root_pass))
+    """Create a new MySQL user."""
+
+    sudo(f'echo "CREATE USER \'{user}\'@\'localhost\' IDENTIFIED BY \'{user_pass}\';" | sudo mysql -u root -p{root_pass}')
 
 
 def db_mysql_grant_user(root_pass, user, database):
-    """ Change password for user: mysql - Ex: (cmd:<root_pass>,<db_name>)"""
-    sudo('echo "GRANT ALL PRIVILEGES ON {}.* TO \'{}\'@\'localhost\';" | sudo mysql -u root -p{}'.format(database, user, root_pass))
-    sudo('echo "FLUSH PRIVILEGES;" | sudo mysql -u root -p{}'.format(root_pass))
+    """Grant all privileges on a database to a user."""
+
+    sudo(f'echo "GRANT ALL PRIVILEGES ON {database}.* TO \'{user}\'@\'localhost\';" | sudo mysql -u root -p{root_pass}')
+    sudo(f'echo "FLUSH PRIVILEGES;" | sudo mysql -u root -p{root_pass}')
 
 

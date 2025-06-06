@@ -14,7 +14,7 @@ from fabric.utils import abort
 
 from cloudy.sys.etc import sys_etc_git_commit
 
-def sys_python_install_common(py_version='3.5'):
+def sys_python_install_common(py_version='3.8'):
     """ Install common python application - Ex: (cmd) """
 
     major = py_version.split('.')[0]

@@ -1,103 +1,88 @@
 import os
-import re
-import sys
 import time
-
-from fabric.api import run
-from fabric.api import task
-from fabric.api import sudo
-from fabric.api import put
-from fabric.api import env
-from fabric.api import settings
-from fabric.api import hide
-from fabric.api import cd
+from fabric.api import sudo, put, cd
 from fabric.contrib import files
-from fabric.utils import abort, warn
-
+from fabric.utils import warn
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.ports import sys_show_next_available_port
 from cloudy.util.common import sys_start_service, sys_reload_service, sys_restart_service
 
 
 def web_nginx_install():
-    """ Install Nginx  - Ex: (cmd)"""
-    requirements = '%s' % ' '.join([
-        'nginx',
-    ])
-
-    # install requirements
-    sudo('apt -y install {}'.format(requirements))
+    """Install Nginx and bootstrap configuration."""
+    sudo('apt -y install nginx')
     web_nginx_bootstrap()
     sys_restart_service('nginx')
     sys_etc_git_commit('Installed Nginx')
 
 
 def web_nginx_bootstrap():
+    """Bootstrap Nginx configuration from local templates."""
     sudo('rm -rf /etc/nginx/*')
     cfgdir = os.path.join(os.path.dirname( __file__), '../cfg')
 
-    localcfg = os.path.expanduser(os.path.join(cfgdir, 'nginx/nginx.conf'))
-    remotecfg = '/etc/nginx/nginx.conf'
-    put(localcfg, remotecfg, use_sudo=True)
-
-    localcfg = os.path.expanduser(os.path.join(cfgdir, 'nginx/mime.types.conf'))
-    remotecfg = '/etc/nginx/mime.types'
-    put(localcfg, remotecfg, use_sudo=True)
+    configs = {
+        'nginx/nginx.conf': '/etc/nginx/nginx.conf',
+        'nginx/mime.types.conf': '/etc/nginx/mime.types'
+    }
+    for local, remote in configs.items():
+        localcfg = os.path.expanduser(os.path.join(cfgdir, local))
+        put(localcfg, remote, use_sudo=True)
 
     sudo('mkdir -p /etc/nginx/sites-available')
     sudo('mkdir -p /etc/nginx/sites-enabled')
 
+
 def web_nginx_copy_ssl(domain, crt_dir='~/.ssh/certificates/'):
-    """
-    Move ssl certificate and key to the server.
-    """
+    """Move SSL certificate and key to the server."""
     sudo('mkdir -p /etc/ssl/nginx/crt/')
     sudo('mkdir -p /etc/ssl/nginx/key/')
-    sudo('chmod -R 755 {}'.format('/etc/ssl/nginx/'))
+    sudo('chmod -R 755 /etc/ssl/nginx/')
 
     crt_dir = os.path.expanduser(crt_dir)
     if not os.path.exists(crt_dir):
-        warn('local certificate dir not found: {}'.format(crt_dir))
+        warn(f'Local certificate dir not found: {crt_dir}')
 
-    localcrt = os.path.expanduser(os.path.join(crt_dir, '{}.combo.crt'.format(domain)))
-    remotecrtdir = '/etc/ssl/nginx/crt/{}.combo.crt'.format(domain)
-    put(localcrt, remotecrtdir, use_sudo=True)
+    localcrt = os.path.join(crt_dir, f'{domain}.combo.crt')
+    remotecrt = f'/etc/ssl/nginx/crt/{domain}.combo.crt'
+    put(localcrt, remotecrt, use_sudo=True)
 
-    localkey = os.path.expanduser(os.path.join(crt_dir, '{}.key'.format(domain)))
-    remotekey = '/etc/ssl/nginx/key/{}.key'.format(domain)
+    localkey = os.path.join(crt_dir, f'{domain}.key')
+    remotekey = f'/etc/ssl/nginx/key/{domain}.key'
     put(localkey, remotekey, use_sudo=True)
 
+
 def web_nginx_setup_domain(domain, proto='http', interface='*', upstream_address='', upstream_port=''):
-    """ Setup Nginx config file for a domain - Ex: (cmd:<domain>,[protocol],[port])"""
+    """Setup Nginx config file for a domain."""
     if 'https' in proto or 'ssl' in proto:
         proto = 'https'
-        ssl_crt = '/etc/ssl/nginx/crt/{}.combo.crt'.format(domain)
-        ssl_key = '/etc/ssl/nginx/key/{}.key'.format(domain)
+        ssl_crt = f'/etc/ssl/nginx/crt/{domain}.combo.crt'
+        ssl_key = f'/etc/ssl/nginx/key/{domain}.key'
         if not files.exists(ssl_crt, use_sudo=True) or not files.exists(ssl_key, use_sudo=True):
-            warn('ssl certificate and key not found.\n{}\n{}'.format(ssl_crt, ssl_key))
+            warn(f'SSL certificate and key not found.\n{ssl_crt}\n{ssl_key}')
 
     cfgdir = os.path.join(os.path.dirname( __file__), '../cfg')
     nginx_avail_dir = '/etc/nginx/sites-available'
     nginx_enabled_dir = '/etc/nginx/sites-enabled'
 
-    localcfg = os.path.expanduser(os.path.join(cfgdir, 'nginx/{}.conf'.format(proto)))
-    remotecfg = '{}/{}.{}'.format(nginx_avail_dir, proto, domain)
-    sudo('rm -rf ' + remotecfg)
+    localcfg = os.path.expanduser(os.path.join(cfgdir, f'nginx/{proto}.conf'))
+    remotecfg = f'{nginx_avail_dir}/{proto}.{domain}'
+    sudo(f'rm -rf {remotecfg}')
     put(localcfg, remotecfg, use_sudo=True)
 
     if upstream_address and upstream_port:
-        sudo('sed -i "s/upstream_address/{}/g" {}'.format(upstream_address, remotecfg))
-        sudo('sed -i "s/upstream_port/{}/g" {}'.format(upstream_port, remotecfg))
+        sudo(f'sed -i "s/upstream_address/{upstream_address}/g" {remotecfg}')
+        sudo(f'sed -i "s/upstream_port/{upstream_port}/g" {remotecfg}')
 
-    sudo('sed -i "s/public_interface/{}/g" {}'.format(interface, remotecfg))
-    sudo('sed -i "s/example\.com/{}/g" {}'.format(domain.replace('.', '\.'), remotecfg))
-    sudo('chown -R root:root {}'.format(nginx_avail_dir))
-    sudo('chmod -R 755 {}'.format(nginx_avail_dir))
+    sudo(f'sed -i "s/public_interface/{interface}/g" {remotecfg}')
+    sudo(f'sed -i "s/example\\.com/{domain.replace(".", "\\.")}/g" {remotecfg}')
+    sudo(f'chown -R root:root {nginx_avail_dir}')
+    sudo(f'chmod -R 755 {nginx_avail_dir}')
     with cd(nginx_enabled_dir):
-        sudo('ln -sf {}'.format(remotecfg))
+        sudo(f'ln -sf {remotecfg}')
     time.sleep(2)
     sys_reload_service('nginx')
-    sys_etc_git_commit('Setup Nginx Config for Domain {}'.format(domain))
+    sys_etc_git_commit(f'Setup Nginx Config for Domain {domain}')
 
 
 

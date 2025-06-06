@@ -2,8 +2,7 @@ import os
 import uuid
 from cloudy.db import *
 from cloudy.sys import *
-from cloudy.util import *
-from fabric.api import env
+from cloudy.util import CloudyConfig
 
 
 def srv_setup_generic_server():
@@ -27,10 +26,8 @@ def srv_setup_generic_server():
         sys_add_hosts(hostname, '127.0.0.1')
 
     sys_set_ipv4_precedence()
-
     sys_install_common()
     sys_time_install_common()
-
     sys_install_postfix()
     sys_set_default_editor()
 
@@ -38,7 +35,7 @@ def srv_setup_generic_server():
     timezone = cfg.get_variable('common', 'timezone', 'America/New_York')
     sys_configure_timezone(timezone)
     locale = cfg.get_variable('common', 'locale', 'en_US.UTF-8')
-    sys_locale_configure()
+    sys_locale_configure(locale)
 
     # swap
     swap = cfg.get_variable('common', 'swap-size')
@@ -56,7 +53,6 @@ def srv_setup_generic_server():
         sys_user_set_group_umask(admin_user)
         sys_user_create_groups(admin_groups)
         sys_user_add_to_groups(admin_user, admin_groups)
-
         shared_key_dir = cfg.get_variable('common', 'shared-key-path')
         if shared_key_dir:
             sys_ssh_push_server_shared_keys(admin_user, shared_key_dir)
@@ -72,7 +68,6 @@ def srv_setup_generic_server():
         sys_user_set_group_umask(auto_user)
         sys_user_create_groups(auto_groups)
         sys_user_add_to_groups(auto_user, auto_groups)
-        
         shared_key_dir = cfg.get_variable('common', 'shared-key-path')
         if shared_key_dir:
             sys_ssh_push_server_shared_keys(auto_user, shared_key_dir)
@@ -95,9 +90,8 @@ def srv_setup_generic_server():
     pub_key = cfg.get_variable('common', 'ssh-key-path')
     if pub_key:
         pub_key = os.path.expanduser(pub_key)
-        if os.path.exists(pub_key):
-            if admin_user:
-                sys_ssh_push_public_key(admin_user, pub_key)
+        if os.path.exists(pub_key) and admin_user:
+            sys_ssh_push_public_key(admin_user, pub_key)
 
 
 

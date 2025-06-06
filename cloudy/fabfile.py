@@ -6,4 +6,5 @@ from cloudy.web import *
 from fabric.api import env
 import logging
 
-logging.getLogger().setLevel(logging.ERROR)
+# Set global logging level to ERROR for cleaner output
+logging.basicConfig(level=logging.ERROR)

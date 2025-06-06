@@ -4,9 +4,7 @@ from fabric.api import env
 
 from cloudy.db import *
 from cloudy.sys import *
-from cloudy.web import *
-from cloudy.util import *
-
+from cloudy.util import CloudyConfig
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 
 

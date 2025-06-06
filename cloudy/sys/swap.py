@@ -14,16 +14,18 @@ from fabric.utils import abort
 
 from cloudy.sys.etc import sys_etc_git_commit
 
-def sys_swap_configure(size='512'):
-    """ Ceates and install a swap file, given file size in MB - Ex (cmd:[Size-MB]) """
-    swap_file = '/swap/{}MiB.swap'.format(size)
+def sys_swap_configure(size: str = '512') -> None:
+    """
+    Create and install a swap file of the given size in MB.
+    """
+    swap_file = f'/swap/{size}MiB.swap'
     sudo('mkdir -p /swap')
     if not files.exists(swap_file):
-        sudo('fallocate -l {}m {}'.format(size, swap_file))
-        sudo('chmod 600 {}'.format(swap_file))
-        sudo('mkswap {}'.format(swap_file))
-        sudo('swapon {}'.format(swap_file))
-        sudo('echo "{} swap  swap  defaults  0 0" | sudo tee -a /etc/fstab'.format(swap_file))
-        sys_etc_git_commit('Added swap file ({})'.format(swap_file))
+        sudo(f'fallocate -l {size}m {swap_file}')
+        sudo(f'chmod 600 {swap_file}')
+        sudo(f'mkswap {swap_file}')
+        sudo(f'swapon {swap_file}')
+        sudo(f'echo "{swap_file} swap  swap  defaults  0 0" | sudo tee -a /etc/fstab')
+        sys_etc_git_commit(f'Added swap file ({swap_file})')
     else:
-        print('Swap file ({}) Exists'.format(swap_file), file=sys.stderr)
+        print(f'Swap file ({swap_file}) exists', file=sys.stderr)

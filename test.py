@@ -1,19 +1,18 @@
 import unittest
-import sys
 import logging
 
 class TestCloudyFunctions(unittest.TestCase):
-
-    def setUp(self):
-        self.log= logging.getLogger( "TestCloudyFunctions" )
-
+    @classmethod
+    def setUpClass(cls):
+        logging.basicConfig(level=logging.DEBUG)
+        cls.log = logging.getLogger("TestCloudyFunctions")
 
     def test_manager(self):
-        pass
+        # Placeholder for actual tests
+        self.log.debug("Running test_manager")
+        self.assertTrue(True)
 
 if __name__ == '__main__':
-    logging.basicConfig( stream=sys.stderr )
-    logging.getLogger( "TestCloudyFunctions" ).setLevel( logging.DEBUG )
     unittest.main()
 
 

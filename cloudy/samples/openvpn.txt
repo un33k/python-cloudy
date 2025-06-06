@@ -1,7 +1,7 @@
-# create a new client opvn file
-fab -u <userName> -H <server_ip>:<ssh_port> sys_openvpn_docker_create_client:ClientName,DomainName,VpnPort,Protocal,Secret
+# Create a new OpenVPN client configuration file
+fab -u <user> -H <server_ip>:<ssh_port> sys_openvpn_docker_create_client:ClientName,DomainName,VpnPort,Protocol,Secret
 fab -u root -H example.com:22 sys_openvpn_docker_create_client:myIphone.cfg,example.com,443,tcp,mySecret
 
-# list user profiles
-fab -u <userName> -H <server_ip>:<ssh_port> sys_openvpn_docker_show_client_list:DomainName,port,protocol
+# List OpenVPN user profiles
+fab -u <user> -H <server_ip>:<ssh_port> sys_openvpn_docker_show_client_list:DomainName,Port,Protocol
 fab -u root -H example.com:22 sys_openvpn_docker_show_client_list:domain.com,80,udp

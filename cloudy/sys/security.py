@@ -14,15 +14,14 @@ from fabric.utils import abort
 
 from cloudy.sys.etc import sys_etc_git_commit
 
-def sys_security_install_common():
-    """ Install common security application - Ex: (cmd) """
-
-    requirements = '%s' % ' '.join([
+def sys_security_install_common() -> None:
+    """Install common security applications."""
+    requirements = [
         'fail2ban',
         'logcheck',
         'logcheck-database',
-    ])
-    sudo('apt -y install {}'.format(requirements))
+    ]
+    sudo(f'apt -y install {" ".join(requirements)}')
     sys_etc_git_commit('Installed common security packages')
 
 

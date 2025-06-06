@@ -1,4 +1,4 @@
-Fabric3==1.14.post1
+fabric>=2.7
 apache-libcloud==3.6.1
 s3cmd==2.3.0
 ipython==8.7.0

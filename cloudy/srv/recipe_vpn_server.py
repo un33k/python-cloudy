@@ -4,23 +4,21 @@ from fabric.api import env
 
 from cloudy.db import *
 from cloudy.sys import *
-from cloudy.web import *
-from cloudy.util import *
-
+from cloudy.util import CloudyConfig
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 from cloudy.sys.core import sys_mkdir
 
 
 def srv_setup_vpn(generic=True):
     """
-    Setup a vpn server(s) - Ex: (cmd:[cfg-file])
+    Setup a VPN server(s) - Ex: (cmd:[cfg-file])
     """
     cfg = CloudyConfig()
 
     if generic:
         srv_setup_generic_server()
 
-    #install docker
+    # Install and configure Docker for OpenVPN
     admin_user = cfg.get_variable('common', 'admin-user')
     sys_docker_install()
     sys_docker_config()
@@ -36,9 +34,9 @@ def srv_setup_vpn(generic=True):
     datadir = cfg.get_variable('VPNSERVER', 'data-dir', '/docker/openvpn')
     sys_mkdir(datadir)
 
+    # Primary OpenVPN instance
     primary_port = cfg.get_variable('VPNSERVER', 'primary-port', '80')
     primary_proto = cfg.get_variable('VPNSERVER', 'primary-proto', 'udp')
-
     if primary_port and primary_proto:
         sys_openvpn_docker_install(
             domain=domain,
@@ -51,11 +49,10 @@ def srv_setup_vpn(generic=True):
         sys_openvpn_docker_conf(domain, primary_port, primary_proto)
         sys_firewall_allow_incoming_port_proto(primary_port, primary_proto)
 
-
+    # Secondary OpenVPN instance
     secondary_port = cfg.get_variable('VPNSERVER', 'secondary-port', '443')
     secondary_proto = cfg.get_variable('VPNSERVER', 'secondary-proto', 'tcp')
-
-    if secondary_port and secondary_port:
+    if secondary_port and secondary_proto:
         sys_openvpn_docker_install(
             domain=domain,
             port=secondary_port,

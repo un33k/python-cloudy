@@ -2,16 +2,13 @@ from fabric.api import env
 
 from cloudy.db import *
 from cloudy.sys import *
-from cloudy.aws import *
-from cloudy.srv import *
 from cloudy.web import *
-from cloudy.util import *
+from cloudy.util import CloudyConfig
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 
 
 def srv_setup_web(generic=True):
-    """ Setup a webserver database server - Ex: (cmd:[cfg-file])"""
-
+    """Setup a webserver database server - Ex: (cmd:[cfg-file])"""
     cfg = CloudyConfig()
 
     if generic:
@@ -29,17 +26,18 @@ def srv_setup_web(generic=True):
 
     # install webserver
     webserver = cfg.get_variable('webserver', 'webserver')
-    if webserver.lower() == 'apache':
+    if webserver and webserver.lower() == 'apache':
         web_apache_install()
         web_apache2_install_mods()
-    elif webserver.lower() == 'gunicorn':
+    elif webserver and webserver.lower() == 'gunicorn':
         web_supervisor_install()
 
     # create web directory
     web_create_data_directory()
 
     webserver_port = cfg.get_variable('webserver', 'webserver-port')
-    sys_firewall_allow_incoming_port(webserver_port)
+    if webserver_port:
+        sys_firewall_allow_incoming_port(webserver_port)
 
     # hostname, cache server
     cache_host = cfg.get_variable('cacheserver', 'cache-host')
@@ -52,7 +50,6 @@ def srv_setup_web(generic=True):
     db_psql_install(pg_version)
     pgis_version = cfg.get_variable('dbserver', 'pgis-version')
     db_pgis_install(pg_version, pgis_version)
-    # sys_remove_default_startup('postgresql')
 
     db_pgpool2_install()
     db_host = cfg.get_variable('dbserver', 'db-host')

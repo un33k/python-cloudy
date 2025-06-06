@@ -2,28 +2,21 @@ import os
 import re
 import sys
 
-from fabric.api import run
-from fabric.api import task
-from fabric.api import sudo
-from fabric.api import put
-from fabric.api import env
-from fabric.api import settings
-from fabric.api import hide
-from fabric.api import cd
-from fabric.contrib import files
-from fabric.utils import abort
+from fabric.api import run, settings, hide
 
 
-def sys_show_next_available_port(start=''):
-    """ Show the next available port - Ex: (cmd:[starting_port])"""
-
-    port = eval(start) if start else 8181
-    for count in range(50):
-        with settings(
-            hide('warnings', 'running', 'stdout', 'stderr'), warn_only=True):
-            port_in_use = run('netstat -lt | grep :{}'.format(port))
-            if port_in_use:
-                port += 1
-                continue
-    print(port)
-    return port
+def sys_show_next_available_port(start: int = 8181, max_tries: int = 50) -> int:
+    """
+    Show the next available TCP port starting from 'start'.
+    Returns the first available port found, or -1 if none found in range.
+    """
+    port = start
+    for _ in range(max_tries):
+        with settings(hide('warnings', 'running', 'stdout', 'stderr'), warn_only=True):
+            port_in_use = run(f'netstat -lt | grep :{port}')
+            if not port_in_use:
+                print(port)
+                return port
+            port += 1
+    print(-1)
+    return -1
