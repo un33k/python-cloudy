@@ -16,19 +16,19 @@ def web_apache2_install(c: Connection):
 def util_apache2_bootstrap(c: Connection):
     """Bootstrap Apache2 configuration from local templates."""
     c.sudo('rm -rf /etc/apache2/*')
-    cfgdir = os.path.join(os.path.dirname(__file__), '../cfg')
+    cfgdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../cfg'))
 
     configs = {
         'apache2/apache2.conf': '/etc/apache2/apache2.conf',
         'apache2/envvars.conf': '/etc/apache2/envvars',
         'apache2/ports.conf': '/etc/apache2/ports.conf'
     }
+
     for local, remote in configs.items():
         localcfg = os.path.expanduser(os.path.join(cfgdir, local))
         c.put(localcfg, remote, use_sudo=True)
 
-    c.sudo('mkdir -p /etc/apache2/sites-available')
-    c.sudo('mkdir -p /etc/apache2/sites-enabled')
+    c.sudo('mkdir -p /etc/apache2/sites-available /etc/apache2/sites-enabled')
 
 @task
 def web_apache2_install_mods(c: Connection, py_version='3'):
@@ -48,21 +48,26 @@ def web_apache2_set_port(c: Connection, port=''):
     sys_etc_git_commit(c, f'Apache now listens on port {port}')
 
 @task
-def web_apache2_setup_domain(c: Connection, domain: str = '', port: str):
+def web_apache2_setup_domain(c: Connection, port: str, domain: str = ''):
     """Setup Apache2 config file for a domain."""
     apache_avail_dir = '/etc/apache2/sites-available'
-    cfgdir = os.path.join(os.path.dirname(__file__), '../cfg')
+    cfgdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../cfg'))
     localcfg = os.path.expanduser(os.path.join(cfgdir, 'apache2/site.conf'))
     remotecfg = f'{apache_avail_dir}/{domain}'
+
     c.sudo(f'rm -rf {remotecfg}')
     c.put(localcfg, remotecfg, use_sudo=True)
+
+    # Escape domain for sed replacement
+    escaped_domain = domain.replace('.', r'\.')
+
     c.sudo(f'sed -i "s/port_num/{port}/g" {remotecfg}')
-    c.sudo(f'sed -i "s/example\\.com/{domain.replace(".", "\\.")}/g" {remotecfg}')
+    c.sudo(f'sed -i "s/example\\.com/{escaped_domain}/g" {remotecfg}')
+
     c.sudo(f'chown -R root:root {apache_avail_dir}')
     c.sudo(f'chmod -R 755 {apache_avail_dir}')
     c.sudo(f'a2ensite {domain}')
-    web_apache2_set_port(port)
+    
+    web_apache2_set_port(c, port)
     sys_reload_service(c, 'apache2')
     sys_etc_git_commit(c, f'Setup Apache Config for Domain {domain}')
-
-

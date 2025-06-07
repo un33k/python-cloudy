@@ -1,35 +1,34 @@
 import os
-from fabric.api import sudo, put, cd
+from fabric import Connection, task
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.ports import sys_show_next_available_port
-from cloudy.util.common import sys_restart_service
-from cloudy.sys.core import sys_add_default_startup
+from cloudy.sys.core import sys_restart_service, sys_add_default_startup
 
-
-def web_supervisor_install():
+@task
+def web_supervisor_install(c: Connection):
     """Install Supervisor and bootstrap configuration."""
-    sudo('apt -y install supervisor')
-    web_supervisor_bootstrap()
+    c.sudo('apt -y install supervisor')
+    web_supervisor_bootstrap(c)
     sys_etc_git_commit(c, 'Installed Supervisor')
 
-
-def web_supervisor_bootstrap():
+@task
+def web_supervisor_bootstrap(c: Connection):
     """Bootstrap Supervisor configuration from local templates."""
-    sudo('rm -rf /etc/supervisor/*')
+    c.sudo('rm -rf /etc/supervisor/*')
     cfgdir = os.path.join(os.path.dirname( __file__), '../cfg')
     localcfg = os.path.expanduser(os.path.join(cfgdir, 'supervisor/supervisord.conf'))
     remotecfg = '/etc/supervisor/supervisord.conf'
 
-    put(localcfg, remotecfg, use_sudo=True)
-    sudo('mkdir -p /etc/supervisor/sites-available')
-    sudo('mkdir -p /etc/supervisor/sites-enabled')
-    sudo('chown -R root:root /etc/supervisor')
-    sudo('chmod -R 644 /etc/supervisor')
-    sys_add_default_startup('supervisor')
+    c.put(localcfg, remotecfg, use_sudo=True)
+    c.sudo('mkdir -p /etc/supervisor/sites-available')
+    c.sudo('mkdir -p /etc/supervisor/sites-enabled')
+    c.sudo('chown -R root:root /etc/supervisor')
+    c.sudo('chmod -R 644 /etc/supervisor')
+    c.sys_add_default_startup('supervisor')
     sys_restart_service(c, 'supervisor')
 
-
-def web_supervisor_setup_domain(domain, port=None, interface='0.0.0.0', worker_num=3):
+@task
+def web_supervisor_setup_domain(c: Connection, domain, port=None, interface='0.0.0.0', worker_num=3):
     """Setup Supervisor config file for a domain."""
     supervisor_avail_dir = '/etc/supervisor/sites-available'
     supervisor_enabled_dir = '/etc/supervisor/sites-enabled'
@@ -37,20 +36,20 @@ def web_supervisor_setup_domain(domain, port=None, interface='0.0.0.0', worker_n
     cfgdir = os.path.join(os.path.dirname( __file__), '../cfg')
     localcfg = os.path.expanduser(os.path.join(cfgdir, 'supervisor/site.conf'))
     remotecfg = f'{supervisor_avail_dir}/{domain}.conf'
-    sudo(f'rm -rf {remotecfg}')
-    put(localcfg, remotecfg, use_sudo=True)
+    c.sudo(f'rm -rf {remotecfg}')
+    c.put(localcfg, remotecfg, use_sudo=True)
     if not port:
-        port = sys_show_next_available_port()
-    sudo(f'sed -i "s/bound_address/{interface}/g" {remotecfg}')
-    sudo(f'sed -i "s/port_num/{port}/g" {remotecfg}')
-    sudo(f'sed -i "s/worker_num/{worker_num}/g" {remotecfg}')
-    sudo(f'sed -i "s/example\\.com/{domain.replace(".", "\\.")}/g" {remotecfg}')
-    sudo(f'chown -R root:root {supervisor_avail_dir}')
-    sudo(f'chmod -R 755 {supervisor_avail_dir}')
-    with cd(supervisor_enabled_dir):
-        sudo(f'ln -sf {remotecfg}')
+        port = sys_show_next_available_port(c)
+    c.sudo(f'sed -i "s/bound_address/{interface}/g" {remotecfg}')
+    c.sudo(f'sed -i "s/port_num/{port}/g" {remotecfg}')
+    c.sudo(f'sed -i "s/worker_num/{worker_num}/g" {remotecfg}')
+    c.sudo(f'sed -i "s/example\\.com/{domain.replace(".", "\\.")}/g" {remotecfg}')
+    c.sudo(f'chown -R root:root {supervisor_avail_dir}')
+    c.sudo(f'chmod -R 755 {supervisor_avail_dir}')
+    with c.cd(supervisor_enabled_dir):
+        c.sudo(f'ln -sf {remotecfg}')
     sys_restart_service(c, 'supervisor')
-    sudo(f'supervisorctl restart {domain}')
+    c.sudo(f'supervisorctl restart {domain}')
     sys_etc_git_commit(c, f'Setup Supervisor Config for Domain {domain}')
 
 

@@ -1,9 +1,8 @@
 from fabric import Connection, task
 from cloudy.sys import redis, firewall
-from cloudy.util import CloudyConfig
-
+from cloudy.util.conf import CloudyConfig
+from cloudy.sys.firewall import fw_allow_incoming_port_proto
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server
-
 
 @task
 def srv_setup_cache_redis(c: Connection, generic: bool = True) -> None:
@@ -16,7 +15,7 @@ def srv_setup_cache_redis(c: Connection, generic: bool = True) -> None:
         srv_setup_generic_server(c)
 
     redis_address: str = cfg.get_variable('CACHESERVER', 'redis-address', '0.0.0.0')
-    redis_port: int = int(cfg.get_variable('CACHESERVER', 'redis-port', '6379'))
+    redis_port: str = cfg.get_variable('CACHESERVER', 'redis-port', '6379')
 
     # Install and configure redis
     redis.sys_redis_install(c)
@@ -26,4 +25,4 @@ def srv_setup_cache_redis(c: Connection, generic: bool = True) -> None:
     redis.sys_redis_configure_port(c, redis_port)
 
     # Allow incoming requests
-    firewall.sys_firewall_allow_incoming_port_proto(c, redis_port, 'tcp')
+    fw_allow_incoming_port_proto(c, redis_port, 'tcp')

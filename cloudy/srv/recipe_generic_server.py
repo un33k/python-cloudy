@@ -4,7 +4,7 @@ from fabric import Connection, task
 
 # Import all needed sys/db modules explicitly as modules
 from cloudy.sys import core, timezone, swap, postfix, vim, ssh, firewall, user
-from cloudy.util import CloudyConfig
+from cloudy.util.conf import CloudyConfig
 
 @task
 def srv_setup_generic_server(c: Connection) -> None:

@@ -8,7 +8,7 @@ from cloudy.sys.core import sys_mkdir, sys_restart_service
 def sys_openvpn_docker_install(
     c: Connection,
     domain: str,
-    port: int = 1194,
+    port: str = '1194',
     proto: str = 'udp',
     passphrase: str = 'nopass',
     datadir: str = '/docker/openvpn',
@@ -38,7 +38,7 @@ def sys_openvpn_docker_install(
 def sys_openvpn_docker_conf(
     c: Connection,
     domain: str,
-    port: int = 1194,
+    port: str = '1194',
     proto: str = 'udp'
 ) -> None:
     """Configure OpenVPN Docker systemd service."""

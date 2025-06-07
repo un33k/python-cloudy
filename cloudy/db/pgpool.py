@@ -1,7 +1,7 @@
 import os
 from fabric import Connection, task
 from cloudy.sys.etc import sys_etc_git_commit
-from cloudy.util.common import sys_restart_service
+from cloudy.sys.core import sys_restart_service
 
 
 @task
@@ -13,7 +13,7 @@ def db_pgpool2_install(c: Connection) -> None:
 
 @task
 def db_pgpool2_configure(
-    c: Connection, dbhost: str = '', dbport: int = 5432, localport: int = 5432
+    c: Connection, dbhost: str = '', dbport: str = '5432', localport: str = '5432'
 ) -> None:
     """Configure pgpool2 with given dbhost, dbport, and localport."""
     cfgdir = os.path.join(os.path.dirname(__file__), '../cfg')

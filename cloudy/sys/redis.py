@@ -27,7 +27,7 @@ def sys_redis_configure_memory(c: Connection, memory: int = 0, divider: int = 8)
     sys_restart_service(c, 'redis-server')
 
 @task
-def sys_redis_configure_port(c: Connection, port: int = 6379) -> None:
+def sys_redis_configure_port(c: Connection, port: str = '6379') -> None:
     """Configure redis-server port."""
     redis_conf = '/etc/redis/redis.conf'
     c.sudo(f'sed -i "s/^port .*/port {port}/" {redis_conf}')

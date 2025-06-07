@@ -1,38 +1,40 @@
-import os
-
-from fabric.api import env
-
-from cloudy.db import *
-from cloudy.sys import *
-from cloudy.web import *
-from cloudy.util import CloudyConfig
-
+from fabric import Connection, task
+from cloudy.sys.firewall import (
+    fw_allow_incoming_http,
+    fw_allow_incoming_https,
+)
+from cloudy.web.nginx import (
+    web_nginx_install,
+    web_nginx_copy_ssl,
+    web_nginx_setup_domain,
+)
+from cloudy.util.conf import CloudyConfig
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server
 
-
-def srv_setup_lb(generic=True):
+@task
+def srv_setup_lb(c: Connection, generic=True):
     """
     Setup a loadbalancer - Ex: (cmd:[cfg-file])
     """
     cfg = CloudyConfig()
 
     if generic:
-        srv_setup_generic_server()
+        srv_setup_generic_server(c)
 
-    sys_firewall_allow_incoming_http()
-    sys_firewall_allow_incoming_https()
+    fw_allow_incoming_http(c)
+    fw_allow_incoming_https(c)
 
     # install nginx
-    web_nginx_install()
+    web_nginx_install(c)
     protocol = 'http'
     domain_name = cfg.get_variable('webserver', 'domain-name', 'example.com')
     certificate_path = cfg.get_variable('common', 'certificate-path')
     if certificate_path:
-        web_nginx_copy_ssl(domain_name, certificate_path)
+        web_nginx_copy_ssl(c, domain_name, certificate_path)
         protocol = 'https'
 
     binding_address = cfg.get_variable('webserver', 'binding-address', '*')
     upstream_address = cfg.get_variable('webserver', 'upstream-address')
-    upstream_port = cfg.get_variable('webserver', 'upstream-port', 8181)
+    upstream_port = cfg.get_variable('webserver', 'upstream-port', '8181')
     if upstream_address and upstream_port:
-        web_nginx_setup_domain(domain_name, protocol, binding_address, upstream_address, upstream_port)
+        web_nginx_setup_domain(c, domain_name, protocol, binding_address, upstream_address, upstream_port)

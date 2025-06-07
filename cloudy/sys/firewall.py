@@ -71,7 +71,7 @@ def fw_disallow_incoming_postgresql(c: Connection) -> None:
     fw_reload_ufw(c)
 
 @task
-def fw_allow_incoming_port(c: Connection, port: int) -> None:
+def fw_allow_incoming_port(c: Connection, port: str) -> None:
     """Allow requests on a specific port."""
     c.sudo(f'ufw allow {port}')
     fw_reload_ufw(c)
@@ -85,7 +85,7 @@ def fw_disallow_incoming_port(c: Connection, port: int) -> None:
     fw_reload_ufw(c)
 
 @task
-def fw_allow_incoming_port_proto(c: Connection, port: int, proto: str) -> None:
+def fw_allow_incoming_port_proto(c: Connection, port: str, proto: str) -> None:
     """Allow requests on a specific port/protocol."""
     c.sudo(f'ufw allow {port}/{proto}')
     fw_reload_ufw(c)
