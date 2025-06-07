@@ -30,7 +30,7 @@ Python Cloudy is a utility to simplify server cloud configuration and automation
   ```
 - Run a command:
   ```
-  fab -H 10.10.10.10 -i ~/.ssh/key.pem sys_uname
+  fab  core.sys-uname -H auto@10.10.10.198:22022 -i ~/.ssh/id_rsa.pub
   ```
 - *(...etc.)*
 

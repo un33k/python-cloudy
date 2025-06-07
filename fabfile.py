@@ -18,7 +18,7 @@ logging.getLogger().setLevel(logging.ERROR)
 # Automatically register all tasks in this file
 ns = Collection.from_module(__import__(__name__))
 
-ns.add_collection(Collection.from_module(core), name='nginx')
+ns.add_collection(Collection.from_module(core), name='core')
 ns.add_collection(Collection.from_module(docker), name='docker')
 ns.add_collection(Collection.from_module(etc), name='etc')
 ns.add_collection(Collection.from_module(python), name='python')
