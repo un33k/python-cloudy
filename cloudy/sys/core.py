@@ -180,6 +180,7 @@ def sys_set_ipv4_precedence(c: Connection) -> None:
     except Exception as e:
         sys_log_error("Failed to set IPv4 precedence", e)
 
+@task
 def run_command(c: Connection, cmd: str, use_sudo: bool = False) -> Optional[str]:
     """Run a shell command, optionally with sudo, and handle errors."""
     try:
