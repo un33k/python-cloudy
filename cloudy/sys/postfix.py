@@ -1,6 +1,5 @@
-import os
 from fabric import Connection, task
-from cloudy.util.common import sys_restart_service
+from cloudy.sys.core import sys_restart_service
 from cloudy.sys.etc import sys_etc_git_commit
 
 

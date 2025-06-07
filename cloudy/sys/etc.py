@@ -1,5 +1,3 @@
-import os
-import re
 import sys
 from typing import Optional
 from fabric import Connection, task

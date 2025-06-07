@@ -1,11 +1,36 @@
 import os
+import time
 from typing import Optional
 from fabric import Connection, task
 
 from cloudy.sys.etc import sys_etc_git_commit
 
-def _log_error(msg: str, exc: Exception) -> None:
+@task
+def sys_log_error(msg: str, exc: Exception) -> None:
     print(f"{msg}: {exc}")
+
+@task
+def sys_start_service(c: Connection, service: str) -> None:
+    """Start a systemd service."""
+    c.sudo(f'systemctl start {service}')
+
+@task
+def sys_stop_service(c: Connection, service: str) -> None:
+    """Stop a systemd service."""
+    c.sudo(f'systemctl stop {service}')
+
+@task
+def sys_reload_service(c: Connection, service: str) -> None:
+    """Reload a systemd service."""
+    c.sudo(f'systemctl reload {service}')
+
+@task
+def sys_restart_service(c: Connection, service: str) -> None:
+    """Restart a systemd service safely."""
+    c.sudo(f'systemctl stop {service}', warn=True)
+    time.sleep(2)
+    c.sudo(f'systemctl start {service}')
+    time.sleep(2)
 
 @task
 def sys_init(c: Connection) -> None:
@@ -125,7 +150,7 @@ def sys_mkdir(c: Connection, path: str = '', owner: str = '', group: str = '') -
             c.sudo(f'chown {chown_str} "{path}"')
         return path
     except Exception as e:
-        _log_error(f"Failed to create directory {path}", e)
+        sys_log_error(f"Failed to create directory {path}", e)
         return None
 
 @task
@@ -134,7 +159,7 @@ def sys_hold_package(c: Connection, package: str) -> None:
     try:
         c.sudo(f'apt-mark hold {package}')
     except Exception as e:
-        _log_error(f"Failed to hold package {package}", e)
+        sys_log_error(f"Failed to hold package {package}", e)
 
 @task
 def sys_unhold_package(c: Connection, package: str) -> None:
@@ -142,7 +167,7 @@ def sys_unhold_package(c: Connection, package: str) -> None:
     try:
         c.sudo(f'apt-mark unhold {package}')
     except Exception as e:
-        _log_error(f"Failed to unhold package {package}", e)
+        sys_log_error(f"Failed to unhold package {package}", e)
 
 @task
 def sys_set_ipv4_precedence(c: Connection) -> None:
@@ -153,7 +178,7 @@ def sys_set_ipv4_precedence(c: Connection) -> None:
     try:
         c.sudo(f"sed -i 's/{pattern_before}/{pattern_after}/' {get_address_info_config}")
     except Exception as e:
-        _log_error("Failed to set IPv4 precedence", e)
+        sys_log_error("Failed to set IPv4 precedence", e)
 
 def run_command(c: Connection, cmd: str, use_sudo: bool = False) -> Optional[str]:
     """Run a shell command, optionally with sudo, and handle errors."""
@@ -161,7 +186,7 @@ def run_command(c: Connection, cmd: str, use_sudo: bool = False) -> Optional[str
         result = c.sudo(cmd) if use_sudo else c.run(cmd)
         return result.stdout if hasattr(result, 'stdout') else str(result)
     except Exception as e:
-        _log_error(f"Command failed: {cmd}", e)
+        sys_log_error(f"Command failed: {cmd}", e)
         return None
 
 

@@ -1,8 +1,4 @@
-import os
-import re
-import sys
 from fabric import Connection, task
-
 from cloudy.sys.etc import sys_etc_git_commit
 
 @task

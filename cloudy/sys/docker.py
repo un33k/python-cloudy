@@ -1,9 +1,7 @@
 import os
 from fabric import Connection, task
 from cloudy.sys.etc import sys_etc_git_commit
-from cloudy.sys.core import sys_mkdir
-from cloudy.util.common import sys_restart_service
-
+from cloudy.sys.core import sys_mkdir, sys_restart_service
 
 @task
 def sys_docker_install(c: Connection) -> None:
