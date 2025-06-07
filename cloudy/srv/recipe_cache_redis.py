@@ -1,5 +1,5 @@
 from fabric import Connection, task
-from cloudy.sys import redis, firewall
+from cloudy.sys import redis
 from cloudy.util.conf import CloudyConfig
 from cloudy.sys.firewall import fw_allow_incoming_port_proto
 from cloudy.srv.recipe_generic_server import srv_setup_generic_server

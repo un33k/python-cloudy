@@ -1,5 +1,4 @@
 from fabric import Connection, task
-from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.core import sys_hostname_configure, sys_add_hosts
 from cloudy.sys.python import sys_python_install_common
 from cloudy.web.apache import web_apache2_install_mods, web_apache2_install
