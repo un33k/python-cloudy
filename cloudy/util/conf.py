@@ -54,34 +54,6 @@ class CloudyConfig:
             for section in self.cfg.sections():
                 self.cfg_grid[section.upper()] = self._section_map(section)
 
-    def s__init__(self, filenames: Any = '~/.cloudy', log_level: int = logging.WARNING) -> None:
-        self.log = logging.getLogger(os.path.basename(__file__))
-        self.log.setLevel(log_level)
-        self.cfg = configparser.ConfigParser()
-        self.cfg_grid: Dict[str, Dict[str, Optional[str]]] = {}
-
-        # Prepare config file paths
-        paths: list[str] = []
-        if isinstance(filenames, str):
-            filenames = [filenames]
-        for f in filenames:
-            p = os.path.expanduser(f)
-            if os.path.exists(p):
-                paths.append(p)
-        # Always load defaults first (lowest precedence)
-        defaults_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../cfg/defaults.cfg"))
-        if os.path.exists(defaults_path):
-            paths.insert(0, defaults_path)
-
-        # Read config files
-        try:
-            self.cfg.read(paths)
-        except Exception as e:
-            self.log.error(f"Unable to open config file(s): {e}")
-        else:
-            for section in self.cfg.sections():
-                self.cfg_grid[section.upper()] = self._section_map(section)
-
     def _section_map(self, section: str) -> Dict[str, Optional[str]]:
         """Create a dict of options for a section."""
         valid: Dict[str, Optional[str]] = {}
