@@ -7,7 +7,8 @@ from cloudy.sys import (
 )
 from cloudy.srv import (
     recipe_cache_redis,
-    recipe_generic_server, recipe_webserver_django,
+    recipe_generic_server,
+    recipe_webserver_django,
     recipe_database_psql_gis,
     recipe_loadbalancer_nginx, 
     recipe_standalone_server, 
