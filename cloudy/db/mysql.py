@@ -1,12 +1,14 @@
 import re
 import sys
 from operator import itemgetter
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 
 
 @task
-def db_mysql_latest_version(c: Connection) -> str:
+@Context.wrap_context
+def db_mysql_latest_version(c: Context) -> str:
     """Get the latest available MySQL version."""
     latest_version: str = ''
     result = c.run('apt-cache search --names-only mysql-client', hide=True, warn=True)
@@ -23,7 +25,8 @@ def db_mysql_latest_version(c: Connection) -> str:
 
 
 @task
-def db_mysql_server_install(c: Connection, version: str = '') -> None:
+@Context.wrap_context
+def db_mysql_server_install(c: Context, version: str = '') -> None:
     """Install MySQL Server."""
     if not version:
         version = db_mysql_latest_version(c)
@@ -33,7 +36,8 @@ def db_mysql_server_install(c: Connection, version: str = '') -> None:
 
 
 @task
-def db_mysql_client_install(c: Connection, version: str = '') -> None:
+@Context.wrap_context
+def db_mysql_client_install(c: Context, version: str = '') -> None:
     """Install MySQL Client."""
     if not version:
         version = db_mysql_latest_version(c)
@@ -43,7 +47,8 @@ def db_mysql_client_install(c: Connection, version: str = '') -> None:
 
 
 @task
-def db_mysql_set_root_password(c: Connection, password: str) -> None:
+@Context.wrap_context
+def db_mysql_set_root_password(c: Context, password: str) -> None:
     """Set MySQL root password."""
     if not password:
         print('Password required for mysql root', file=sys.stderr)
@@ -53,19 +58,22 @@ def db_mysql_set_root_password(c: Connection, password: str) -> None:
 
 
 @task
-def db_mysql_create_database(c: Connection, root_pass: str, db_name: str) -> None:
+@Context.wrap_context
+def db_mysql_create_database(c: Context, root_pass: str, db_name: str) -> None:
     """Create a new MySQL database."""
     c.sudo(f'echo "CREATE DATABASE {db_name} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" | sudo mysql -u root -p{root_pass}')
 
 
 @task
-def db_mysql_create_user(c: Connection, root_pass: str, user: str, user_pass: str) -> None:
+@Context.wrap_context
+def db_mysql_create_user(c: Context, root_pass: str, user: str, user_pass: str) -> None:
     """Create a new MySQL user."""
     c.sudo(f'echo "CREATE USER \'{user}\'@\'localhost\' IDENTIFIED BY \'{user_pass}\';" | sudo mysql -u root -p{root_pass}')
 
 
 @task
-def db_mysql_grant_user(c: Connection, root_pass: str, user: str, database: str) -> None:
+@Context.wrap_context
+def db_mysql_grant_user(c: Context, root_pass: str, user: str, database: str) -> None:
     """Grant all privileges on a database to a user."""
     c.sudo(f'echo "GRANT ALL PRIVILEGES ON {database}.* TO \'{user}\'@\'localhost\';" | sudo mysql -u root -p{root_pass}')
     c.sudo(f'echo "FLUSH PRIVILEGES;" | sudo mysql -u root -p{root_pass}')

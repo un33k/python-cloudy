@@ -1,10 +1,12 @@
 import os
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.core import sys_restart_service
 
 @task
-def web_nginx_install(c: Connection):
+@Context.wrap_context
+def web_nginx_install(c: Context):
     """Install Nginx and bootstrap configuration."""
     c.sudo('apt -y install nginx')
     web_nginx_bootstrap(c)
@@ -12,7 +14,8 @@ def web_nginx_install(c: Connection):
     sys_etc_git_commit(c, 'Installed Nginx')
 
 @task
-def web_nginx_bootstrap(c: Connection):
+@Context.wrap_context
+def web_nginx_bootstrap(c: Context):
     """Bootstrap Nginx configuration from local templates."""
     c.sudo('rm -rf /etc/nginx/*')
     cfgdir = os.path.join(os.path.dirname(__file__), '../cfg')
@@ -29,7 +32,8 @@ def web_nginx_bootstrap(c: Connection):
     c.sudo('mkdir -p /etc/nginx/sites-enabled')
 
 @task
-def web_nginx_copy_ssl(c: Connection, domain: str, crt_dir: str = '~/.ssh/certificates/'):
+@Context.wrap_context
+def web_nginx_copy_ssl(c: Context, domain: str, crt_dir: str = '~/.ssh/certificates/'):
     """Move SSL certificate and key to the server."""
     c.sudo('mkdir -p /etc/ssl/nginx/crt/')
     c.sudo('mkdir -p /etc/ssl/nginx/key/')
@@ -49,8 +53,9 @@ def web_nginx_copy_ssl(c: Connection, domain: str, crt_dir: str = '~/.ssh/certif
     c.put(localkey, remotekey, use_sudo=True)
 
 @task
+@Context.wrap_context
 def web_nginx_setup_domain(
-    c: Connection,
+    c: Context,
     domain: str,
     proto: str = 'http',
     interface: str = '*',

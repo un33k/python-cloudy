@@ -1,8 +1,10 @@
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 
 @task
-def sys_security_install_common(c: Connection) -> None:
+@Context.wrap_context
+def sys_security_install_common(c: Context) -> None:
     """Install common security applications."""
     requirements = [
         'fail2ban',

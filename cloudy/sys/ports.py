@@ -1,8 +1,10 @@
 import sys
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 
 @task
-def sys_show_next_available_port(c: Connection, start: str = '8181', max_tries: str = '50') -> str:
+@Context.wrap_context
+def sys_show_next_available_port(c: Context, start: str = '8181', max_tries: str = '50') -> str:
     """
     Show the next available TCP port starting from 'start'.
     Returns the first available port found, or -1 if none found in range.

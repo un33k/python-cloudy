@@ -1,4 +1,5 @@
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.core import sys_hostname_configure, sys_add_hosts
 from cloudy.sys.python import sys_python_install_common
 from cloudy.web.apache import web_apache2_install_mods, web_apache2_install
@@ -18,7 +19,8 @@ from cloudy.util.conf import CloudyConfig
 from cloudy.srv.recipe_generic_server import setup_server
 
 @task
-def srv_setup_web(c: Connection, generic=True):
+@Context.wrap_context
+def srv_setup_web(c: Context, generic=True):
     """Setup a webserver database server - Ex: (cmd:[cfg-file])"""
     cfg = CloudyConfig()
 

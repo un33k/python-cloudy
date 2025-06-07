@@ -1,11 +1,13 @@
 import os
 import uuid
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys import core, timezone, swap, postfix, vim, ssh, firewall, user
 from cloudy.util.conf import CloudyConfig
 
 @task
-def setup_server(c: Connection) -> None:
+@Context.wrap_context
+def setup_server(c: Context) -> None:
     """
     Setup a generic server with the required packages - Ex: (cmd:[cfg-file])
     """

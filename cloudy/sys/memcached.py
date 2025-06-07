@@ -1,22 +1,26 @@
 import os
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.core import sys_restart_service
 from cloudy.sys.etc import sys_etc_git_commit
 
 @task
-def sys_memcached_install(c: Connection) -> None:
+@Context.wrap_context
+def sys_memcached_install(c: Context) -> None:
     """Install memcached and restart the service."""
     c.sudo('apt -y install memcached')
     sys_etc_git_commit(c, 'Installed memcached')
     sys_restart_service(c, 'memcached')
 
 @task
-def sys_memcached_libdev_install(c: Connection) -> None:
+@Context.wrap_context
+def sys_memcached_libdev_install(c: Context) -> None:
     """Install libmemcached-dev required by pylibmc."""
     c.sudo('apt -y install libmemcached-dev')
 
 @task
-def sys_memcached_configure_memory(c: Connection, memory: int = 0, divider: int = 8) -> None:
+@Context.wrap_context
+def sys_memcached_configure_memory(c: Context, memory: int = 0, divider: int = 8) -> None:
     """Configure memcached memory. If memory is 0, use total system memory divided by 'divider'."""
     memcached_conf = '/etc/memcached.conf'
     if not memory:
@@ -28,7 +32,8 @@ def sys_memcached_configure_memory(c: Connection, memory: int = 0, divider: int 
     sys_restart_service(c, 'memcached')
 
 @task
-def sys_memcached_configure_port(c: Connection, port: int = 11211) -> None:
+@Context.wrap_context
+def sys_memcached_configure_port(c: Context, port: int = 11211) -> None:
     """Configure memcached port."""
     memcached_conf = '/etc/memcached.conf'
     c.sudo(f'sed -i "s/-p\\s\\+[0-9]\\+/-p {port}/g" {memcached_conf}')
@@ -36,7 +41,8 @@ def sys_memcached_configure_port(c: Connection, port: int = 11211) -> None:
     sys_restart_service(c, 'memcached')
 
 @task
-def sys_memcached_configure_interface(c: Connection, interface: str = '0.0.0.0') -> None:
+@Context.wrap_context
+def sys_memcached_configure_interface(c: Context, interface: str = '0.0.0.0') -> None:
     """Configure memcached interface."""
     memcached_conf = '/etc/memcached.conf'
     c.sudo(f'sed -i "s/-l\\s\\+[0-9.]\\+/-l {interface}/g" {memcached_conf}')
@@ -44,7 +50,8 @@ def sys_memcached_configure_interface(c: Connection, interface: str = '0.0.0.0')
     sys_restart_service(c, 'memcached')
 
 @task
-def sys_memcached_config(c: Connection) -> None:
+@Context.wrap_context
+def sys_memcached_config(c: Context) -> None:
     """Replace memcached.conf with local config and reconfigure memory."""
     cfgdir = os.path.join(os.path.dirname(__file__), '../cfg')
     localcfg = os.path.expanduser(os.path.join(cfgdir, 'memcached/memcached.conf'))

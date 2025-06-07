@@ -1,9 +1,11 @@
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 
 @task
+@Context.wrap_context
 def sys_mount_device_format(
-    c: Connection, device: str, mount_point: str, filesystem: str = 'xfs'
+    c: Context, device: str, mount_point: str, filesystem: str = 'xfs'
 ) -> None:
     """Format and mount a device, ensuring it survives reboot."""
 
@@ -16,8 +18,9 @@ def sys_mount_device_format(
     sys_etc_git_commit(c, f'Mounted {device} on {mount_point} using {filesystem}')
 
 @task
+@Context.wrap_context
 def sys_mount_device(
-    c: Connection, device: str, mount_point: str, filesystem: str = 'xfs'
+    c: Context, device: str, mount_point: str, filesystem: str = 'xfs'
 ) -> None:
     """Mount a device."""
 
@@ -27,8 +30,9 @@ def sys_mount_device(
     c.sudo(f'mount -t {filesystem} {device} {mount_point}')
 
 @task
+@Context.wrap_context
 def sys_mount_fstab_add(
-    c: Connection, device: str, mount_point: str, filesystem: str = 'xfs'
+    c: Context, device: str, mount_point: str, filesystem: str = 'xfs'
 ) -> None:
     """Add a mount record into /etc/fstab."""
 
@@ -37,8 +41,9 @@ def sys_mount_fstab_add(
     c.sudo(f'echo "{entry}" | sudo tee -a /etc/fstab')
 
 @task
+@Context.wrap_context
 def util_mount_validate_vars(
-    c: Connection, device: str, mount_point: str, filesystem: str = 'xfs'
+    c: Context, device: str, mount_point: str, filesystem: str = 'xfs'
 ) -> None:
     """Check system for device, mount point, and file system."""
 
@@ -57,7 +62,8 @@ def util_mount_validate_vars(
     c.sudo(f'grep -q {filesystem} /proc/filesystems || modprobe {filesystem}')
 
 @task
-def util_mount_is_mounted(c: Connection, device: str) -> bool:
+@Context.wrap_context
+def util_mount_is_mounted(c: Context, device: str) -> bool:
     """Check if a device is already mounted."""
 
     result = c.run('df', hide=True, warn=True)

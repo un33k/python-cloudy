@@ -1,11 +1,13 @@
 import os
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.ports import sys_show_next_available_port
 from cloudy.sys.core import sys_reload_service
 
 @task
-def web_apache2_install(c: Connection):
+@Context.wrap_context
+def web_apache2_install(c: Context):
     """Install apache2 and related modules."""
     c.sudo('apt -y install apache2')
     web_apache2_install_mods(c)
@@ -13,7 +15,8 @@ def web_apache2_install(c: Connection):
     sys_etc_git_commit(c, 'Installed apache2')
 
 @task
-def util_apache2_bootstrap(c: Connection):
+@Context.wrap_context
+def util_apache2_bootstrap(c: Context):
     """Bootstrap Apache2 configuration from local templates."""
     c.sudo('rm -rf /etc/apache2/*')
     cfgdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../cfg'))
@@ -31,7 +34,8 @@ def util_apache2_bootstrap(c: Connection):
     c.sudo('mkdir -p /etc/apache2/sites-available /etc/apache2/sites-enabled')
 
 @task
-def web_apache2_install_mods(c: Connection, py_version='3'):
+@Context.wrap_context
+def web_apache2_install_mods(c: Context, py_version='3'):
     """Install apache2 related packages."""
     mod_wsgi = 'libapache2-mod-wsgi-py3' if '3' in py_version else 'libapache2-mod-wsgi'
     requirements = [mod_wsgi, 'libapache2-mod-rpaf']
@@ -39,7 +43,8 @@ def web_apache2_install_mods(c: Connection, py_version='3'):
     sys_etc_git_commit(c, 'Installed apache2 and related packages')
 
 @task
-def web_apache2_set_port(c: Connection, port=''):
+@Context.wrap_context
+def web_apache2_set_port(c: Context, port=''):
     """Setup Apache2 to listen to a new port."""
     remotecfg = '/etc/apache2/ports.conf'
     port = sys_show_next_available_port(c, port)
@@ -48,7 +53,8 @@ def web_apache2_set_port(c: Connection, port=''):
     sys_etc_git_commit(c, f'Apache now listens on port {port}')
 
 @task
-def web_apache2_setup_domain(c: Connection, port: str, domain: str = ''):
+@Context.wrap_context
+def web_apache2_setup_domain(c: Context, port: str, domain: str = ''):
     """Setup Apache2 config file for a domain."""
     apache_avail_dir = '/etc/apache2/sites-available'
     cfgdir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../cfg'))

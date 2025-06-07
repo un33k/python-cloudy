@@ -1,9 +1,11 @@
 import sys
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 
 @task
-def sys_swap_configure(c: Connection, size: str = '512') -> None:
+@Context.wrap_context
+def sys_swap_configure(c: Context, size: str = '512') -> None:
     """
     Create and install a swap file of the given size in MB.
     """

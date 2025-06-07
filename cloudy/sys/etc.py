@@ -1,13 +1,17 @@
 import sys
-from typing import Optional
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 
-def is_git_installed(c: Connection) -> bool:
+@task
+@Context.wrap_context
+def is_git_installed(c: Context) -> bool:
     """Check if git is installed on the host."""
     result = c.run('which git', hide=True, warn=True)
     return bool(result.stdout.strip())
 
-def sys_etc_git_init(c: Connection) -> None:
+@task
+@Context.wrap_context
+def sys_etc_git_init(c: Context) -> None:
     """Initialize git tracking in /etc if not already present."""
     if not is_git_installed(c):
         return
@@ -18,7 +22,9 @@ def sys_etc_git_init(c: Connection) -> None:
             c.sudo('git add .')
             c.sudo('git commit -a -m "Initial Submission"')
 
-def sys_etc_git_commit(c: Connection, msg: str, print_only: bool = True) -> None:
+@task
+@Context.wrap_context
+def sys_etc_git_commit(c: Context, msg: str, print_only: bool = True) -> None:
     """
     Add/remove files from git and commit changes in /etc.
     If print_only is True or git is not installed, just print the message.

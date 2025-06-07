@@ -1,12 +1,14 @@
 import os
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.core import sys_mkdir, sys_restart_service
 
 
 @task
+@Context.wrap_context
 def sys_openvpn_docker_install(
-    c: Connection,
+    c: Context,
     domain: str,
     port: str = '1194',
     proto: str = 'udp',
@@ -35,8 +37,9 @@ def sys_openvpn_docker_install(
 
 
 @task
+@Context.wrap_context
 def sys_openvpn_docker_conf(
-    c: Connection,
+    c: Context,
     domain: str,
     port: str = '1194',
     proto: str = 'udp'
@@ -60,8 +63,9 @@ def sys_openvpn_docker_conf(
 
 
 @task
+@Context.wrap_context
 def sys_openvpn_docker_create_client(
-    c: Connection,
+    c: Context,
     client_name: str,
     domain: str,
     port: int = 1194,
@@ -92,8 +96,9 @@ def sys_openvpn_docker_create_client(
 
 
 @task
+@Context.wrap_context
 def sys_openvpn_docker_revoke_client(
-    c: Connection,
+    c: Context,
     client_name: str,
     domain: str,
     port: int = 1194,
@@ -114,8 +119,9 @@ def sys_openvpn_docker_revoke_client(
 
 
 @task
+@Context.wrap_context
 def sys_openvpn_docker_show_client_list(
-    c: Connection,
+    c: Context,
     domain: str,
     port: int = 1194,
     proto: str = 'udp',

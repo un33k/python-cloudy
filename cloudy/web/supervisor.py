@@ -1,18 +1,21 @@
 import os
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.ports import sys_show_next_available_port
 from cloudy.sys.core import sys_restart_service, sys_add_default_startup
 
 @task
-def web_supervisor_install(c: Connection):
+@Context.wrap_context
+def web_supervisor_install(c: Context):
     """Install Supervisor and bootstrap configuration."""
     c.sudo('apt -y install supervisor')
     web_supervisor_bootstrap(c)
     sys_etc_git_commit(c, 'Installed Supervisor')
 
 @task
-def web_supervisor_bootstrap(c: Connection):
+@Context.wrap_context
+def web_supervisor_bootstrap(c: Context):
     """Bootstrap Supervisor configuration from local templates."""
     c.sudo('rm -rf /etc/supervisor/*')
     cfgdir = os.path.join(os.path.dirname( __file__), '../cfg')
@@ -28,7 +31,8 @@ def web_supervisor_bootstrap(c: Connection):
     sys_restart_service(c, 'supervisor')
 
 @task
-def web_supervisor_setup_domain(c: Connection, domain, port=None, interface='0.0.0.0', worker_num=3):
+@Context.wrap_context
+def web_supervisor_setup_domain(c: Context, domain, port=None, interface='0.0.0.0', worker_num=3):
     """Setup Supervisor config file for a domain."""
     supervisor_avail_dir = '/etc/supervisor/sites-available'
     supervisor_enabled_dir = '/etc/supervisor/sites-enabled'

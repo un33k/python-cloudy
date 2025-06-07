@@ -1,4 +1,5 @@
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys import docker
 from cloudy.sys import openvpn
 from cloudy.sys import firewall
@@ -7,7 +8,8 @@ from cloudy.srv import recipe_generic_server
 from cloudy.sys import core
 
 @task
-def setup_openvpn(c: Connection, generic=True):
+@Context.wrap_context
+def setup_openvpn(c: Context, generic=True):
     """
     Setup a VPN server(s) - Ex: (cmd:[cfg-file])
     """

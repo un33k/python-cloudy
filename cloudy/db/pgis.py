@@ -1,13 +1,15 @@
 import re
 import sys
 from operator import itemgetter
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.db.psql import db_psql_default_installed_version
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.core import sys_start_service
 
 @task
-def db_pgis_install(c: Connection, psql_version: str = '', pgis_version: str = '') -> None:
+@Context.wrap_context
+def db_pgis_install(c: Context, psql_version: str = '', pgis_version: str = '') -> None:
     """Install postgis for a given postgres version."""
     if not psql_version:
         psql_version = db_psql_default_installed_version(c)
@@ -39,7 +41,7 @@ def db_pgis_install(c: Connection, psql_version: str = '', pgis_version: str = '
     sys_start_service(c, 'postgresql')
     sys_etc_git_commit(c, f'Installed postgis for psql ({psql_version})')
 
-def db_pgis_get_latest_version(c: Connection, pg_version: str = '') -> str:
+def db_pgis_get_latest_version(c: Context, pg_version: str = '') -> str:
     """Return the latest available postgis version for pg_version."""
     if not pg_version:
         pg_version = db_psql_default_installed_version(c)
@@ -57,7 +59,7 @@ def db_pgis_get_latest_version(c: Connection, pg_version: str = '') -> str:
     print(f'Latest available postgis is: [{latest_version}]', file=sys.stderr)
     return latest_version
 
-def db_pgis_get_latest_libgeos_version(c: Connection) -> str:
+def db_pgis_get_latest_libgeos_version(c: Context) -> str:
     """Return the latest libgeos version."""
     latest_version: str = ''
     result = c.run('apt-cache search --names-only libgeos', hide=True, warn=True)
@@ -73,7 +75,7 @@ def db_pgis_get_latest_libgeos_version(c: Connection) -> str:
     return latest_version
 
 def db_pgis_configure(
-    c: Connection, pg_version: str = '', pgis_version: str = '', legacy: bool = False
+    c: Context, pg_version: str = '', pgis_version: str = '', legacy: bool = False
 ) -> None:
     """Configure postgis template."""
     if not pg_version:
@@ -100,7 +102,7 @@ def db_pgis_configure(
 
     sys_etc_git_commit(c, f'Configured postgis ({pgis_version}) for psql ({pg_version})')
 
-def db_pgis_get_database_gis_info(c: Connection, dbname: str) -> None:
+def db_pgis_get_database_gis_info(c: Context, dbname: str) -> None:
     """Return the postgis version of a postgis database."""
     c.sudo(f'sudo -u postgres psql -d {dbname} -c "SELECT PostGIS_Version();"')
 

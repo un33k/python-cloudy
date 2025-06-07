@@ -1,19 +1,22 @@
 import os
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.core import sys_restart_service
 
 
 @task
-def db_pgpool2_install(c: Connection) -> None:
+@Context.wrap_context
+def db_pgpool2_install(c: Context) -> None:
     """Install pgpool2."""
     c.sudo('apt -y install pgpool2')
     sys_etc_git_commit(c, 'Installed pgpool2')
 
 
 @task
+@Context.wrap_context
 def db_pgpool2_configure(
-    c: Connection, dbhost: str = '', dbport: str = '5432', localport: str = '5432'
+    c: Context, dbhost: str = '', dbport: str = '5432', localport: str = '5432'
 ) -> None:
     """Configure pgpool2 with given dbhost, dbport, and localport."""
     cfgdir = os.path.join(os.path.dirname(__file__), '../cfg')

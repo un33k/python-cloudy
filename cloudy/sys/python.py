@@ -1,8 +1,10 @@
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 
 @task
-def sys_python_install_common(c: Connection, py_version: str = '3.8') -> None:
+@Context.wrap_context
+def sys_python_install_common(c: Context, py_version: str = '3.8') -> None:
     """Install common python application packages."""
     major = py_version.split('.')[0]
     if major == '2':

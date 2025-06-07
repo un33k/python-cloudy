@@ -1,9 +1,11 @@
 import sys
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 
 @task
-def sys_user_delete(c: Connection, username: str) -> None:
+@Context.wrap_context
+def sys_user_delete(c: Context, username: str) -> None:
     """Delete a user (except root)."""
     if username == 'root':
         print('Cannot delete root user', file=sys.stderr)
@@ -14,7 +16,8 @@ def sys_user_delete(c: Connection, username: str) -> None:
 
 
 @task
-def sys_user_add(c: Connection, username: str) -> None:
+@Context.wrap_context
+def sys_user_add(c: Context, username: str) -> None:
     """Add a new user, deleting any existing user with the same name."""
     sys_user_delete(c, username)
     c.sudo(f'useradd --create-home --shell "/bin/bash" {username}', warn=True)
@@ -22,56 +25,64 @@ def sys_user_add(c: Connection, username: str) -> None:
 
 
 @task
-def sys_user_add_sudoer(c: Connection, username: str) -> None:
+@Context.wrap_context
+def sys_user_add_sudoer(c: Context, username: str) -> None:
     """Add user to sudoers."""
     c.sudo(f'echo "{username}   ALL=(ALL:ALL) ALL" | sudo tee -a /etc/sudoers')
     sys_etc_git_commit(c, f'Added user to sudoers - ({username})')
 
 
 @task
-def sys_user_remove_sudoer(c: Connection, username: str) -> None:
+@Context.wrap_context
+def sys_user_remove_sudoer(c: Context, username: str) -> None:
     """Remove user from sudoers."""
     c.sudo(f"sed -i '/\\s*{username}\\s*.*/d' /etc/sudoers")
     sys_etc_git_commit(c, f'Removed user from sudoers - ({username})')
 
 
 @task
-def sys_user_add_to_group(c: Connection, username: str, group: str) -> None:
+@Context.wrap_context
+def sys_user_add_to_group(c: Context, username: str, group: str) -> None:
     """Add user to an existing group."""
     c.sudo(f'usermod -a -G {group} {username}', warn=True)
     sys_etc_git_commit(c, f'Added user ({username}) to group ({group})')
 
 
 @task
-def sys_user_add_to_groups(c: Connection, username: str, groups: str) -> None:
+@Context.wrap_context
+def sys_user_add_to_groups(c: Context, username: str, groups: str) -> None:
     """Add user to multiple groups (comma-separated)."""
     for group in [g.strip() for g in groups.split(',') if g.strip()]:
         sys_user_add_to_group(c, username, group)
 
 
 @task
-def sys_user_create_group(c: Connection, group: str) -> None:
+@Context.wrap_context
+def sys_user_create_group(c: Context, group: str) -> None:
     """Create a new group."""
     c.sudo(f'addgroup {group}', warn=True)
     sys_etc_git_commit(c, f'Created a new group ({group})')
 
 
 @task
-def sys_user_create_groups(c: Connection, groups: str) -> None:
+@Context.wrap_context
+def sys_user_create_groups(c: Context, groups: str) -> None:
     """Create multiple groups (comma-separated)."""
     for group in [g.strip() for g in groups.split(',') if g.strip()]:
         sys_user_create_group(c, group)
 
 
 @task
-def sys_user_remove_from_group(c: Connection, username: str, group: str) -> None:
+@Context.wrap_context
+def sys_user_remove_from_group(c: Context, username: str, group: str) -> None:
     """Remove a user from a group."""
     c.sudo(f'deluser {username} {group}')
     sys_etc_git_commit(c, f'Removed user ({username}) from group ({group})')
 
 
 @task
-def sys_user_set_group_umask(c: Connection, username: str, umask: str = '0002') -> None:
+@Context.wrap_context
+def sys_user_set_group_umask(c: Context, username: str, umask: str = '0002') -> None:
     """Set user umask in .bashrc."""
     bashrc = f'/home/{username}/.bashrc'
     c.sudo(f"sed -i '/\\s*umask\\s*.*/d' {bashrc}")
@@ -80,14 +91,16 @@ def sys_user_set_group_umask(c: Connection, username: str, umask: str = '0002') 
 
 
 @task
-def sys_user_change_password(c: Connection, username: str, password: str) -> None:
+@Context.wrap_context
+def sys_user_change_password(c: Context, username: str, password: str) -> None:
     """Change password for a user."""
     c.sudo(f'echo "{username}:{password}" | chpasswd')
     sys_etc_git_commit(c, f'Password changed for user ({username})')
 
 
 @task
-def sys_user_set_pip_cache_dir(c: Connection, username: str) -> None:
+@Context.wrap_context
+def sys_user_set_pip_cache_dir(c: Context, username: str) -> None:
     """Set cache dir for pip for a given user."""
     bashrc = f'/home/{username}/.bashrc'
     cache_dir = '/srv/www/.pip_cache_dir'

@@ -1,11 +1,13 @@
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys import firewall
 from cloudy.web import nginx
 from cloudy.util.conf import CloudyConfig
 from cloudy.srv import recipe_generic_server
 
 @task
-def setup_lb(c: Connection, generic=True):
+@Context.wrap_context
+def setup_lb(c: Context, generic=True):
     """
     Setup a loadbalancer - Ex: (cmd:[cfg-file])
     """

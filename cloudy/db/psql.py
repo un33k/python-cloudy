@@ -3,20 +3,23 @@ import re
 import sys
 import datetime
 from typing import Optional
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.core import sys_start_service
 
 
 @task
-def db_psql_install_postgres_repo(c: Connection) -> None:
+@Context.wrap_context
+def db_psql_install_postgres_repo(c: Context) -> None:
     """Install the official postgres repository."""
     c.sudo('echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list')
     c.sudo('wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -')
     c.sudo('apt update')
 
 @task
-def db_psql_latest_version(c: Connection) -> str:
+@Context.wrap_context
+def db_psql_latest_version(c: Context) -> str:
     """Get the latest available postgres version."""
     db_psql_install_postgres_repo(c)
     latest_version: str = ''
@@ -31,7 +34,7 @@ def db_psql_latest_version(c: Connection) -> str:
     print(f'Latest available postgresql is: [{latest_version}]', file=sys.stderr)
     return latest_version
 
-def db_psql_default_installed_version(c: Connection) -> str:
+def db_psql_default_installed_version(c: Context) -> str:
     """Get the default installed postgres version."""
     default_version: str = ''
     result = c.run('psql --version | head -1', hide=True, warn=True)
@@ -43,7 +46,8 @@ def db_psql_default_installed_version(c: Connection) -> str:
     return default_version
 
 @task
-def db_psql_install(c: Connection, version: str = '') -> None:
+@Context.wrap_context
+def db_psql_install(c: Context, version: str = '') -> None:
     """Install postgres of a given version or the latest version."""
     db_psql_install_postgres_repo(c)
     if not version:
@@ -59,7 +63,8 @@ def db_psql_install(c: Connection, version: str = '') -> None:
     sys_etc_git_commit(c, f'Installed postgres ({version})')
 
 @task
-def db_psql_client_install(c: Connection, version: str = '') -> None:
+@Context.wrap_context
+def db_psql_client_install(c: Context, version: str = '') -> None:
     """Install postgres client of a given version or the latest version."""
     if not version:
         version = db_psql_latest_version(c)
@@ -70,7 +75,7 @@ def db_psql_client_install(c: Connection, version: str = '') -> None:
     c.sudo(f'apt -y install {requirements}')
     sys_etc_git_commit(c, f'Installed postgres client ({version})')
 
-def db_psql_make_data_dir(c: Connection, version: str = '', data_dir: str = '/var/lib/postgresql') -> str:
+def db_psql_make_data_dir(c: Context, version: str = '', data_dir: str = '/var/lib/postgresql') -> str:
     """Make data directory for the postgres cluster."""
     if not version:
         version = db_psql_latest_version(c)
@@ -78,14 +83,15 @@ def db_psql_make_data_dir(c: Connection, version: str = '', data_dir: str = '/va
     c.sudo(f'mkdir -p {data_dir}')
     return data_dir
 
-def db_psql_remove_cluster(c: Connection, version: str, cluster: str) -> None:
+def db_psql_remove_cluster(c: Context, version: str, cluster: str) -> None:
     """Remove a cluster if exists."""
     c.run(f'pg_dropcluster --stop {version} {cluster}', warn=True)
     sys_etc_git_commit(c, f'Removed postgres cluster ({version} {cluster})')
 
 @task
+@Context.wrap_context
 def db_psql_create_cluster(
-    c: Connection,
+    c: Context,
     version: str = '',
     cluster: str = 'main',
     encoding: str = 'UTF-8',
@@ -102,8 +108,9 @@ def db_psql_create_cluster(
     sys_etc_git_commit(c, f'Created new postgres cluster ({version} {cluster})')
 
 @task
+@Context.wrap_context
 def db_psql_set_permission(
-    c: Connection, version: str = '', cluster: str = 'main'
+    c: Context, version: str = '', cluster: str = 'main'
 ) -> None:
     """Set default permission for postgresql."""
     if not version:
@@ -119,8 +126,9 @@ def db_psql_set_permission(
     sys_etc_git_commit(c, f'Set default postgres access for cluster ({version} {cluster})')
 
 @task
+@Context.wrap_context
 def db_psql_configure(
-    c: Connection,
+    c: Context,
     version: str = '',
     cluster: str = 'main',
     port: str = '5432',
@@ -138,22 +146,26 @@ def db_psql_configure(
         sys_start_service(c, 'postgresql')
 
 @task
-def db_psql_create_adminpack(c: Connection) -> None:
+@Context.wrap_context
+def db_psql_create_adminpack(c: Context) -> None:
     """Install admin pack."""
     c.sudo('echo "CREATE EXTENSION adminpack;" | sudo -u postgres psql')
 
 @task
-def db_psql_user_password(c: Connection, username: str, password: str) -> None:
+@Context.wrap_context
+def db_psql_user_password(c: Context, username: str, password: str) -> None:
     """Change password for a postgres user."""
     c.sudo(f'echo "ALTER USER {username} WITH ENCRYPTED PASSWORD \'{password}\';" | sudo -u postgres psql')
 
 @task
-def db_psql_create_user(c: Connection, username: str, password: str) -> None:
+@Context.wrap_context
+def db_psql_create_user(c: Context, username: str, password: str) -> None:
     """Create postgresql user."""
     c.sudo(f'echo "CREATE ROLE {username} WITH NOSUPERUSER NOCREATEDB NOCREATEROLE LOGIN ENCRYPTED PASSWORD \'{password}\';" | sudo -u postgres psql')
 
 @task
-def db_psql_delete_user(c: Connection, username: str) -> None:
+@Context.wrap_context
+def db_psql_delete_user(c: Context, username: str) -> None:
     """Delete postgresql user."""
     if username != 'postgres':
         c.sudo(f'echo "DROP ROLE {username};" | sudo -u postgres psql')
@@ -161,56 +173,66 @@ def db_psql_delete_user(c: Connection, username: str) -> None:
         print("Cannot drop user 'postgres'", file=sys.stderr)
 
 @task
-def db_psql_list_users(c: Connection) -> None:
+@Context.wrap_context
+def db_psql_list_users(c: Context) -> None:
     """List postgresql users."""
     c.sudo('sudo -u postgres psql -d template1 -c "SELECT * from pg_user;"')
 
 @task
-def db_psql_list_databases(c: Connection) -> None:
+@Context.wrap_context
+def db_psql_list_databases(c: Context) -> None:
     """List postgresql databases."""
     c.sudo('sudo -u postgres psql -l')
 
 @task
-def db_psql_create_database(c: Connection, dbname: str, dbowner: str) -> None:
+@Context.wrap_context
+def db_psql_create_database(c: Context, dbname: str, dbowner: str) -> None:
     """Create a postgres database for an existing user."""
     c.sudo(f'sudo -u postgres createdb -E UTF8 {dbname}')
     db_psql_grant_database_privileges(c, dbname, dbowner)
 
 @task
-def db_psql_add_gis_extension_to_database(c: Connection, dbname: str) -> None:
+@Context.wrap_context
+def db_psql_add_gis_extension_to_database(c: Context, dbname: str) -> None:
     """Add gis extension to an existing database."""
     c.sudo(f'sudo -u postgres psql -d {dbname} -c "CREATE EXTENSION postgis;"', warn=True)
 
 @task
-def db_psql_add_gis_topology_extension_to_database(c: Connection, dbname: str) -> None:
+@Context.wrap_context
+def db_psql_add_gis_topology_extension_to_database(c: Context, dbname: str) -> None:
     """Add gis topology extension to an existing database."""
     c.sudo(f'sudo -u postgres psql -d {dbname} -c "CREATE EXTENSION postgis_topology;"', warn=True)
 
 @task
-def db_psql_create_gis_database_from_template(c: Connection, dbname: str, dbowner: str) -> None:
+@Context.wrap_context
+def db_psql_create_gis_database_from_template(c: Context, dbname: str, dbowner: str) -> None:
     """Create a postgres GIS database from template for an existing user."""
     c.sudo(f'sudo -u postgres createdb -T template_postgis {dbname}')
     db_psql_grant_database_privileges(c, dbname, dbowner)
 
 @task
-def db_psql_create_gis_database(c: Connection, dbname: str, dbowner: str) -> None:
+@Context.wrap_context
+def db_psql_create_gis_database(c: Context, dbname: str, dbowner: str) -> None:
     """Create a postgres GIS database for an existing user."""
     db_psql_create_database(c, dbname, dbowner)
     db_psql_add_gis_extension_to_database(c, dbname)
     db_psql_add_gis_topology_extension_to_database(c, dbname)
 
 @task
-def db_psql_delete_database(c: Connection, dbname: str) -> None:
+@Context.wrap_context
+def db_psql_delete_database(c: Context, dbname: str) -> None:
     """Delete (drop) a database."""
     c.sudo(f'echo "DROP DATABASE {dbname};" | sudo -u postgres psql')
 
 @task
-def db_psql_grant_database_privileges(c: Connection, dbname: str, dbuser: str) -> None:
+@Context.wrap_context
+def db_psql_grant_database_privileges(c: Context, dbname: str, dbuser: str) -> None:
     """Grant all privileges on database for an existing user."""
     c.sudo(f'echo "GRANT ALL PRIVILEGES ON DATABASE {dbname} to {dbuser};" | sudo -u postgres psql')
 
 @task
-def db_psql_dump_database(c: Connection, dump_dir: str, db_name: str, dump_name: Optional[str] = None) -> None:
+@Context.wrap_context
+def db_psql_dump_database(c: Context, dump_dir: str, db_name: str, dump_name: Optional[str] = None) -> None:
     """Backup (dump) a database and save into a given directory."""
     # Check if directory exists, create if not
     result = c.run(f'test -d {dump_dir}', warn=True)

@@ -1,11 +1,13 @@
 import os
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.core import sys_reload_service
 
 
 @task
-def sys_ssh_set_port(c: Connection, port: str = '22') -> None:
+@Context.wrap_context
+def sys_ssh_set_port(c: Context, port: str = '22') -> None:
     """Set SSH port."""
     sshd_config = '/etc/ssh/sshd_config'
     c.sudo(f"sed -i 's/^#*Port .*/Port {port}/' {sshd_config}")
@@ -14,7 +16,8 @@ def sys_ssh_set_port(c: Connection, port: str = '22') -> None:
 
 
 @task
-def sys_ssh_disable_root_login(c: Connection) -> None:
+@Context.wrap_context
+def sys_ssh_disable_root_login(c: Context) -> None:
     """Disable root login."""
     sshd_config = '/etc/ssh/sshd_config'
     c.sudo(f"sed -i 's/^#*PermitRootLogin .*/PermitRootLogin no/' {sshd_config}")
@@ -24,7 +27,8 @@ def sys_ssh_disable_root_login(c: Connection) -> None:
 
 
 @task
-def sys_ssh_enable_root_login(c: Connection) -> None:
+@Context.wrap_context
+def sys_ssh_enable_root_login(c: Context) -> None:
     """Enable root login."""
     sshd_config = '/etc/ssh/sshd_config'
     c.sudo(f"sed -i 's/^#*PermitRootLogin .*/PermitRootLogin yes/' {sshd_config}")
@@ -33,7 +37,8 @@ def sys_ssh_enable_root_login(c: Connection) -> None:
 
 
 @task
-def sys_ssh_enable_password_authentication(c: Connection) -> None:
+@Context.wrap_context
+def sys_ssh_enable_password_authentication(c: Context) -> None:
     """Enable password authentication."""
     sshd_config = '/etc/ssh/sshd_config'
     c.sudo(f"sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication yes/' {sshd_config}")
@@ -42,7 +47,8 @@ def sys_ssh_enable_password_authentication(c: Connection) -> None:
 
 
 @task
-def sys_ssh_disable_password_authentication(c: Connection) -> None:
+@Context.wrap_context
+def sys_ssh_disable_password_authentication(c: Context) -> None:
     """Disable password authentication."""
     sshd_config = '/etc/ssh/sshd_config'
     c.sudo(f"sed -i 's/^#*PasswordAuthentication .*/PasswordAuthentication no/' {sshd_config}")
@@ -51,7 +57,8 @@ def sys_ssh_disable_password_authentication(c: Connection) -> None:
 
 
 @task
-def sys_ssh_push_public_key(c: Connection, user: str, pub_key: str = '~/.ssh/id_rsa.pub') -> None:
+@Context.wrap_context
+def sys_ssh_push_public_key(c: Context, user: str, pub_key: str = '~/.ssh/id_rsa.pub') -> None:
     """Install a public key on the remote server for a user."""
     home_dir = '~' if user == 'root' else f'/home/{user}'
     ssh_dir = f'{home_dir}/.ssh'
@@ -69,7 +76,8 @@ def sys_ssh_push_public_key(c: Connection, user: str, pub_key: str = '~/.ssh/id_
 
 
 @task
-def sys_ssh_push_server_shared_keys(c: Connection, user: str, shared_dir: str = '~/.ssh/shared/ssh/') -> None:
+@Context.wrap_context
+def sys_ssh_push_server_shared_keys(c: Context, user: str, shared_dir: str = '~/.ssh/shared/ssh/') -> None:
     """Install shared SSH keys for a user (e.g., for GitHub access)."""
     home_dir = '~' if user == 'root' else f'/home/{user}'
     key_dir = os.path.expanduser(shared_dir)

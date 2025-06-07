@@ -1,7 +1,8 @@
 import sys
 import time
 
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.util.conf import CloudyConfig
 from libcloud.compute.types import Provider, NodeState
 from libcloud.compute.providers import get_driver
@@ -29,7 +30,7 @@ def util_get_state2string(state: NodeState) -> str:
     }
     return compute_state_map.get(state, 'unknown')
 
-def util_get_connection(c: Connection):
+def util_get_connection(c: Context):
     try:
         cfg = CloudyConfig()
         ACCESS_ID = (cfg.cfg_grid['AWS']['access_id'] or '').strip()
@@ -41,7 +42,7 @@ def util_get_connection(c: Connection):
     conn = Driver(ACCESS_ID, SECRET_KEY)
     return conn
 
-def util_wait_till_node(c: Connection, name: str, state: NodeState, timeout: int = 10) -> Node | None:
+def util_wait_till_node(c: Context, name: str, state: NodeState, timeout: int = 10) -> Node | None:
     node = None
     elapsed = 0
     frequency = 5
@@ -53,21 +54,23 @@ def util_wait_till_node(c: Connection, name: str, state: NodeState, timeout: int
         elapsed += frequency
     return node
 
-def util_wait_till_node_destroyed(c: Connection, name: str, timeout: int = 15) -> Node | None:
+def util_wait_till_node_destroyed(c: Context, name: str, timeout: int = 15) -> Node | None:
     return util_wait_till_node(c, name, NodeState.TERMINATED, timeout)
 
-def util_wait_till_node_running(c: Connection, name: str, timeout: int = 15) -> Node | None:
+def util_wait_till_node_running(c: Context, name: str, timeout: int = 15) -> Node | None:
     return util_wait_till_node(c, name, NodeState.RUNNING, timeout)
 
 @task
-def util_list_instances(c: Connection):
+@Context.wrap_context
+def util_list_instances(c: Context):
     conn = util_get_connection(c)
     nodes = conn.list_nodes()
     print(nodes, file=sys.stderr)
     return nodes
 
 @task
-def aws_list_sizes(c: Connection):
+@Context.wrap_context
+def aws_list_sizes(c: Context):
     """ List node sizes - Ex: (cmd)"""
     conn = util_get_connection(c)
     sizes = sorted([i for i in conn.list_sizes()], key=lambda x: x.ram)
@@ -75,7 +78,8 @@ def aws_list_sizes(c: Connection):
         print(' - '.join([i.id, str(i.ram), str(i.price)]), file=sys.stderr)
 
 @task
-def aws_get_size(c: Connection, size: str) -> object | None:
+@Context.wrap_context
+def aws_get_size(c: Context, size: str) -> object | None:
     """ Get Node Size - Ex: (cmd:<size>)"""
     conn = util_get_connection(c)
     sizes = [i for i in conn.list_sizes()]
@@ -87,7 +91,8 @@ def aws_get_size(c: Connection, size: str) -> object | None:
     return None
 
 @task
-def aws_list_images(c: Connection):
+@Context.wrap_context
+def aws_list_images(c: Context):
     """ List available images - Ex: (cmd)"""
     conn = util_get_connection(c)
     images = sorted([i for i in conn.list_images()], key=lambda x: x.id)
@@ -95,7 +100,8 @@ def aws_list_images(c: Connection):
         print(' - '.join([i.id, i.name]), file=sys.stderr)
 
 @task
-def aws_get_image(c: Connection, name: str) -> object | None:
+@Context.wrap_context
+def aws_get_image(c: Context, name: str) -> object | None:
     """ Confirm if a node exists - Ex: (cmd:<image>)"""
     conn = util_get_connection(c)
     images = [i for i in conn.list_images()]
@@ -107,7 +113,8 @@ def aws_get_image(c: Connection, name: str) -> object | None:
     return None
 
 @task
-def aws_list_locations(c: Connection):
+@Context.wrap_context
+def aws_list_locations(c: Context):
     """ List available locations - Ex: (cmd) """
     conn = util_get_connection(c)
     locations = sorted([i for i in conn.list_locations()], key=lambda x: x.id)
@@ -115,7 +122,8 @@ def aws_list_locations(c: Connection):
         print(' - '.join([getattr(i, "availability_zone", type('', (), {"name": ""})()).name, i.id, i.name, i.country]), file=sys.stderr)
 
 @task
-def aws_get_location(c: Connection, name: str) -> object | None:
+@Context.wrap_context
+def aws_get_location(c: Context, name: str) -> object | None:
     """ Confirm if a location exists - Ex: (cmd:<location>)"""
     conn = util_get_connection(c)
     locations = sorted([i for i in conn.list_locations()], key=lambda x: x.id)
@@ -127,7 +135,8 @@ def aws_get_location(c: Connection, name: str) -> object | None:
     return None
 
 @task
-def aws_list_security_groups(c: Connection):
+@Context.wrap_context
+def aws_list_security_groups(c: Context):
     """ List available security groups - Ex: (cmd)"""
     conn = util_get_connection(c)
     groups = sorted([i for i in conn.ex_list_security_groups()])
@@ -135,7 +144,8 @@ def aws_list_security_groups(c: Connection):
         print(i, file=sys.stderr)
 
 @task
-def aws_security_group_found(c: Connection, name: str) -> bool:
+@Context.wrap_context
+def aws_security_group_found(c: Context, name: str) -> bool:
     """ Confirm if a security group exists - Ex: (cmd:<name>) """
     conn = util_get_connection(c)
     groups = sorted([i for i in conn.ex_list_security_groups()])
@@ -147,7 +157,8 @@ def aws_security_group_found(c: Connection, name: str) -> bool:
     return False
 
 @task
-def aws_list_keypairs(c: Connection):
+@Context.wrap_context
+def aws_list_keypairs(c: Context):
     """ List all available keypairs - Ex: (cmd)"""
     conn = util_get_connection(c)
     nodes = sorted([i for i in conn.ex_describe_all_keypairs()])
@@ -155,7 +166,8 @@ def aws_list_keypairs(c: Connection):
         print(i, file=sys.stderr)
 
 @task
-def aws_keypair_found(c: Connection, name: str) -> bool:
+@Context.wrap_context
+def aws_keypair_found(c: Context, name: str) -> bool:
     """ Confirm if a keypair exists - Ex: (cmd:<name>) """
     conn = util_get_connection(c)
     keys = sorted([i for i in conn.ex_describe_all_keypairs()])
@@ -166,7 +178,8 @@ def aws_keypair_found(c: Connection, name: str) -> bool:
     return False
 
 @task
-def aws_list_nodes(c: Connection):
+@Context.wrap_context
+def aws_list_nodes(c: Context):
     """ List all available computing nodes - Ex: (cmd)"""
     conn = util_get_connection(c)
     nodes = sorted([i for i in conn.list_nodes()], key=lambda x: x.name)
@@ -174,7 +187,8 @@ def aws_list_nodes(c: Connection):
         util_print_node(i)
 
 @task
-def aws_get_node(c: Connection, name: str) -> Node | None:
+@Context.wrap_context
+def aws_get_node(c: Context, name: str) -> Node | None:
     """ Confirm if a computing node exists - Ex: (cmd:<name>) """
     conn = util_get_connection(c)
     nodes = sorted([i for i in conn.list_nodes()], key=lambda x: x.name)
@@ -185,8 +199,9 @@ def aws_get_node(c: Connection, name: str) -> Node | None:
     return None
 
 @task
+@Context.wrap_context
 def aws_create_node(
-    c: Connection,
+    c: Context,
     name: str,
     image: str,
     size: str,
@@ -223,7 +238,8 @@ def aws_create_node(
     return node
 
 @task
-def aws_destroy_node(c: Connection, name: str, timeout: int = 30) -> None:
+@Context.wrap_context
+def aws_destroy_node(c: Context, name: str, timeout: int = 30) -> None:
     """ Destroy a computing node - Ex (cmd:<name>)"""
     node = aws_get_node(c, name)
     if not node:
@@ -239,7 +255,8 @@ def aws_destroy_node(c: Connection, name: str, timeout: int = 30) -> None:
         c.abort(f'Failed to destroy node ({name})')
 
 @task
-def aws_create_volume(c: Connection, name: str, size: int, location: str, snapshot: str = None) -> object:
+@Context.wrap_context
+def aws_create_volume(c: Context, name: str, size: int, location: str, snapshot: str = None) -> object:
     """ Create a volume of a given size in a given zone - Ex: (cmd:<name>,<size>,[location],[snapshot])"""
     conn = util_get_connection(c)
     loc = aws_get_location(c, location)
@@ -250,7 +267,8 @@ def aws_create_volume(c: Connection, name: str, size: int, location: str, snapsh
     return volume
 
 @task
-def aws_list_volumes(c: Connection) -> None:
+@Context.wrap_context
+def aws_list_volumes(c: Context) -> None:
     from boto.ec2.connection import EC2Connection
     from boto.utils import get_instance_metadata
     try:

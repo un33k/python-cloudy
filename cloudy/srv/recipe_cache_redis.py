@@ -1,11 +1,13 @@
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys import redis
 from cloudy.util.conf import CloudyConfig
 from cloudy.sys import firewall
 from cloudy.srv import recipe_generic_server
 
 @task
-def setup_redis(c: Connection, generic: bool = True) -> None:
+@Context.wrap_context
+def setup_redis(c: Context, generic: bool = True) -> None:
     """
     Setup a cache server - Ex: (cmd:[cfg-file])
     """

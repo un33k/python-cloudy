@@ -1,31 +1,36 @@
 import os
 import time
 from typing import Optional
-from fabric import Connection, task
-
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 
 @task
-def sys_log_error(c: Connection, msg: str, exc: Exception) -> None:
+@Context.wrap_context
+def sys_log_error(c: Context, msg: str, exc: Exception) -> None:
     print(f"{msg}: {exc}")
 
 @task
-def sys_start_service(c: Connection, service: str) -> None:
+@Context.wrap_context
+def sys_start_service(c: Context, service: str) -> None:
     """Start a systemd service."""
     c.sudo(f'systemctl start {service}')
 
 @task
-def sys_stop_service(c: Connection, service: str) -> None:
+@Context.wrap_context
+def sys_stop_service(c: Context, service: str) -> None:
     """Stop a systemd service."""
     c.sudo(f'systemctl stop {service}')
 
 @task
-def sys_reload_service(c: Connection, service: str) -> None:
+@Context.wrap_context
+def sys_reload_service(c: Context, service: str) -> None:
     """Reload a systemd service."""
     c.sudo(f'systemctl reload {service}')
 
 @task
-def sys_restart_service(c: Connection, service: str) -> None:
+@Context.wrap_context
+def sys_restart_service(c: Context, service: str) -> None:
     """Restart a systemd service safely."""
     c.sudo(f'systemctl stop {service}', warn=True)
     time.sleep(2)
@@ -33,18 +38,23 @@ def sys_restart_service(c: Connection, service: str) -> None:
     time.sleep(2)
 
 @task
-def sys_init(c: Connection) -> None:
+@Context.wrap_context
+def sys_init(c: Context) -> None:
     """Remove needrestart package if present (to avoid unnecessary restarts)."""
-    c.sudo('apt remove -y needrestart', warn=True)
+    c.sudo('apt remove -y needrestart', warn=False)
+    c.sudo('apt autoremove -y', warn=False)
 
 @task
-def sys_update(c: Connection) -> None:
+@Context.wrap_context
+def sys_update(c: Context) -> None:
     """Update package repositories."""
     c.sudo('apt -y update')
+    c.sudo('apt list --upgradable', warn=True)
     sys_etc_git_commit(c, 'Updated package repositories')
 
 @task
-def sys_upgrade(c: Connection) -> None:
+@Context.wrap_context
+def sys_upgrade(c: Context) -> None:
     """Perform a full system upgrade and reboot."""
     c.sudo('apt install -y aptitude')
     c.sudo('apt update')
@@ -53,7 +63,8 @@ def sys_upgrade(c: Connection) -> None:
     c.sudo('shutdown -r now')
 
 @task
-def sys_safe_upgrade(c: Connection) -> None:
+@Context.wrap_context
+def sys_safe_upgrade(c: Context) -> None:
     """Perform a safe system upgrade and reboot."""
     c.sudo('apt install -y aptitude')
     c.sudo('apt upgrade -y')
@@ -62,23 +73,26 @@ def sys_safe_upgrade(c: Connection) -> None:
     c.sudo('shutdown -r now')
 
 @task
-def sys_git_install(c: Connection) -> None:
+@Context.wrap_context
+def sys_git_install(c: Context) -> None:
     """Install the latest version of git."""
     c.sudo('apt update')
     c.sudo('apt -y install git')
 
 @task
-def sys_install_common(c: Connection) -> None:
+@Context.wrap_context
+def sys_install_common(c: Context) -> None:
     """Install a set of common system utilities."""
     requirements = [
         'build-essential', 'gcc', 'subversion', 'mercurial', 'wget', 'vim', 'less', 'sudo',
         'redis-tools', 'curl', 'apt-transport-https', 'ca-certificates',
-        'software-properties-common', 'net-tools', 'ntp'
+        'software-properties-common', 'net-tools', 'ntpsec'
     ]
     c.sudo(f'apt -y install {" ".join(requirements)}')
 
 @task
-def sys_git_configure(c: Connection, user: str, name: str, email: str) -> None:
+@Context.wrap_context
+def sys_git_configure(c: Context, user: str, name: str, email: str) -> None:
     """Configure git for a given user."""
     c.sudo('apt install -y git-core')
     c.sudo(f'sudo -u {user} git config --global user.name "{name}"', warn=True)
@@ -86,7 +100,8 @@ def sys_git_configure(c: Connection, user: str, name: str, email: str) -> None:
     sys_etc_git_commit(c, f'Configured git for user: {user}')
 
 @task
-def sys_add_hosts(c: Connection, host: str, ip: str) -> None:
+@Context.wrap_context
+def sys_add_hosts(c: Context, host: str, ip: str) -> None:
     """Add or update an entry in /etc/hosts."""
     host_file = '/etc/hosts'
     c.sudo(f"sed -i '/\\s*{host}\\s*.*/d' {host_file}")
@@ -94,51 +109,60 @@ def sys_add_hosts(c: Connection, host: str, ip: str) -> None:
     sys_etc_git_commit(c, f'Added host:{host}, ip:{ip} to: {host_file}')
 
 @task
-def sys_hostname_configure(c: Connection, hostname: str) -> None:
+@Context.wrap_context
+def sys_hostname_configure(c: Context, hostname: str) -> None:
     """Configure the system hostname."""
     c.sudo(f'echo "{hostname}" > /etc/hostname')
     c.sudo('hostname -F /etc/hostname')
     sys_etc_git_commit(c, f'Configured hostname to: {hostname}')
 
 @task
-def sys_locale_configure(c: Connection, locale: str = 'en_US.UTF-8') -> None:
+@Context.wrap_context
+def sys_locale_configure(c: Context, locale: str = 'en_US.UTF-8') -> None:
     """Configure the system locale."""
     c.sudo('DEBIAN_FRONTEND=noninteractive dpkg-reconfigure locales')
     c.sudo(f'update-locale LANG={locale}')
 
 @task
-def sys_uname(c: Connection) -> None:
+@Context.wrap_context
+def sys_uname(c: Context) -> None:
     """Display remote system information."""
     c.run('uname -a')
 
 @task
-def sys_show_process_by_memory_usage(c: Connection) -> None:
+@Context.wrap_context
+def sys_show_process_by_memory_usage(c: Context) -> None:
     """List processes by memory usage."""
     c.run('ps -eo pmem,pcpu,rss,vsize,args | sort -k 1 -r')
 
 @task
-def sys_show_disk_io(c: Connection) -> None:
+@Context.wrap_context
+def sys_show_disk_io(c: Context) -> None:
     """List disk I/O statistics."""
     c.run('iostat -d -x 2 5')
 
 @task
-def sys_shutdown(c: Connection, restart: bool = True) -> None:
+@Context.wrap_context
+def sys_shutdown(c: Context, restart: bool = True) -> None:
     """Shutdown or restart the host."""
     c.sudo('shutdown -r now' if restart else 'shutdown now')
 
 @task
-def sys_add_default_startup(c: Connection, program: str) -> None:
+@Context.wrap_context
+def sys_add_default_startup(c: Context, program: str) -> None:
     """Enable a program to start at system boot."""
     c.sudo(f'systemctl enable {program}')
 
 @task
-def sys_remove_default_startup(c: Connection, program: str) -> None:
+@Context.wrap_context
+def sys_remove_default_startup(c: Context, program: str) -> None:
     """Disable a program from starting at system boot."""
     c.sudo(f'systemctl stop {program}', warn=True)
     c.sudo(f'systemctl disable {program}')
 
 @task
-def sys_mkdir(c: Connection, path: str = '', owner: str = '', group: str = '') -> Optional[str]:
+@Context.wrap_context
+def sys_mkdir(c: Context, path: str = '', owner: str = '', group: str = '') -> Optional[str]:
     """Create a directory and optionally set owner/group."""
     if not path:
         return None
@@ -154,7 +178,8 @@ def sys_mkdir(c: Connection, path: str = '', owner: str = '', group: str = '') -
         return None
 
 @task
-def sys_hold_package(c: Connection, package: str) -> None:
+@Context.wrap_context
+def sys_hold_package(c: Context, package: str) -> None:
     """Prevent a package from being updated (hold the version)."""
     try:
         c.sudo(f'apt-mark hold {package}')
@@ -162,7 +187,8 @@ def sys_hold_package(c: Connection, package: str) -> None:
         sys_log_error(c, f"Failed to hold package {package}", e)
 
 @task
-def sys_unhold_package(c: Connection, package: str) -> None:
+@Context.wrap_context
+def sys_unhold_package(c: Context, package: str) -> None:
     """Remove a package from being held at a version."""
     try:
         c.sudo(f'apt-mark unhold {package}')
@@ -170,18 +196,25 @@ def sys_unhold_package(c: Connection, package: str) -> None:
         sys_log_error(c, f"Failed to unhold package {package}", e)
 
 @task
-def sys_set_ipv4_precedence(c: Connection)  -> None:
+@Context.wrap_context
+def sys_set_ipv4_precedence(c: Context) -> None:
     """Set IPv4 to take precedence for sites that prefer it."""
     get_address_info_config = '/etc/gai.conf'
-    pattern_before = r'\s*#\s*precedence\s*::ffff:0:0/96\s*100'
+    # Use POSIX character class [[:space:]] instead of \s, and use # delimiter in sed.
+    pattern_before = r'^[ \t]*#[ \t]*precedence[ \t]*::ffff:0:0/96[ \t]*100'
     pattern_after = 'precedence ::ffff:0:0/96 100'
     try:
-        c.sudo(f"sed -i 's/{pattern_before}/{pattern_after}/' {get_address_info_config}")
+        # Use | delimiter in sed to avoid conflicts with # in the pattern
+        sed_command = (
+            f"sed -i \"s|{pattern_before}|{pattern_after}|\" {get_address_info_config}"
+        )
+        c.sudo(sed_command)
     except Exception as e:
         sys_log_error(c, "Failed to set IPv4 precedence", e)
 
 @task
-def run_command(c: Connection, cmd: str, use_sudo: bool = False) -> Optional[str]:
+@Context.wrap_context
+def run_command(c: Context, cmd: str, use_sudo: bool = False) -> Optional[str]:
     """Run a shell command, optionally with sudo, and handle errors."""
     try:
         result = c.sudo(cmd) if use_sudo else c.run(cmd)

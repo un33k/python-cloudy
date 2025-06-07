@@ -1,10 +1,12 @@
 import os
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.sys.core import sys_mkdir, sys_restart_service
 
 @task
-def sys_docker_install(c: Connection) -> None:
+@Context.wrap_context
+def sys_docker_install(c: Context) -> None:
     """Install Docker CE on Ubuntu."""
     url = "https://download.docker.com/linux/ubuntu"
     c.sudo(f'curl -fsSL {url}/gpg | apt-key add -')
@@ -16,7 +18,8 @@ def sys_docker_install(c: Connection) -> None:
 
 
 @task
-def sys_docker_config(c: Connection) -> None:
+@Context.wrap_context
+def sys_docker_config(c: Context) -> None:
     """Configure Docker daemon and create /docker directory."""
     cfgdir = os.path.join(os.path.dirname(__file__), '../cfg')
     localcfg = os.path.expanduser(os.path.join(cfgdir, 'docker/daemon.json'))
@@ -29,7 +32,8 @@ def sys_docker_config(c: Connection) -> None:
 
 
 @task
-def sys_docker_user_group(c: Connection, username: str) -> None:
+@Context.wrap_context
+def sys_docker_user_group(c: Context, username: str) -> None:
     """Add a user to the docker group."""
     # Try to create the group, ignore error if it exists
     c.sudo('groupadd docker', warn=True)

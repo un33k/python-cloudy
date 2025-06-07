@@ -1,9 +1,11 @@
 import os
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 
 @task
-def web_geoip_install_requirements(c: Connection):
+@Context.wrap_context
+def web_geoip_install_requirements(c: Context):
     """Install GeoIP build requirements."""
     requirements = [
         'zlibc',
@@ -16,7 +18,8 @@ def web_geoip_install_requirements(c: Connection):
     sys_etc_git_commit(c, 'Installed GeoIP requirements')
 
 @task
-def web_geoip_install_maxmind_api(c: Connection):
+@Context.wrap_context
+def web_geoip_install_maxmind_api(c: Context):
     """Install Maxmind C API."""
     tmp_dir = '/tmp/maxmind'
     geoip_url = 'http://www.maxmind.com/download/geoip/api/c/GeoIP.tar.gz'
@@ -32,7 +35,8 @@ def web_geoip_install_maxmind_api(c: Connection):
     sys_etc_git_commit(c, 'Installed Maxmind C API')
 
 @task
-def web_geoip_install_maxmind_country(c: Connection, dest_dir='/srv/www/shared/geoip'):
+@Context.wrap_context
+def web_geoip_install_maxmind_country(c: Context, dest_dir='/srv/www/shared/geoip'):
     """Install Maxmind Country Lite database."""
     tmp_dir = '/tmp/maxmind'
     geo_country_url = 'http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/GeoIP.dat.gz'
@@ -46,7 +50,8 @@ def web_geoip_install_maxmind_country(c: Connection, dest_dir='/srv/www/shared/g
         c.sudo(f'chmod -R g+wrx {dest_dir}')
 
 @task
-def web_geoip_install_maxmind_city(c: Connection, dest_dir='/srv/www/shared/geoip'):
+@Context.wrap_context
+def web_geoip_install_maxmind_city(c: Context, dest_dir='/srv/www/shared/geoip'):
     """Install Maxmind City Lite database."""
     tmp_dir = '/tmp/maxmind'
     geo_city_url = 'http://geolite.maxmind.com/download/geoip/database/GeoLiteCity.dat.gz'

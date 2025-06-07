@@ -1,18 +1,21 @@
 import os
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 
 
 @task
-def db_pgbouncer_install(c: Connection) -> None:
+@Context.wrap_context
+def db_pgbouncer_install(c: Context) -> None:
     """Install pgbouncer."""
     c.sudo('apt -y install pgbouncer')
     sys_etc_git_commit(c, 'Installed pgbouncer')
 
 
 @task
+@Context.wrap_context
 def db_pgbouncer_configure(
-    c: Connection, dbhost: str = '', dbport: int = 5432
+    c: Context, dbhost: str = '', dbport: int = 5432
 ) -> None:
     """Configure pgbouncer with given dbhost and dbport."""
     cfgdir = os.path.join(os.path.dirname(__file__), '../cfg')
@@ -32,8 +35,9 @@ def db_pgbouncer_configure(
 
 
 @task
+@Context.wrap_context
 def db_pgbouncer_set_user_password(
-    c: Connection, user: str, password: str
+    c: Context, user: str, password: str
 ) -> None:
     """Add user:pass to auth_user in pgbouncer userlist.txt."""
     userlist = '/etc/pgbouncer/userlist.txt'

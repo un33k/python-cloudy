@@ -1,8 +1,10 @@
-from fabric import Connection, task
+from fabric import task
+from cloudy.util.context import Context
 from cloudy.sys.etc import sys_etc_git_commit
 
 @task
-def sys_set_default_editor(c: Connection, default: int = 3) -> None:
+@Context.wrap_context
+def sys_set_default_editor(c: Context, default: int = 3) -> None:
     """
     Set the default editor using update-alternatives.
     :param default: The selection number for the editor (as shown by update-alternatives --config editor).
