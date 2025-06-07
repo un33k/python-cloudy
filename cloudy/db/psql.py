@@ -5,7 +5,7 @@ import datetime
 from typing import Optional
 from fabric import Connection, task
 from cloudy.sys.etc import sys_etc_git_commit
-from cloudy.util.common import sys_start_service
+from cloudy.sys.core import sys_start_service
 
 
 @task

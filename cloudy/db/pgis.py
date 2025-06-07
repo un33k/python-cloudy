@@ -4,7 +4,7 @@ from operator import itemgetter
 from fabric import Connection, task
 from cloudy.db.psql import db_psql_default_installed_version
 from cloudy.sys.etc import sys_etc_git_commit
-from cloudy.util.common import sys_start_service
+from cloudy.sys.core import sys_start_service
 
 @task
 def db_pgis_install(c: Connection, psql_version: str = '', pgis_version: str = '') -> None:
