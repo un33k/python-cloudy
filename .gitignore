@@ -62,3 +62,5 @@ cfg.txt
 
 # virtual environment
 .venv/
+
+.cloudy

@@ -15,12 +15,12 @@ from cloudy.sys import python
 from cloudy.srv import recipe_generic_server
 
 @task
-def srv_setup_sta(c: Connection) -> None:
+def setup_standalone(c: Connection) -> None:
     """Setup a standalone database/web/loadbalancer server - Ex: (cmd:[cfg-file])"""
     cfg = CloudyConfig()
 
     # ====== Generic Server =========
-    recipe_generic_server.srv_setup_generic_server(c)
+    recipe_generic_server.setup_server(c)
 
     # ====== Database Server =========
     dbaddress = cfg.get_variable('dbserver', 'listen-address')

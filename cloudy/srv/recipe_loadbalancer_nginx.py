@@ -5,14 +5,14 @@ from cloudy.util.conf import CloudyConfig
 from cloudy.srv import recipe_generic_server
 
 @task
-def srv_setup_lb(c: Connection, generic=True):
+def setup_lb(c: Connection, generic=True):
     """
     Setup a loadbalancer - Ex: (cmd:[cfg-file])
     """
     cfg = CloudyConfig()
 
     if generic:
-        recipe_generic_server.srv_setup_generic_server(c)
+        recipe_generic_server.setup_server(c)
 
     firewall.fw_allow_incoming_http(c)
     firewall.fw_allow_incoming_https(c)

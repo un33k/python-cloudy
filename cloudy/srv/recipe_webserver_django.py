@@ -15,7 +15,7 @@ from cloudy.web.www import web_create_data_directory
 from cloudy.db.psql import db_psql_install
 from cloudy.db.pgis import db_pgis_install
 from cloudy.util.conf import CloudyConfig
-from cloudy.srv.recipe_generic_server import srv_setup_generic_server
+from cloudy.srv.recipe_generic_server import setup_server
 
 @task
 def srv_setup_web(c: Connection, generic=True):
@@ -23,7 +23,7 @@ def srv_setup_web(c: Connection, generic=True):
     cfg = CloudyConfig()
 
     if generic:
-        srv_setup_generic_server(c)
+        setup_server(c)
 
     # hostname, ips
     hostname = cfg.get_variable('common', 'hostname')

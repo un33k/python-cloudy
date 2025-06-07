@@ -6,7 +6,7 @@ from fabric import Connection, task
 from cloudy.sys.etc import sys_etc_git_commit
 
 @task
-def sys_log_error(msg: str, exc: Exception) -> None:
+def sys_log_error(c: Connection, msg: str, exc: Exception) -> None:
     print(f"{msg}: {exc}")
 
 @task
@@ -150,7 +150,7 @@ def sys_mkdir(c: Connection, path: str = '', owner: str = '', group: str = '') -
             c.sudo(f'chown {chown_str} "{path}"')
         return path
     except Exception as e:
-        sys_log_error(f"Failed to create directory {path}", e)
+        sys_log_error(c, f"Failed to create directory {path}", e)
         return None
 
 @task
@@ -159,7 +159,7 @@ def sys_hold_package(c: Connection, package: str) -> None:
     try:
         c.sudo(f'apt-mark hold {package}')
     except Exception as e:
-        sys_log_error(f"Failed to hold package {package}", e)
+        sys_log_error(c, f"Failed to hold package {package}", e)
 
 @task
 def sys_unhold_package(c: Connection, package: str) -> None:
@@ -167,10 +167,10 @@ def sys_unhold_package(c: Connection, package: str) -> None:
     try:
         c.sudo(f'apt-mark unhold {package}')
     except Exception as e:
-        sys_log_error(f"Failed to unhold package {package}", e)
+        sys_log_error(c, f"Failed to unhold package {package}", e)
 
 @task
-def sys_set_ipv4_precedence(c: Connection) -> None:
+def sys_set_ipv4_precedence(c: Connection)  -> None:
     """Set IPv4 to take precedence for sites that prefer it."""
     get_address_info_config = '/etc/gai.conf'
     pattern_before = r'\s*#\s*precedence\s*::ffff:0:0/96\s*100'
@@ -178,7 +178,7 @@ def sys_set_ipv4_precedence(c: Connection) -> None:
     try:
         c.sudo(f"sed -i 's/{pattern_before}/{pattern_after}/' {get_address_info_config}")
     except Exception as e:
-        sys_log_error("Failed to set IPv4 precedence", e)
+        sys_log_error(c, "Failed to set IPv4 precedence", e)
 
 @task
 def run_command(c: Connection, cmd: str, use_sudo: bool = False) -> Optional[str]:
@@ -187,7 +187,7 @@ def run_command(c: Connection, cmd: str, use_sudo: bool = False) -> Optional[str
         result = c.sudo(cmd) if use_sudo else c.run(cmd)
         return result.stdout if hasattr(result, 'stdout') else str(result)
     except Exception as e:
-        sys_log_error(f"Command failed: {cmd}", e)
+        sys_log_error(c, f"Command failed: {cmd}", e)
         return None
 
 

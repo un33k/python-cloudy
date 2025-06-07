@@ -8,14 +8,14 @@ from cloudy.util.conf import CloudyConfig
 from cloudy.srv import recipe_generic_server
 
 @task
-def srv_setup_db(c: Connection, generic=True):
+def setup_db(c: Connection, generic=True):
     """
     Setup a database - Ex: (cmd:[cfg-file])
     """
     cfg = CloudyConfig()
 
     if generic:
-        recipe_generic_server.srv_setup_generic_server(c)
+        recipe_generic_server.setup_server(c)
 
     dbaddress = cfg.get_variable('dbserver', 'listen-address')
     if dbaddress and '*' not in dbaddress:

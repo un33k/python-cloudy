@@ -5,7 +5,7 @@ from cloudy.sys import core, timezone, swap, postfix, vim, ssh, firewall, user
 from cloudy.util.conf import CloudyConfig
 
 @task
-def srv_setup_generic_server(c: Connection) -> None:
+def setup_server(c: Connection) -> None:
     """
     Setup a generic server with the required packages - Ex: (cmd:[cfg-file])
     """

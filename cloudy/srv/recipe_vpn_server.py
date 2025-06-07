@@ -7,14 +7,14 @@ from cloudy.srv import recipe_generic_server
 from cloudy.sys import core
 
 @task
-def srv_setup_openvpn(c: Connection, generic=True):
+def setup_openvpn(c: Connection, generic=True):
     """
     Setup a VPN server(s) - Ex: (cmd:[cfg-file])
     """
     cfg = CloudyConfig()
 
     if generic:
-        recipe_generic_server.srv_setup_generic_server(c)
+        recipe_generic_server.setup_server(c)
 
     # Install and configure Docker for OpenVPN
     admin_user = cfg.get_variable('common', 'admin-user')

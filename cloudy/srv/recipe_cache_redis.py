@@ -5,14 +5,14 @@ from cloudy.sys import firewall
 from cloudy.srv import recipe_generic_server
 
 @task
-def srv_setup_cache_redis(c: Connection, generic: bool = True) -> None:
+def setup_redis(c: Connection, generic: bool = True) -> None:
     """
     Setup a cache server - Ex: (cmd:[cfg-file])
     """
     cfg = CloudyConfig()
 
     if generic:
-        recipe_generic_server.srv_setup_generic_server(c)
+        recipe_generic_server.setup_server(c)
 
     redis_address: str = cfg.get_variable('CACHESERVER', 'redis-address', '0.0.0.0')
     redis_port: str = cfg.get_variable('CACHESERVER', 'redis-port', '6379')

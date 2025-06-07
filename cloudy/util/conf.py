@@ -12,7 +12,49 @@ class CloudyConfig:
     CloudyConfig loads and manages configuration from multiple files.
     The last file in the list has the highest precedence.
     """
-    def __init__(self, filenames: Any = '~/.cloudy', log_level: int = logging.WARNING) -> None:
+    def __init__(self, filenames: Any = None, log_level: int = logging.WARNING) -> None:
+        self.log = logging.getLogger(os.path.basename(__file__))
+        self.log.setLevel(log_level)
+        self.cfg = configparser.ConfigParser()
+        self.cfg_grid: Dict[str, Dict[str, Optional[str]]] = {}
+
+        # Prepare config file paths
+        paths: list[str] = []
+
+        # 1. Config file in current directory
+        cwd_path = os.path.abspath('./.cloudy')
+        if os.path.exists(cwd_path):
+            paths.append(cwd_path)
+
+        # 2. Config file in home directory
+        home_path = os.path.expanduser('~/.cloudy')
+        if os.path.exists(home_path):
+            paths.append(home_path)
+
+        # 3. Explicitly passed config file(s)
+        if filenames:
+            if isinstance(filenames, str):
+                filenames = [filenames]
+            for f in filenames:
+                p = os.path.expanduser(f)
+                if os.path.exists(p) and p not in paths:
+                    paths.append(p)
+
+        # 4. Defaults file (lowest precedence)
+        defaults_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../cfg/defaults.cfg"))
+        if os.path.exists(defaults_path):
+            paths.insert(0, defaults_path)
+
+        # Read all valid config files
+        try:
+            self.cfg.read(paths)
+        except Exception as e:
+            self.log.error(f"Unable to open config file(s): {e}")
+        else:
+            for section in self.cfg.sections():
+                self.cfg_grid[section.upper()] = self._section_map(section)
+
+    def s__init__(self, filenames: Any = '~/.cloudy', log_level: int = logging.WARNING) -> None:
         self.log = logging.getLogger(os.path.basename(__file__))
         self.log.setLevel(log_level)
         self.cfg = configparser.ConfigParser()
