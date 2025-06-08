@@ -17,7 +17,7 @@ def setup_db(c: Context, generic=True):
     cfg = CloudyConfig()
 
     if generic:
-        recipe_generic_server.setup_server(c)
+        c = recipe_generic_server.setup_server(c)
 
     dbaddress = cfg.get_variable('dbserver', 'listen-address')
     if dbaddress and '*' not in dbaddress:

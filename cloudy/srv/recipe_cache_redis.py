@@ -14,7 +14,7 @@ def setup_redis(c: Context, generic: bool = True) -> None:
     cfg = CloudyConfig()
 
     if generic:
-        recipe_generic_server.setup_server(c)
+        c = recipe_generic_server.setup_server(c)
 
     redis_address: str = cfg.get_variable('CACHESERVER', 'redis-address', '0.0.0.0')
     redis_port: str = cfg.get_variable('CACHESERVER', 'redis-port', '6379')

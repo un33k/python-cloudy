@@ -14,7 +14,7 @@ def setup_lb(c: Context, generic=True):
     cfg = CloudyConfig()
 
     if generic:
-        recipe_generic_server.setup_server(c)
+        c = recipe_generic_server.setup_server(c)
 
     firewall.fw_allow_incoming_http(c)
     firewall.fw_allow_incoming_https(c)

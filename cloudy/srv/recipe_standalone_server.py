@@ -22,7 +22,7 @@ def setup_standalone(c: Context) -> None:
     cfg = CloudyConfig()
 
     # ====== Generic Server =========
-    recipe_generic_server.setup_server(c)
+    c = recipe_generic_server.setup_server(c)
 
     # ====== Database Server =========
     dbaddress = cfg.get_variable('dbserver', 'listen-address')

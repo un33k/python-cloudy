@@ -7,7 +7,7 @@ from cloudy.util.conf import CloudyConfig
 
 @task
 @Context.wrap_context
-def setup_server(c: Context) -> None:
+def setup_server(c: Context) -> 'Context':
     """
     Setup a generic server with the required packages - Ex: (cmd:[cfg-file])
     """
@@ -98,8 +98,4 @@ def setup_server(c: Context) -> None:
         if os.path.exists(pub_key) and admin_user:
             ssh.sys_ssh_push_public_key(c, admin_user, pub_key)
 
-
-
-
-
-
+    return c
