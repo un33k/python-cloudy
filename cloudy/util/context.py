@@ -1,5 +1,6 @@
 import logging
 import sys
+from colorama import Fore, Style
 from functools import wraps
 from fabric import Connection
 from typing import Callable, Optional, Dict, Any
@@ -14,13 +15,13 @@ logger.propagate = False
 
 class Context(Connection):
     def run(self, command, *args, **kwargs):
-        print(f"\n### {command}\n-----------", flush=True) # replaces logger to ensure immediate output
+        print(f"\n{Fore.CYAN}### {command}\n-----------{Style.RESET_ALL}", flush=True)
         kwargs.setdefault("hide", False)
         kwargs.setdefault("pty", True)
         return super().run(command, *args, **kwargs)
 
     def sudo(self, command, *args, **kwargs):
-        print(f"\n### {command}\n-----------", flush=True)
+        print(f"\n{Fore.YELLOW}### {command}\n-----------{Style.RESET_ALL}", flush=True)
         kwargs.setdefault("hide", False)
         kwargs.setdefault("pty", True)
         return super().sudo(command, *args, **kwargs)

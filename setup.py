@@ -14,6 +14,7 @@ author_email = 'info@neekware.com'
 license = 'BSD'
 install_requires = [
     'fabric>=3.2.2',
+    'colorama>=0.4.6',
     'apache-libcloud>=3.8.0',
     's3cmd>=2.4.0'
 ]
