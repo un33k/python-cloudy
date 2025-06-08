@@ -33,7 +33,7 @@ domain-name             = simplyfound.com
 geo-ip                  = YES
 
 [DBSERVER]
-pg-version              = 9.6
+pg-version              = 17
 pgis-version            = 2.2
 db-host                 = db-host
 db-port                 = 5432
