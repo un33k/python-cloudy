@@ -79,11 +79,14 @@ def setup_server(c: Context) -> None:
     ssh_port = cfg.get_variable('common', 'ssh-port', '22')
     if ssh_port:
         ssh.sys_ssh_set_port(c, ssh_port)
+        c = c.reconnect(new_port=ssh_port)
         firewall.fw_secure_server(c, ssh_port)
+        c = c.reconnect(new_port=ssh_port)
 
     disable_root = cfg.get_variable('common', 'ssh-disable-root')
-    if disable_root and disable_root.upper() == 'YES':
+    if auto_user and disable_root and disable_root.upper() == 'YES':
         ssh.sys_ssh_disable_root_login(c)
+        c = c.reconnect(new_port=ssh_port, new_user=auto_user)
 
     enable_password = cfg.get_variable('common', 'ssh-enable-password')
     if enable_password and enable_password.upper() == 'YES':

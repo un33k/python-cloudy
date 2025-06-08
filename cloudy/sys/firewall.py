@@ -12,9 +12,21 @@ def fw_reload_ufw(c: Context) -> None:
 @Context.wrap_context
 def fw_install(c: Context) -> None:
     """Install UFW firewall."""
+    # Disable UFW first (ignore errors if not installed/enabled)
+    c.sudo('ufw --force disable', warn=True)
+    
+    # Remove UFW completely
+    c.sudo('apt remove --purge -y ufw')
+    
+    # Clean up any remaining configuration files
+    c.sudo('apt autoremove -y')
+    
+    # Install UFW fresh
+    c.sudo('apt update')
     c.sudo('apt -y install ufw')
+    
     sys_etc_git_commit(c, 'Installed firewall (ufw)')
-
+    
 @task
 @Context.wrap_context
 def fw_secure_server(c: Context, ssh_port: str = '22') -> None:
