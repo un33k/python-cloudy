@@ -9,9 +9,15 @@ from cloudy.util.conf import CloudyConfig
 @Context.wrap_context
 def setup_server(c: Context, cfg_file=None) -> 'Context':
     """
-    Setup a generic server with the required packages - Ex: (cmd:[cfg-file])
+    Setup server with config files
+    Ex: fab setup-server --cfg-file="./.cloudy.generic,./.cloudy.admin"
     """
-    cfg = CloudyConfig(cfg_file)
+    if cfg_file:
+        # Split comma-separated files and pass as list
+        cfg_files = [f.strip() for f in cfg_file.split(',')]
+        cfg = CloudyConfig(cfg_files)
+    else:
+        cfg = CloudyConfig()
     
     # git info
     core.sys_init(c)

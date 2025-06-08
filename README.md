@@ -35,6 +35,9 @@ Python Cloudy is a utility to simplify server cloud configuration and automation
   ```
   fab recipe-generic-server.setup-server --cfg-file=./.cloudy.generic
   ```
+  ```
+  fab -H root@10.10.10.198 recipe-generic-server.setup-server --cfg-file=./.cloudy.generic,./.cloudy.admin
+  ```
 - *(...etc.)*
 
 ---

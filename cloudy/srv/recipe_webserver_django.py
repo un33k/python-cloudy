@@ -15,10 +15,17 @@ from cloudy.srv import recipe_generic_server
 
 @task
 @Context.wrap_context
-def srv_setup_web(c: Context, cfg_file=None, generic=True):
-    """Setup a webserver database server - Ex: (cmd:[cfg-file])"""
-    
-    cfg = CloudyConfig(cfg_file)
+def setup_web(c: Context, cfg_file=None, generic=True):
+    """
+    Setup web server with config files
+    Ex: fab setup-web --cfg-file="./.cloudy.generic,./.cloudy.admin"
+    """
+    if cfg_file:
+        # Split comma-separated files and pass as list
+        cfg_files = [f.strip() for f in cfg_file.split(',')]
+        cfg = CloudyConfig(cfg_files)
+    else:
+        cfg = CloudyConfig()
 
     if generic:
         recipe_generic_server.setup_server(c)

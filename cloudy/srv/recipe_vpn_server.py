@@ -11,9 +11,15 @@ from cloudy.sys import core
 @Context.wrap_context
 def setup_openvpn(c: Context, cfg_file=None, generic=True):
     """
-    Setup a VPN server(s) - Ex: (cmd:[cfg-file])
+    Setup vpn server with config files
+    Ex: fab setup-openvpn --cfg-file="./.cloudy.generic,./.cloudy.admin"
     """
-    cfg = CloudyConfig(cfg_file)
+    if cfg_file:
+        # Split comma-separated files and pass as list
+        cfg_files = [f.strip() for f in cfg_file.split(',')]
+        cfg = CloudyConfig(cfg_files)
+    else:
+        cfg = CloudyConfig()
 
     if generic:
         c = recipe_generic_server.setup_server(c)
