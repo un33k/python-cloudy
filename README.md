@@ -32,6 +32,9 @@ Python Cloudy is a utility to simplify server cloud configuration and automation
   ```
   fab -H auto@10.10.10.198:22022 -i ~/.ssh/id_rsa.pub core.sys-uname
   ```
+  ```
+  fab recipe-generic-server.setup-server --cfg-file=./.cloudy.generic
+  ```
 - *(...etc.)*
 
 ---

@@ -10,11 +10,11 @@ from cloudy.srv import recipe_generic_server
 
 @task
 @Context.wrap_context
-def setup_db(c: Context, generic=True):
+def setup_db(c: Context, cfg_file=None, generic=True):
     """
     Setup a database - Ex: (cmd:[cfg-file])
     """
-    cfg = CloudyConfig()
+    cfg = CloudyConfig(cfg_file)
 
     if generic:
         c = recipe_generic_server.setup_server(c)

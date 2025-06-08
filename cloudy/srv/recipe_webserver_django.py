@@ -15,9 +15,10 @@ from cloudy.srv import recipe_generic_server
 
 @task
 @Context.wrap_context
-def srv_setup_web(c: Context, generic=True):
+def srv_setup_web(c: Context, cfg_file=None, generic=True):
     """Setup a webserver database server - Ex: (cmd:[cfg-file])"""
-    cfg = CloudyConfig()
+    
+    cfg = CloudyConfig(cfg_file)
 
     if generic:
         recipe_generic_server.setup_server(c)

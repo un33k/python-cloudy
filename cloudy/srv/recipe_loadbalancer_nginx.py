@@ -7,11 +7,11 @@ from cloudy.srv import recipe_generic_server
 
 @task
 @Context.wrap_context
-def setup_lb(c: Context, generic=True):
+def setup_lb(c: Context, cfg_file=None, generic=True):
     """
     Setup a loadbalancer - Ex: (cmd:[cfg-file])
     """
-    cfg = CloudyConfig()
+    cfg = CloudyConfig(cfg_file)
 
     if generic:
         c = recipe_generic_server.setup_server(c)

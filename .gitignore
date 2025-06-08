@@ -64,3 +64,4 @@ cfg.txt
 .venv/
 
 .cloudy
+.cloudy.*

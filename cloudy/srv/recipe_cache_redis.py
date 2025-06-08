@@ -7,14 +7,14 @@ from cloudy.srv import recipe_generic_server
 
 @task
 @Context.wrap_context
-def setup_redis(c: Context, generic: bool = True) -> None:
+def setup_redis(c: Context, cfg_file=None, generic: bool = True) -> None:
     """
     Setup a cache server - Ex: (cmd:[cfg-file])
     """
-    cfg = CloudyConfig()
+    cfg = CloudyConfig(cfg_file)
 
     if generic:
-        c = recipe_generic_server.setup_server(c)
+        recipe_generic_server.setup_server(c)
 
     redis_address: str = cfg.get_variable('CACHESERVER', 'redis-address', '0.0.0.0')
     redis_port: str = cfg.get_variable('CACHESERVER', 'redis-port', '6379')

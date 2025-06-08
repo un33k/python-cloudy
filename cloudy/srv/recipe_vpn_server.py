@@ -9,11 +9,11 @@ from cloudy.sys import core
 
 @task
 @Context.wrap_context
-def setup_openvpn(c: Context, generic=True):
+def setup_openvpn(c: Context, cfg_file=None, generic=True):
     """
     Setup a VPN server(s) - Ex: (cmd:[cfg-file])
     """
-    cfg = CloudyConfig()
+    cfg = CloudyConfig(cfg_file)
 
     if generic:
         c = recipe_generic_server.setup_server(c)

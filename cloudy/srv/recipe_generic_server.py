@@ -7,11 +7,11 @@ from cloudy.util.conf import CloudyConfig
 
 @task
 @Context.wrap_context
-def setup_server(c: Context) -> 'Context':
+def setup_server(c: Context, cfg_file=None) -> 'Context':
     """
     Setup a generic server with the required packages - Ex: (cmd:[cfg-file])
     """
-    cfg = CloudyConfig()
+    cfg = CloudyConfig(cfg_file)
     
     # git info
     core.sys_init(c)

@@ -17,9 +17,10 @@ from cloudy.srv import recipe_generic_server
 
 @task
 @Context.wrap_context
-def setup_standalone(c: Context) -> None:
+def setup_standalone(c: Context, cfg_file=None) -> None:
     """Setup a standalone database/web/loadbalancer server - Ex: (cmd:[cfg-file])"""
-    cfg = CloudyConfig()
+    
+    cfg = CloudyConfig(cfg_file)
 
     # ====== Generic Server =========
     c = recipe_generic_server.setup_server(c)
