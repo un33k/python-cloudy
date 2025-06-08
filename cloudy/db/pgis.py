@@ -15,23 +15,22 @@ def db_pgis_install(c: Context, psql_version: str = '', pgis_version: str = '') 
         psql_version = db_psql_default_installed_version(c)
     if not pgis_version:
         pgis_version = db_pgis_get_latest_version(c, psql_version)
-    libgeos_version = db_pgis_get_latest_libgeos_version(c)
+    
     requirements = ' '.join([
         f'postgresql-{psql_version}-postgis-{pgis_version}',
         'postgis',
         'libproj-dev',
         'gdal-bin',
         'binutils',
-        f'libgeos-{libgeos_version}',
+        'libgeos-c1v5',
         'libgeos-dev',
-        'libgdal1-dev',
-        'libgdal-dev',
+        'libgdal-dev', 
         'libgeoip-dev',
         'libpq-dev',
         'libxml2',
         'libxml2-dev',
         'libxml2-utils',
-        'libjson0-dev',
+        'libjson-c-dev',
         'xsltproc',
         'docbook-xsl',
         'docbook-mathml',
@@ -41,6 +40,8 @@ def db_pgis_install(c: Context, psql_version: str = '', pgis_version: str = '') 
     sys_start_service(c, 'postgresql')
     sys_etc_git_commit(c, f'Installed postgis for psql ({psql_version})')
 
+@task
+@Context.wrap_context
 def db_pgis_get_latest_version(c: Context, pg_version: str = '') -> str:
     """Return the latest available postgis version for pg_version."""
     if not pg_version:
@@ -59,21 +60,31 @@ def db_pgis_get_latest_version(c: Context, pg_version: str = '') -> str:
     print(f'Latest available postgis is: [{latest_version}]', file=sys.stderr)
     return latest_version
 
+@task
+@Context.wrap_context
 def db_pgis_get_latest_libgeos_version(c: Context) -> str:
     """Return the latest libgeos version."""
     latest_version: str = ''
     result = c.run('apt-cache search --names-only libgeos', hide=True, warn=True)
-    version_re = re.compile(r'libgeos-([0-9.]+)\s-')
-    versions = [ver.group(1) for line in result.stdout.split('\n') if (ver := version_re.search(line.lower()))]
-    versions.sort(reverse=True)
-    try:
+    
+    # Updated regex to match common libgeos package patterns
+    version_re = re.compile(r'libgeos-?([0-9]+(?:\.[0-9]+)*)')
+    
+    versions = []
+    for line in result.stdout.split('\n'):
+        if (ver := version_re.search(line.lower())):
+            versions.append(ver.group(1))
+    
+    # Sort versions properly (semantic versioning)
+    if versions:
+        versions.sort(key=lambda x: [int(i) for i in x.split('.')], reverse=True)
         latest_version = versions[0]
-    except IndexError:
-        pass
 
     print(f'Latest available libgeos is: [{latest_version}]', file=sys.stderr)
     return latest_version
 
+@task
+@Context.wrap_context
 def db_pgis_configure(
     c: Context, pg_version: str = '', pgis_version: str = '', legacy: bool = False
 ) -> None:
@@ -102,6 +113,8 @@ def db_pgis_configure(
 
     sys_etc_git_commit(c, f'Configured postgis ({pgis_version}) for psql ({pg_version})')
 
+@task
+@Context.wrap_context
 def db_pgis_get_database_gis_info(c: Context, dbname: str) -> None:
     """Return the postgis version of a postgis database."""
     c.sudo(f'sudo -u postgres psql -d {dbname} -c "SELECT PostGIS_Version();"')
