@@ -47,7 +47,8 @@ def web_supervisor_setup_domain(c: Context, domain, port=None, interface='0.0.0.
     c.sudo(f'sed -i "s/bound_address/{interface}/g" {remotecfg}')
     c.sudo(f'sed -i "s/port_num/{port}/g" {remotecfg}')
     c.sudo(f'sed -i "s/worker_num/{worker_num}/g" {remotecfg}')
-    c.sudo(f'sed -i "s/example\\.com/{domain.replace(".", "\\.")}/g" {remotecfg}')
+    escaped_domain = domain.replace(".", "\\.")
+    c.sudo(f'sed -i "s/example\\.com/{escaped_domain}/g" {remotecfg}')
     c.sudo(f'chown -R root:root {supervisor_avail_dir}')
     c.sudo(f'chmod -R 755 {supervisor_avail_dir}')
     with c.cd(supervisor_enabled_dir):
