@@ -40,10 +40,10 @@ fab setup.cache
 fab setup.load-balancer
 
 # Database operations
-fab db.psql.create-user --username=webapp --password=secure123
-fab db.psql.create-database --dbname=myapp --dbowner=webapp
-fab db.psql.backup --dump-dir=/backups --db-name=myapp
-fab db.mysql.create-user --root-pass=rootpwd --user=webapp --user-pass=secure123
+fab db.pg.create-user --username=webapp --password=secure123
+fab db.pg.create-db --dbname=myapp --dbowner=webapp
+fab db.pg.dump --dump-dir=/backups --db-name=myapp
+fab db.my.create-user --root-pass=rootpwd --user=webapp --user-pass=secure123
 
 # System administration  
 fab system.hostname --hostname=myserver.com
@@ -69,8 +69,11 @@ fab help                    # Show all command categories with examples
 #### Command Categories
 - **setup.***: One-command server deployment recipes
 - **system.***: System configuration (hostname, users, SSH, timezone)
-- **db.psql.***: PostgreSQL operations (create, backup, users)
-- **db.mysql.***: MySQL operations (create, backup, users)
+- **db.pg.***: PostgreSQL operations (create, backup, users)
+- **db.my.***: MySQL operations (create, backup, users)
+- **db.pgb.***: PgBouncer connection pooling
+- **db.pgp.***: PgPool load balancing  
+- **db.gis.***: PostGIS spatial database extensions
 - **security.***: Security and firewall configuration
 - **cache.***: Redis cache management
 - **docker.***: Docker installation and configuration
