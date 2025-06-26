@@ -111,7 +111,7 @@ def sys_user_set_group_umask(c: Context, username: str, umask: str = "0002") -> 
 @Context.wrap_context
 def sys_user_change_password(c: Context, username: str, password: str) -> None:
     """Change password for a user."""
-    c.sudo(f'echo "{username}:{password}" | chpasswd')
+    c.sudo(f"sh -c 'echo \"{username}:{password}\" | chpasswd'")
     sys_etc_git_commit(c, f"Password changed for user ({username})")
 
 

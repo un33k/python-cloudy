@@ -54,7 +54,7 @@ def web_apache2_set_port(c: Context, port=""):
     """Setup Apache2 to listen to a new port."""
     remotecfg = "/etc/apache2/ports.conf"
     port = sys_show_next_available_port(c, port)
-    c.sudo(f'echo "Listen 127.0.0.1:{port}" >> {remotecfg}')
+    c.sudo(f"sh -c 'echo \"Listen 127.0.0.1:{port}\" >> {remotecfg}'")
     sys_reload_service(c, "apache2")
     sys_etc_git_commit(c, f"Apache now listens on port {port}")
 

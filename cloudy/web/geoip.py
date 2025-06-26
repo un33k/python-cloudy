@@ -48,7 +48,7 @@ def web_geoip_install_maxmind_country(c: Context, dest_dir="/srv/www/shared/geoi
     c.sudo(f"mkdir -p {tmp_dir}")
     with c.cd(tmp_dir):
         c.sudo(f"wget -N -q {geo_country_url}")
-        c.sudo("gunzip -c GeoIP.dat.gz > GeoIP.dat")
+        c.sudo("gunzip GeoIP.dat.gz")
         c.sudo(f"mkdir -p {dest_dir}")
         c.sudo(f"chown -R :www-data {dest_dir}")
         c.sudo(f"mv -f *.dat {dest_dir}")
@@ -64,7 +64,7 @@ def web_geoip_install_maxmind_city(c: Context, dest_dir="/srv/www/shared/geoip")
     c.sudo(f"mkdir -p {tmp_dir}")
     with c.cd(tmp_dir):
         c.sudo(f"wget -N -q {geo_city_url}")
-        c.sudo("gunzip -c GeoLiteCity.dat.gz > GeoLiteCity.dat")
+        c.sudo("gunzip GeoLiteCity.dat.gz")
         c.sudo(f"mkdir -p {dest_dir}")
         c.sudo(f"chown -R :www-data {dest_dir}")
         c.sudo(f"mv -f *.dat {dest_dir}")

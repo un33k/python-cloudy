@@ -140,7 +140,7 @@ def sys_add_hosts(c: Context, host: str, ip: str) -> None:
 @Context.wrap_context
 def sys_hostname_configure(c: Context, hostname: str) -> None:
     """Configure the system hostname."""
-    c.sudo(f'echo "{hostname}" > /etc/hostname')
+    c.sudo(f"sh -c 'echo {hostname} > /etc/hostname'")
     c.sudo("hostname -F /etc/hostname")
     sys_etc_git_commit(c, f"Configured hostname to: {hostname}")
 

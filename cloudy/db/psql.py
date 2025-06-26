@@ -29,9 +29,9 @@ def db_psql_install_postgres_repo(c: Context) -> None:
 
     # Add the PostgreSQL repository with the signed-by option pointing to the keyring
     c.sudo(
-        'echo "deb [signed-by=/etc/apt/keyrings/postgresql.gpg] '
-        'https://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | '
-        'tee /etc/apt/sources.list.d/pgdg.list > /dev/null'
+        'sh -c \'echo "deb [signed-by=/etc/apt/keyrings/postgresql.gpg] '
+        'https://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" '
+        "> /etc/apt/sources.list.d/pgdg.list'"
     )
 
     # Update package lists
@@ -244,7 +244,7 @@ def db_psql_remove_cluster(c: Context, version: str, cluster: str) -> None:
         print(f"Warning: Removing main cluster for PostgreSQL {version}")
 
     # Stop and remove the cluster
-    result = c.run(f"pg_dropcluster --stop {version} {cluster}", warn=True)
+    result = c.sudo(f"pg_dropcluster --stop {version} {cluster}", warn=True)
 
     if result.failed:
         print(f"Failed to remove cluster '{version}/{cluster}': {result.stderr}")
@@ -284,7 +284,8 @@ def db_psql_set_permission(c: Context, version: str = "", cluster: str = "main")
     localcfg = os.path.expanduser(os.path.join(cfgdir, "postgresql/pg_hba.conf"))
     remotecfg = f"/etc/postgresql/{version}/{cluster}/pg_hba.conf"
     c.sudo(f"rm -rf {remotecfg}")
-    c.put(localcfg, remotecfg)
+    c.put(localcfg, "/tmp/pg_hba.conf")
+    c.sudo(f"mv /tmp/pg_hba.conf {remotecfg}")
     c.sudo(f"chown postgres:postgres {remotecfg}")
     c.sudo(f"chmod 644 {remotecfg}")
     core.sys_start_service(c, "postgresql")

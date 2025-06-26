@@ -25,7 +25,8 @@ def db_pgpool2_configure(
     localcfg = os.path.expanduser(os.path.join(cfgdir, "pgpool2/pgpool.conf"))
     remotecfg = "/etc/pgpool2/pgpool.conf"
     c.sudo(f"rm -rf {remotecfg}")
-    c.put(localcfg, remotecfg)
+    c.put(localcfg, "/tmp/pgpool.conf")
+    c.sudo(f"mv /tmp/pgpool.conf {remotecfg}")
     c.sudo(f'sed -i "s/dbhost/{dbhost}/g" {remotecfg}')
     c.sudo(f'sed -i "s/dbport/{dbport}/g" {remotecfg}')
     c.sudo(f'sed -i "s/localport/{localport}/g" {remotecfg}')
@@ -33,6 +34,7 @@ def db_pgpool2_configure(
     localdefault = os.path.expanduser(os.path.join(cfgdir, "pgpool2/default-pgpool2"))
     remotedefault = "/etc/default/pgpool2"
     c.sudo(f"rm -rf {remotedefault}")
-    c.put(localdefault, remotedefault)
+    c.put(localdefault, "/tmp/default-pgpool2")
+    c.sudo(f"mv /tmp/default-pgpool2 {remotedefault}")
     sys_etc_git_commit(c, "Configured pgpool2")
     sys_restart_service(c, "pgpool2")

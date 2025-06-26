@@ -96,7 +96,8 @@ def sys_redis_config(c: Context) -> None:
     remotecfg = "/etc/redis/redis.conf"
     if os.path.exists(cfgdir):
         c.sudo(f"rm -f {remotecfg}")
-        c.put(cfgdir, remotecfg)
+        c.put(cfgdir, "/tmp/redis.conf")
+        c.sudo(f"mv /tmp/redis.conf {remotecfg}")
         sys_redis_configure_memory(c)
         sys_etc_git_commit(c, "Configured redis-server")
         sys_restart_service(c, "redis-server")

@@ -70,7 +70,7 @@ def sys_ssh_push_public_key(c: Context, user: str, pub_key: str = "~/.ssh/id_rsa
         raise FileNotFoundError(f"Public key not found: {pub_key}")
     c.sudo(f"mkdir -p {ssh_dir}")
     c.put(pub_key, "/tmp/tmpkey")
-    c.sudo(f"cat /tmp/tmpkey >> {auth_key}")
+    c.sudo(f"sh -c 'cat /tmp/tmpkey >> {auth_key}'")
     c.sudo("rm -f /tmp/tmpkey")
     c.sudo(f"chown -R {user}:{user} {ssh_dir}")
     c.sudo(f"chmod 700 {ssh_dir}")

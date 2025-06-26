@@ -65,7 +65,8 @@ def sys_memcached_config(c: Context) -> None:
     localcfg = os.path.expanduser(os.path.join(cfgdir, "memcached/memcached.conf"))
     remotecfg = "/etc/memcached.conf"
     c.sudo(f"rm -rf {remotecfg}")
-    c.put(localcfg, remotecfg)
+    c.put(localcfg, "/tmp/memcached.conf")
+    c.sudo(f"mv /tmp/memcached.conf {remotecfg}")
     sys_memcached_configure_memory(c)
     sys_etc_git_commit(c, "Configured memcached")
     sys_restart_service(c, "memcached")

@@ -57,7 +57,8 @@ def sys_openvpn_docker_conf(
     localcfg = os.path.expanduser(os.path.join(cfgdir, "openvpn/docker-systemd.cfg"))
     remotecfg = f"/etc/systemd/system/docker-{docker_name}.service"
     c.sudo(f"rm -rf {remotecfg}")
-    c.put(localcfg, remotecfg)
+    c.put(localcfg, "/tmp/docker-openvpn.service")
+    c.sudo(f"mv /tmp/docker-openvpn.service {remotecfg}")
     # Replace placeholders in the config file
     c.sudo(f"sed -i 's/docker_port/{port}/g' {remotecfg}")
     c.sudo(f"sed -i 's/docker_proto/{proto}/g' {remotecfg}")

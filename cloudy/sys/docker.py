@@ -28,7 +28,8 @@ def sys_docker_config(c: Context) -> None:
     localcfg = os.path.expanduser(os.path.join(cfgdir, "docker/daemon.json"))
     remotecfg = "/etc/docker/daemon.json"
     c.sudo(f"rm -rf {remotecfg}")
-    c.put(localcfg, remotecfg)
+    c.put(localcfg, "/tmp/daemon.json")
+    c.sudo(f"mv /tmp/daemon.json {remotecfg}")
     sys_mkdir(c, "/docker")
     sys_etc_git_commit(c, "Configured docker")
     sys_restart_service(c, "docker")
