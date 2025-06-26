@@ -5,11 +5,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ### Environment Setup
+
+**⚠️ CRITICAL**: Always use `.venv` (not `venv`) for the virtual environment!
+
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+# Automated setup (recommended)
+./bootstrap.sh
+
+# OR manual setup
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -e .
-cd cloudy
+```
+
+**Before any Python/Fabric commands, ALWAYS activate:**
+```bash
+source .venv/bin/activate
 ```
 
 ### Core Development Commands
@@ -19,16 +30,50 @@ cd cloudy
 - **Publish package**: `python setup.py publish`
 
 ### Fabric Command Patterns
+
 ```bash
-# Execute system commands
-fab -H user@host:port core.sys-uname
+# High-level server deployment (one command setups)
+fab setup.server --cfg-file=./.cloudy.production
+fab setup.database --cfg-file=./.cloudy.production
+fab setup.web --cfg-file=./.cloudy.production
+fab setup.cache
+fab setup.load-balancer
 
-# Run recipes with single config
-fab recipe-generic-server.setup-server --cfg-file=./.cloudy.generic
+# Database operations
+fab db.psql.create-user --username=webapp --password=secure123
+fab db.psql.create-database --dbname=myapp --dbowner=webapp
+fab db.psql.backup --dump-dir=/backups --db-name=myapp
+fab db.mysql.create-user --root-pass=rootpwd --user=webapp --user-pass=secure123
 
-# Run recipes with multiple configs
-fab -H root@host recipe-webserver-django.setup-web --cfg-file=./base.cfg,./web.cfg
+# System administration  
+fab system.hostname --hostname=myserver.com
+fab system.add-user --username=admin
+fab system.ssh-port --port=2222
+fab system.timezone --timezone=America/New_York
+
+# Security
+fab security.install-firewall
+fab security.secure-server --ssh-port=2222
+fab security.disable-root
+
+# Services
+fab cache.install
+fab cache.configure
+fab docker.install
+fab docker.add-user --username=myuser
+
+# Get help
+fab help                    # Show all command categories with examples
 ```
+
+#### Command Categories
+- **setup.***: One-command server deployment recipes
+- **system.***: System configuration (hostname, users, SSH, timezone)
+- **db.psql.***: PostgreSQL operations (create, backup, users)
+- **db.mysql.***: MySQL operations (create, backup, users)
+- **security.***: Security and firewall configuration
+- **cache.***: Redis cache management
+- **docker.***: Docker installation and configuration
 
 ## Architecture Overview
 

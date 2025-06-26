@@ -1,12 +1,12 @@
+import importlib
 import os
 import re
 import types
-import importlib
 
-PACKAGE = 'cloudy.srv'
+PACKAGE = "cloudy.srv"
 MODULE_RE = r"^[^.].*\.py$"
-PREFIX = ['srv_']
-SKIP = {'__init__.py'}
+PREFIX = ["srv_"]
+SKIP = {"__init__.py"}
 
 functions = []
 module_dir = os.path.dirname(__file__)
@@ -15,7 +15,7 @@ for fname in os.listdir(module_dir):
     if fname in SKIP or not re.match(MODULE_RE, fname):
         continue
     mod_name = fname[:-3]
-    module = importlib.import_module(f'{PACKAGE}.{mod_name}')
+    module = importlib.import_module(f"{PACKAGE}.{mod_name}")
     for name in dir(module):
         if any(name.startswith(p) for p in PREFIX):
             item = getattr(module, name)

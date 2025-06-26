@@ -1,17 +1,19 @@
-import os
 import configparser
 import logging
+import os
 from typing import Any, Dict, Optional
 
 LOG_LEVEL = logging.INFO
 FORMAT = "%(levelname)-10s %(name)s %(message)s"
 logging.basicConfig(format=FORMAT, level=LOG_LEVEL)
 
+
 class CloudyConfig:
     """
     CloudyConfig loads and manages configuration from multiple files.
     The last file in the list has the highest precedence.
     """
+
     def __init__(self, filenames: Any = None, log_level: int = logging.WARNING) -> None:
         self.log = logging.getLogger(os.path.basename(__file__))
         self.log.setLevel(log_level)
@@ -22,12 +24,12 @@ class CloudyConfig:
         paths: list[str] = []
 
         # 1. Config file in current directory
-        cwd_path = os.path.abspath('./.cloudy')
+        cwd_path = os.path.abspath("./.cloudy")
         if os.path.exists(cwd_path):
             paths.append(cwd_path)
 
         # 2. Config file in home directory
-        home_path = os.path.expanduser('~/.cloudy')
+        home_path = os.path.expanduser("~/.cloudy")
         if os.path.exists(home_path):
             paths.append(home_path)
 
@@ -41,7 +43,9 @@ class CloudyConfig:
                     paths.append(p)
 
         # 4. Defaults file (lowest precedence)
-        defaults_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "../cfg/defaults.cfg"))
+        defaults_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "../cfg/defaults.cfg")
+        )
         if os.path.exists(defaults_path):
             paths.insert(0, defaults_path)
 
@@ -69,7 +73,7 @@ class CloudyConfig:
                 valid[option] = None
         return valid
 
-    def get_variable(self, section: str, variable: str, fallback: str = '') -> str:
+    def get_variable(self, section: str, variable: str, fallback: str = "") -> str:
         """
         Get a variable value from a section, with optional fallback.
         Section is case-insensitive.
@@ -91,11 +95,6 @@ class CloudyConfig:
             else:
                 self.log.warning(f"No such variable ({variable}) in section [{section}]")
         except Exception as e:
-            self.log.warning(f"Failed to set environment variable ({variable}) from section [{section}]: {e}")
-
-
-
-
-
-
-
+            self.log.warning(
+                f"Failed to set environment variable ({variable}) from section [{section}]: {e}"
+            )
