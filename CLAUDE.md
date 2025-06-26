@@ -34,14 +34,37 @@ source .venv/bin/activate
 
 **⚠️ IMPORTANT**: After running `recipe.gen-install`, root login is disabled for security.
 
-**Sudo Password Authentication**:
+**⚠️ CRITICAL - Sudo Password Requirements**:
+
+Due to underlying issues with Fabric, Python Cloudy does NOT support interactive password prompts. For any sudo operations, you MUST export the password as an environment variable:
+
 ```bash
-# Set sudo password via environment variable (secure approach)
+# REQUIRED: Set sudo password via environment variable
 export INVOKE_SUDO_PASSWORD=admin_user_password
 
 # Then run commands normally
 fab -H admin@server:port command
 ```
+
+This applies to ALL non-root operations including:
+- System administration (`sys.*`)
+- Database management (`db.*`)
+- Web server operations (`web.*`)
+- Service management (`services.*`)
+- Firewall configuration (`fw.*`)
+
+**Alternative: Fabric Built-in Password Prompts**:
+Fabric provides command-line options for password prompting, though these may not work reliably with Python Cloudy:
+
+```bash
+# SSH authentication password prompt
+fab --prompt-for-login-password -H user@server command
+
+# Sudo password prompt  
+fab --prompt-for-sudo-password -H user@server command
+```
+
+**⚠️ WARNING**: These Fabric options may not work consistently due to underlying Fabric issues. The environment variable approach (`INVOKE_SUDO_PASSWORD`) is the recommended and reliable method.
 
 **Complete Secure Workflow Example**:
 ```bash

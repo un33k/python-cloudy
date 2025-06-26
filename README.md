@@ -43,13 +43,60 @@ fab -l
 
 ---
 
+## Important: Sudo Password Configuration
+
+**⚠️ CRITICAL**: Due to underlying issues with Fabric, Python Cloudy requires explicit sudo password configuration since interactive password prompts are not supported in automated deployments.
+
+For any operations requiring sudo privileges (when not running as root), you must export the sudo password as an environment variable:
+
+```bash
+export INVOKE_SUDO_PASSWORD=your_sudo_password
+```
+
+This applies to all non-root operations including:
+- System administration tasks
+- Package installations  
+- Service management
+- Configuration file updates
+
+---
+
 ## Usage Examples
 
-### High-Level Server Deployment
-```bash
-# Complete server setup with configuration file
-fab -H root@10.10.10.198 recipe.gen-install --cfg-file="./.cloudy.generic"
+### Secure Server Deployment Workflow
 
+**⚠️ IMPORTANT**: Python Cloudy implements a secure two-phase deployment:
+
+#### Phase 1: Initial Setup (as root)
+```bash
+# Setup secure server - creates admin user, disables root login, configures firewall
+source .venv/bin/activate
+fab -H root@10.10.10.198 recipe.gen-install --cfg-file="./.cloudy.generic"
+```
+
+**After this step:**
+- ✅ Root login is disabled for security
+- ✅ Admin user created with SSH key authentication  
+- ✅ SSH port changed (default: 22022)
+- ✅ UFW firewall configured
+
+#### Phase 2: Ongoing Management (as admin user)
+
+**⚠️ CRITICAL**: Due to underlying Fabric issues, for any sudo operations, you must export the password as an environment variable since interactive password prompts are not supported:
+
+```bash
+# Set sudo password for automation (REQUIRED for sudo operations)
+export INVOKE_SUDO_PASSWORD=your_admin_password
+
+# Install additional services (Nginx, PostgreSQL, etc.)
+fab -H admin@10.10.10.198:22022 web.nginx.install
+fab -H admin@10.10.10.198:22022 db.pg.install
+fab -H admin@10.10.10.198:22022 fw.allow-http
+fab -H admin@10.10.10.198:22022 fw.allow-https
+```
+
+### Other High-Level Recipes
+```bash
 # Redis cache server setup
 fab -H root@server.com recipe.redis-install --cfg-file="./.cloudy.redis"
 
@@ -75,6 +122,9 @@ fab -H root@db.com db.my.create-user --username=wpuser --password=pass123
 
 ### System Administration
 ```bash
+# For non-root users, export sudo password first
+export INVOKE_SUDO_PASSWORD=your_sudo_password
+
 # System setup and updates
 fab -H root@server.com sys.init
 fab -H root@server.com sys.update
