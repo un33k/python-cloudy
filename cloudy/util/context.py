@@ -66,19 +66,30 @@ ALWAYS_SHOW_OUTPUT: List[str] = [
 
 # Commands that are typically "noisy" and should be hidden by default (regex patterns)
 HIDE_BY_DEFAULT_PATTERNS: List[str] = [
+    # Package management
     r"apt.*update",
     r"apt.*install",
     r"apt.*upgrade",
+    r"apt.*remove",
+    r"apt.*autoremove",
+    r"apt.*list\s+--upgradable",
     r"apt-get.*update",
     r"apt-get.*install",
     r"apt-get.*upgrade",
     r"yum.*install",
     r"yum.*update",
     r"dnf.*install",
+    r"dpkg\s+-i",
+    r"dpkg-reconfigure",
+    r"rpm\s+-i",
+    # Downloads and archives
     r"wget\s+",
     r"curl\s+-.*",  # downloading
     r"unzip\s+",
     r"tar\s+-[xz]",
+    r"g?zip\s+",
+    r"bunzip2?\s+",
+    # Build tools
     r"make\s+",
     r"cmake\s+",
     r"pip.*install",
@@ -90,10 +101,28 @@ HIDE_BY_DEFAULT_PATTERNS: List[str] = [
     r"gradle.*build",
     r"go.*build",
     r"cargo.*build",
-    r"dpkg\s+-i",
-    r"rpm\s+-i",
-    r"g?zip\s+",
-    r"bunzip2?\s+",
+    # System configuration and services
+    r"systemctl\s+(start|stop|reload|restart)",
+    r"service\s+.*\s+(start|stop|reload|restart)",
+    r"update-alternatives",
+    r"debconf-set-selections",
+    r"passwd\s+",
+    r"chpasswd",
+    # File operations
+    r"chmod\s+",
+    r"chown\s+",
+    r"mkdir\s+-p",
+    r"ln\s+-sf",
+    r"mv\s+",
+    r"cp\s+",
+    r"rm\s+",
+    r"sed\s+-i",
+    r"sh\s+-c.*>",  # shell redirects
+    r"echo.*>",  # redirect operations
+    r"cat.*>>",  # append operations
+    # SSH and network
+    r"ssh-keygen",
+    r"scp\s+",
 ]
 
 
@@ -104,6 +133,7 @@ class Context(Connection):
     Provides intelligent command output filtering, automatic password handling,
     and robust SSH port reconnection for server automation tasks.
     """
+
     @property
     def verbose(self) -> bool:
         """Check if verbose output is enabled via environment variable or config."""
@@ -115,9 +145,8 @@ class Context(Connection):
         if hasattr(self.config, "run") and getattr(self.config.run, "echo", False):
             return True
 
-        return (
-            getattr(self.config, "cloudy_verbose", False)
-            or getattr(self.config, "cloudy_debug", False)
+        return getattr(self.config, "cloudy_verbose", False) or getattr(
+            self.config, "cloudy_debug", False
         )
 
     @property
@@ -277,6 +306,7 @@ class Context(Connection):
     @staticmethod
     def wrap_context(func: Callable):
         """Decorator to wrap Fabric tasks with enhanced Context functionality."""
+
         @wraps(func)
         def wrapper(c: Context, *args, **kwargs):
             # Also apply the same robustness for inline_ssh_env and connect_kwargs
