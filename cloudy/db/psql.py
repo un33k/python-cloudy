@@ -29,7 +29,7 @@ def db_psql_install_postgres_repo(c: Context) -> None:
 
     # Add the PostgreSQL repository with the signed-by option pointing to the keyring
     c.sudo(
-        'sh -c \'echo "deb [signed-by=/etc/apt/keyrings/postgresql.gpg] '
+        "sh -c 'echo \"deb [signed-by=/etc/apt/keyrings/postgresql.gpg] "
         'https://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" '
         "> /etc/apt/sources.list.d/pgdg.list'"
     )

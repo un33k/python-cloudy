@@ -79,8 +79,8 @@ def setup_openvpn(c: Context, cfg_paths=None, generic=True):
         firewall.fw_allow_incoming_port_proto(c, secondary_port, secondary_proto)
 
     # Success message
-    print(f"\n🎉 ✅ OPENVPN SERVER SETUP COMPLETED SUCCESSFULLY!")
-    print(f"📋 Configuration Summary:")
+    print("\n🎉 ✅ OPENVPN SERVER SETUP COMPLETED SUCCESSFULLY!")
+    print("📋 Configuration Summary:")
     print(f"   └── Domain: {domain}")
     print(f"   └── Data Directory: {datadir}")
     print(f"   └── Docker Repository: {repository}")
@@ -90,9 +90,9 @@ def setup_openvpn(c: Context, cfg_paths=None, generic=True):
     if secondary_port and secondary_proto:
         print(f"   └── Secondary VPN: {secondary_port}/{secondary_proto.upper()}")
     print(f"   └── Passphrase: {'Configured' if passphrase != 'nopass' else 'Default (nopass)'}")
-    print(f"\n🚀 OpenVPN server is ready! Generate client certificates to connect.")
+    print("\n🚀 OpenVPN server is ready! Generate client certificates to connect.")
     if generic:
         admin_user = cfg.get_variable("common", "admin-user", "admin")
         ssh_port = cfg.get_variable("common", "ssh-port", "22")
         print(f"   └── Admin SSH: {admin_user}@server:{ssh_port}")
-    print(f"\n📝 Next steps: Use OpenVPN container commands to generate client configs")
+    print("\n📝 Next steps: Use OpenVPN container commands to generate client configs")

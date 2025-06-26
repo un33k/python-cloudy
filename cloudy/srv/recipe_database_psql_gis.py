@@ -69,8 +69,8 @@ def setup_db(c: Context, cfg_paths=None, generic=True):
     pgis.db_pgis_get_database_gis_info(c, "template_postgis")
 
     # Success message
-    print(f"\n🎉 ✅ POSTGRESQL + POSTGIS DATABASE SERVER SETUP COMPLETED!")
-    print(f"📋 Configuration Summary:")
+    print("\n🎉 ✅ POSTGRESQL + POSTGIS DATABASE SERVER SETUP COMPLETED!")
+    print("📋 Configuration Summary:")
     print(f"   └── PostgreSQL Version: {pg_version}")
     print(f"   └── PostGIS Version: {pgis_version}")
     print(f"   └── Database Port: {pg_port}")
@@ -80,10 +80,10 @@ def setup_db(c: Context, cfg_paths=None, generic=True):
     print(f"   └── Encoding: {pg_encoding}")
     print(f"   └── Firewall: Port {pg_port} allowed")
     if postgres_user_pass:
-        print(f"   └── Postgres User: Password configured")
+        print("   └── Postgres User: Password configured")
     if postgres_sys_user_pass:
-        print(f"   └── System User: Password configured")
-    print(f"\n🚀 PostgreSQL with PostGIS is ready for spatial database operations!")
+        print("   └── System User: Password configured")
+    print("\n🚀 PostgreSQL with PostGIS is ready for spatial database operations!")
     if generic:
         admin_user = cfg.get_variable("common", "admin-user", "admin")
         ssh_port = cfg.get_variable("common", "ssh-port", "22")

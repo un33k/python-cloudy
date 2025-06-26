@@ -86,8 +86,8 @@ def setup_web(c: Context, cfg_paths=None, generic=True):
         geoip.web_geoip_install_maxmind_city(c)
 
     # Success message
-    print(f"\n🎉 ✅ DJANGO WEB SERVER SETUP COMPLETED SUCCESSFULLY!")
-    print(f"📋 Configuration Summary:")
+    print("\n🎉 ✅ DJANGO WEB SERVER SETUP COMPLETED SUCCESSFULLY!")
+    print("📋 Configuration Summary:")
     print(f"   └── Hostname: {hostname or 'Not configured'}")
     print(f"   └── Python Version: {py_version or 'System default'}")
     print(f"   └── Web Server: {webserver or 'Not specified'}")
@@ -99,9 +99,9 @@ def setup_web(c: Context, cfg_paths=None, generic=True):
     if db_host:
         print(f"   └── Database: {db_host}:{db_port} via PgPool")
     if geo_ip:
-        print(f"   └── GeoIP: MaxMind databases installed")
-    print(f"   └── Web Directory: /var/www")
-    print(f"\n🚀 Django web server is ready for application deployment!")
+        print("   └── GeoIP: MaxMind databases installed")
+    print("   └── Web Directory: /var/www")
+    print("\n🚀 Django web server is ready for application deployment!")
     if generic:
         admin_user = cfg.get_variable("common", "admin-user", "admin")
         ssh_port = cfg.get_variable("common", "ssh-port", "22")

@@ -43,13 +43,13 @@ def setup_redis(c: Context, cfg_paths=None, generic: bool = True) -> None:
     firewall.fw_allow_incoming_port_proto(c, redis_port, "tcp")
 
     # Success message
-    print(f"\n🎉 ✅ REDIS SERVER SETUP COMPLETED SUCCESSFULLY!")
-    print(f"📋 Configuration Summary:")
+    print("\n🎉 ✅ REDIS SERVER SETUP COMPLETED SUCCESSFULLY!")
+    print("📋 Configuration Summary:")
     print(f"   └── Redis Address: {redis_address}")
     print(f"   └── Redis Port: {redis_port}")
     print(f"   └── Firewall: Port {redis_port}/tcp allowed")
-    print(f"   └── Memory: Auto-configured (1/2 of system memory)")
-    print(f"\n🚀 Redis server is ready for use!")
+    print("   └── Memory: Auto-configured (1/2 of system memory)")
+    print("\n🚀 Redis server is ready for use!")
     if generic:
         print(f"   └── Admin SSH: Port {cfg.get_variable('common', 'ssh-port', '22')}")
         print(f"   └── Admin User: {cfg.get_variable('common', 'admin-user', 'admin')}")

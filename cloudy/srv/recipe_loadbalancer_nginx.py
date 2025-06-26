@@ -52,17 +52,17 @@ def setup_lb(c: Context, cfg_paths=None, generic=True):
         )
 
     # Success message
-    print(f"\n🎉 ✅ NGINX LOAD BALANCER SETUP COMPLETED SUCCESSFULLY!")
-    print(f"📋 Configuration Summary:")
+    print("\n🎉 ✅ NGINX LOAD BALANCER SETUP COMPLETED SUCCESSFULLY!")
+    print("📋 Configuration Summary:")
     print(f"   └── Domain: {domain_name}")
     print(f"   └── Protocol: {protocol.upper()}")
     print(f"   └── Binding Address: {binding_address}")
     if upstream_address and upstream_port:
         print(f"   └── Upstream: {upstream_address}:{upstream_port}")
     if certificate_path:
-        print(f"   └── SSL Certificate: Configured")
-    print(f"   └── Firewall: HTTP (80) and HTTPS (443) allowed")
-    print(f"\n🚀 Nginx load balancer is ready to serve traffic!")
+        print("   └── SSL Certificate: Configured")
+    print("   └── Firewall: HTTP (80) and HTTPS (443) allowed")
+    print("\n🚀 Nginx load balancer is ready to serve traffic!")
     if generic:
         admin_user = cfg.get_variable("common", "admin-user", "admin")
         ssh_port = cfg.get_variable("common", "ssh-port", "22")

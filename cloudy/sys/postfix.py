@@ -21,11 +21,15 @@ def sys_install_postfix(c: Context) -> None:
 
         # Set debconf selections
         c.sudo(
-            "sh -c 'echo \"postfix postfix/main_mailer_type select Internet Site\" | debconf-set-selections'"
+            'sh -c \'echo "postfix postfix/main_mailer_type select Internet Site" | '
+            "debconf-set-selections'"
         )
-        c.sudo("sh -c 'echo \"postfix postfix/mailname string localhost\" | debconf-set-selections'")
         c.sudo(
-            "sh -c 'echo \"postfix postfix/destinations string localhost.localdomain, localhost\" | debconf-set-selections'"
+            "sh -c 'echo \"postfix postfix/mailname string localhost\" | debconf-set-selections'"
+        )
+        c.sudo(
+            "sh -c 'echo \"postfix postfix/destinations string localhost.localdomain, "
+            "localhost\" | debconf-set-selections'"
         )
 
         # Install postfix

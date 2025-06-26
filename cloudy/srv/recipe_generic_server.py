@@ -142,19 +142,19 @@ def setup_server(c: Context, cfg_paths: Optional[str] = None) -> Context:
             if result.return_code == 0:
                 print(
                     f"✅ Successfully connected as {admin_user} with SSH key authentication "
-                    f"and sudo access"
+                    "and sudo access"
                 )
             else:
                 print(f"⚠️  Connected as {admin_user} with SSH keys, but sudo test failed")
         else:
             print(
                 f"✅ Successfully connected as {admin_user} with SSH key authentication "
-                f"(sudo not tested - no password available)"
+                "(sudo not tested - no password available)"
             )
 
     # Success message for generic server setup
-    print(f"\n🎉 ✅ GENERIC SERVER SETUP COMPLETED SUCCESSFULLY!")
-    print(f"📋 Configuration Summary:")
+    print("\n🎉 ✅ GENERIC SERVER SETUP COMPLETED SUCCESSFULLY!")
+    print("📋 Configuration Summary:")
     print(f"   ├── Hostname: {hostname or 'Not configured'}")
     print(f"   ├── Timezone: {timezone_val}")
     print(f"   ├── Locale: {locale_val}")
@@ -166,8 +166,8 @@ def setup_server(c: Context, cfg_paths: Optional[str] = None) -> Context:
     print(f"   ├── Root Login: {'Disabled' if disable_root else 'Enabled'}")
     print(f"   ├── Password Auth: {'Enabled' if enable_password else 'Disabled'}")
     print(f"   ├── SSH Keys: {'Configured' if pub_key else 'Not configured'}")
-    print(f"   └── Firewall: UFW enabled and configured")
-    print(f"\n🚀 Generic server foundation is ready for specialized deployments!")
+    print("   └── Firewall: UFW enabled and configured")
+    print("\n🚀 Generic server foundation is ready for specialized deployments!")
     if admin_user and disable_root:
         print(f"   └── SSH Access: {admin_user}@server:{ssh_port} (key-based authentication)")
     else:
