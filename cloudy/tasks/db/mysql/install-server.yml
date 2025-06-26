@@ -1,0 +1,62 @@
+# Granular Task: Install MySQL Server
+# Equivalent to: cloudy-old/db/mysql.py::db_mysql_server_install()
+# Usage: ansible-playbook tasks/db/mysql/install-server.yml -e "mysql_version=8.0"
+
+---
+- name: Install MySQL server
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    mysql_version: "{{ mysql_version | default('') }}"
+    
+  tasks:
+    - name: Get latest MySQL version if not specified
+      import_tasks: get-latest-version.yml
+      when: not mysql_version
+      
+    - name: Set MySQL version to install
+      set_fact:
+        install_mysql_version: "{{ mysql_version if mysql_version else mysql_latest_version }}"
+        
+    - name: Validate MySQL version
+      fail:
+        msg: "Could not determine MySQL version to install"
+      when: not install_mysql_version
+      
+    - name: Install MySQL server package
+      apt:
+        name: "mysql-server-{{ install_mysql_version }}"
+        state: present
+        update_cache: true
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+      register: mysql_server_install
+      
+    - name: Start and enable MySQL service
+      systemd:
+        name: mysql
+        state: started
+        enabled: true
+      register: mysql_service_result
+      
+    - name: Verify MySQL installation
+      command: mysql --version
+      register: mysql_version_check
+      changed_when: false
+      
+    - name: Test MySQL connectivity
+      shell: mysql -e "SELECT 1" 2>/dev/null
+      register: mysql_connection_test
+      changed_when: false
+      failed_when: false
+      
+    - name: Display MySQL server installation status
+      debug:
+        msg: |
+          ✅ MySQL {{ install_mysql_version }} server installation completed
+          Installation: {{ 'New installation' if mysql_server_install.changed else 'Already installed' }}
+          Service: {{ 'Started and enabled' if mysql_service_result.changed else 'Already running' }}
+          Version: {{ mysql_version_check.stdout }}
+          Connectivity: {{ 'Connected' if mysql_connection_test.rc == 0 else 'Authentication required' }}

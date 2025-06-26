@@ -1,0 +1,30 @@
+# Granular Task: Configure NTP Daily Sync
+# Equivalent to: cloudy-old/sys/timezone.py::sys_configure_ntp()
+# Usage: ansible-playbook tasks/sys/timezone/configure-ntp.yml
+
+---
+- name: Configure NTP daily sync
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    ntp_server: "{{ ntp_server | default('ntp.ubuntu.com') }}"
+    
+  tasks:
+    - name: Add daily NTP sync cron job for root
+      cron:
+        name: "Daily NTP sync"
+        minute: "59"
+        hour: "23"
+        job: "/usr/sbin/ntpdate {{ ntp_server }} > /dev/null"
+        user: root
+      register: ntp_cron_result
+      
+    - name: Display NTP configuration status
+      debug:
+        msg: |
+          ✅ NTP daily sync configured
+          Server: {{ ntp_server }}
+          Schedule: Daily at 23:59
+          Status: {{ 'Added' if ntp_cron_result.changed else 'Already configured' }}

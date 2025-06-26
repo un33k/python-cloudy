@@ -1,0 +1,59 @@
+# Granular Task: Configure Git for User
+# Equivalent to: cloudy-old/sys/core.py::sys_git_configure()
+# Usage: ansible-playbook tasks/sys/core/configure-git.yml -e "target_user=admin git_name='John Doe' git_email='john@example.com'"
+
+---
+- name: Configure Git for user
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    # Required variables
+    target_user: "{{ target_user | mandatory }}"
+    git_name: "{{ git_name | mandatory }}"
+    git_email: "{{ git_email | mandatory }}"
+    
+  tasks:
+    - name: Install git-core package
+      apt:
+        name: git-core
+        state: present
+        
+    - name: Configure git user name
+      become_user: "{{ target_user }}"
+      git_config:
+        name: user.name
+        value: "{{ git_name }}"
+        scope: global
+      register: git_name_config
+      
+    - name: Configure git user email
+      become_user: "{{ target_user }}"
+      git_config:
+        name: user.email
+        value: "{{ git_email }}"
+        scope: global
+      register: git_email_config
+      
+    - name: Commit change to /etc git (if git repo exists)
+      shell: |
+        if [ -d /etc/.git ]; then
+          cd /etc
+          git add -A
+          git commit -m "Configured git for user: {{ target_user }}" || true
+        fi
+      when: git_name_config.changed or git_email_config.changed
+      
+    - name: Verify git configuration
+      become_user: "{{ target_user }}"
+      command: git config --global --list
+      register: git_config_list
+      changed_when: false
+      
+    - name: Display git configuration
+      debug:
+        msg: |
+          ✅ Git configured successfully for user: {{ target_user }}
+          Name: {{ git_name }}
+          Email: {{ git_email }}

@@ -1,0 +1,60 @@
+# Granular Task: Disallow Traffic on Specific Port
+# Equivalent to: cloudy-old/sys/firewall.py::fw_disallow_incoming_port()
+# Usage: ansible-playbook tasks/sys/firewall/disallow-port.yml -e "port=8080"
+
+---
+- name: Disallow traffic on specific port
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    port: "{{ port | mandatory }}"
+    
+  tasks:
+    - name: Validate port number
+      fail:
+        msg: "Port must be between 1-65535, got: {{ port }}"
+      when: port | int < 1 or port | int > 65535
+      
+    - name: Remove allow rule for port {{ port }}
+      ufw:
+        rule: allow
+        port: "{{ port }}"
+        delete: true
+      register: ufw_disallow_port
+      failed_when: false
+      
+    - name: Remove TCP-specific rule for port {{ port }}
+      ufw:
+        rule: allow
+        port: "{{ port }}"
+        proto: tcp
+        delete: true
+      register: ufw_disallow_port_tcp
+      failed_when: false
+      
+    - name: Remove UDP-specific rule for port {{ port }}
+      ufw:
+        rule: allow
+        port: "{{ port }}"
+        proto: udp
+        delete: true
+      register: ufw_disallow_port_udp
+      failed_when: false
+      
+    - name: Get UFW status
+      command: ufw status
+      register: ufw_status
+      changed_when: false
+      
+    - name: Display port disallow status
+      debug:
+        msg: |
+          ✅ Traffic disallowed on port {{ port }}
+          Generic rule: {{ 'Removed' if ufw_disallow_port.changed else 'Did not exist' }}
+          TCP rule: {{ 'Removed' if ufw_disallow_port_tcp.changed else 'Did not exist' }}
+          UDP rule: {{ 'Removed' if ufw_disallow_port_udp.changed else 'Did not exist' }}
+          
+          Current UFW Rules:
+          {{ ufw_status.stdout }}

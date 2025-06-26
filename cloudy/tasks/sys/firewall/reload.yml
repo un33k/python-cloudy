@@ -1,0 +1,31 @@
+# Granular Task: Reload UFW and Show Status
+# Equivalent to: cloudy-old/sys/firewall.py::fw_reload_ufw()
+# Usage: ansible-playbook tasks/sys/firewall/reload.yml
+
+---
+- name: Reload UFW and show status
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Disable UFW temporarily
+      ufw:
+        state: disabled
+      register: ufw_disable
+      
+    - name: Enable UFW
+      ufw:
+        state: enabled
+      register: ufw_enable
+      
+    - name: Get UFW status
+      command: ufw status verbose
+      register: ufw_status
+      changed_when: false
+      
+    - name: Display UFW status
+      debug:
+        msg: |
+          ✅ UFW reloaded successfully
+          {{ ufw_status.stdout }}

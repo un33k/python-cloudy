@@ -1,0 +1,38 @@
+# Granular Task: Allow Traffic on Specific Port
+# Equivalent to: cloudy-old/sys/firewall.py::fw_allow_incoming_port()
+# Usage: ansible-playbook tasks/sys/firewall/allow-port.yml -e "port=8080"
+
+---
+- name: Allow traffic on specific port
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    port: "{{ port | mandatory }}"
+    
+  tasks:
+    - name: Validate port number
+      fail:
+        msg: "Port must be between 1-65535, got: {{ port }}"
+      when: port | int < 1 or port | int > 65535
+      
+    - name: Allow traffic on port {{ port }}
+      ufw:
+        rule: allow
+        port: "{{ port }}"
+      register: ufw_allow_port
+      
+    - name: Get UFW status
+      command: ufw status
+      register: ufw_status
+      changed_when: false
+      
+    - name: Display port allow status
+      debug:
+        msg: |
+          ✅ Traffic allowed on port {{ port }}
+          Status: {{ 'Rule added' if ufw_allow_port.changed else 'Rule already exists' }}
+          
+          Current UFW Rules:
+          {{ ufw_status.stdout }}

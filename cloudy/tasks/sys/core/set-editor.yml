@@ -1,0 +1,44 @@
+# Granular Task: Set Default System Editor
+# Equivalent to: cloudy-old/sys/vim.py::sys_set_default_editor()
+# Usage: ansible-playbook tasks/sys/core/set-editor.yml -e "editor_choice=3"
+
+---
+- name: Set default system editor
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    editor_choice: "{{ editor_choice | default(3) }}"
+    
+  tasks:
+    - name: Get available editors
+      command: update-alternatives --list editor
+      register: available_editors
+      changed_when: false
+      failed_when: false
+      
+    - name: Display available editors
+      debug:
+        msg: |
+          Available editors:
+          {{ available_editors.stdout_lines | join('\n') if available_editors.stdout_lines else 'None found' }}
+          
+    - name: Set default editor using update-alternatives
+      shell: "echo {{ editor_choice }} | update-alternatives --config editor"
+      register: editor_config
+      changed_when: "'update-alternatives: using' in editor_config.stdout"
+      
+    - name: Verify current default editor
+      command: update-alternatives --query editor
+      register: current_editor
+      changed_when: false
+      failed_when: false
+      
+    - name: Display editor configuration status
+      debug:
+        msg: |
+          ✅ Default editor configuration completed
+          Choice: {{ editor_choice }}
+          Status: {{ 'Changed' if editor_config.changed else 'Already set' }}
+          Current editor: {{ current_editor.stdout_lines | select('match', '^Value:') | first | regex_replace('^Value: ', '') if current_editor.stdout_lines else 'Unknown' }}

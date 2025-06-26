@@ -1,0 +1,38 @@
+# Granular Task: List PostgreSQL Users
+# Equivalent to: cloudy-old/db/psql.py::db_psql_list_users()
+# Usage: ansible-playbook tasks/db/postgresql/list-users.yml
+
+---
+- name: List PostgreSQL users
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Get PostgreSQL users list
+      become_user: postgres
+      postgresql_query:
+        query: |
+          SELECT 
+            usename as username,
+            usesuper as is_superuser,
+            usecreatedb as can_create_db,
+            usecreaterole as can_create_role,
+            usebypassrls as can_bypass_rls,
+            valuntil as password_expiry
+          FROM pg_user 
+          ORDER BY usename
+      register: pg_users_list
+      
+    - name: Display PostgreSQL users
+      debug:
+        msg: |
+          📋 PostgreSQL Users ({{ pg_users_list.rowcount }} total):
+          {% for user in pg_users_list.query_result %}
+          ├── {{ user.username }}
+          │   ├── Superuser: {{ user.is_superuser }}
+          │   ├── Create DB: {{ user.can_create_db }}
+          │   ├── Create Role: {{ user.can_create_role }}
+          │   ├── Bypass RLS: {{ user.can_bypass_rls }}
+          │   └── Password Expiry: {{ user.password_expiry | default('Never') }}
+          {% endfor %}

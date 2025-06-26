@@ -1,0 +1,48 @@
+# Granular Task: Get Installed PostgreSQL Version
+# Equivalent to: cloudy-old/db/psql.py::db_psql_default_installed_version()
+# Usage: ansible-playbook tasks/db/postgresql/get-installed-version.yml
+
+---
+- name: Get installed PostgreSQL version
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: false
+  
+  tasks:
+    - name: Check if PostgreSQL is installed
+      command: psql --version
+      register: psql_version_check
+      changed_when: false
+      failed_when: false
+      
+    - name: Parse PostgreSQL version
+      set_fact:
+        installed_pg_version: "{{ psql_version_check.stdout | regex_search('psql \\(PostgreSQL\\) (\\d+(?:\\.\\d+)?)', '\\1') | first }}"
+      when: psql_version_check.rc == 0 and psql_version_check.stdout
+      
+    - name: Normalize version for modern PostgreSQL (>= 10)
+      set_fact:
+        postgresql_installed_version: "{{ installed_pg_version.split('.')[0] }}"
+      when: 
+        - installed_pg_version is defined
+        - installed_pg_version.split('.')[0] | int >= 10
+        
+    - name: Keep full version for legacy PostgreSQL (< 10)
+      set_fact:
+        postgresql_installed_version: "{{ installed_pg_version }}"
+      when: 
+        - installed_pg_version is defined
+        - installed_pg_version.split('.')[0] | int < 10
+        
+    - name: Set not installed if no version found
+      set_fact:
+        postgresql_installed_version: ""
+      when: psql_version_check.rc != 0 or not psql_version_check.stdout
+      
+    - name: Display installed PostgreSQL version
+      debug:
+        msg: |
+          🔍 PostgreSQL installation check completed
+          Raw version: {{ psql_version_check.stdout if psql_version_check.rc == 0 else 'Not installed' }}
+          Parsed version: {{ postgresql_installed_version if postgresql_installed_version else 'Not installed' }}
+          Status: {{ 'Installed' if postgresql_installed_version else 'Not installed' }}

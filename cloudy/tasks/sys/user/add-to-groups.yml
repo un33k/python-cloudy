@@ -1,0 +1,33 @@
+# Granular Task: Add User to Multiple Groups
+# Equivalent to: cloudy-old/sys/user.py::sys_user_add_to_groups()
+# Usage: ansible-playbook tasks/sys/user/add-to-groups.yml -e "username=admin group_list='docker,www-data,admin'"
+
+---
+- name: Add user to multiple groups
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    username: "{{ username | mandatory }}"
+    group_list: "{{ group_list | mandatory }}"
+    
+  tasks:
+    - name: Parse group list
+      set_fact:
+        groups_array: "{{ group_list.split(',') | map('trim') | list }}"
+        
+    - name: Add user to multiple groups
+      user:
+        name: "{{ username }}"
+        groups: "{{ groups_array }}"
+        append: true
+      register: groups_addition_result
+      
+    - name: Display groups addition status
+      debug:
+        msg: |
+          ✅ User added to multiple groups
+          User: {{ username }}
+          Groups: {{ groups_array | join(', ') }}
+          Status: {{ 'Updated' if groups_addition_result.changed else 'Already member of all groups' }}

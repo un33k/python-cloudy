@@ -1,0 +1,31 @@
+# Granular Task: Enable SSH Root Login
+# Equivalent to: cloudy-old/sys/ssh.py::sys_ssh_enable_root_login()
+# Usage: ansible-playbook tasks/sys/ssh/enable-root-login.yml
+
+---
+- name: Enable SSH root login
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Enable root login in sshd_config
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin\s+'
+        line: "PermitRootLogin yes"
+        backup: true
+      register: root_login_config
+      
+    - name: Reload SSH service
+      systemd:
+        name: ssh
+        state: reloaded
+      when: root_login_config.changed
+      
+    - name: Display root login enable status
+      debug:
+        msg: |
+          ✅ SSH root login enabled
+          Config changed: {{ root_login_config.changed }}
+          ⚠️  Security warning: Root login is now allowed!

@@ -1,0 +1,44 @@
+# Granular Task: Open Firewall (Allow All Traffic)
+# Equivalent to: cloudy-old/sys/firewall.py::fw_wide_open()
+# Usage: ansible-playbook tasks/sys/firewall/wide-open.yml
+
+---
+- name: Open firewall (allow all traffic)
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Set default policy - allow incoming
+      ufw:
+        direction: incoming
+        policy: allow
+      register: ufw_allow_incoming
+      
+    - name: Set default policy - allow outgoing
+      ufw:
+        direction: outgoing
+        policy: allow
+      register: ufw_allow_outgoing
+      
+    - name: Enable UFW
+      ufw:
+        state: enabled
+      register: ufw_enable
+      
+    - name: Get UFW status
+      command: ufw status verbose
+      register: ufw_status
+      changed_when: false
+      
+    - name: Display wide open firewall status
+      debug:
+        msg: |
+          ⚠️  FIREWALL WIDE OPEN - ALL TRAFFIC ALLOWED
+          Default incoming: ALLOW
+          Default outgoing: ALLOW
+          
+          Current UFW Status:
+          {{ ufw_status.stdout }}
+          
+          🚨 SECURITY WARNING: This configuration allows all traffic!

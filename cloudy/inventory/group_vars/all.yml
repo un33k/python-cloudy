@@ -1,0 +1,35 @@
+# Global Variables (replaces cloudy-old .cloudy config files)
+# These match the old [COMMON] section variables
+
+# Git Configuration
+git_user_full_name: "System Administrator"
+git_user_email: "admin@example.com"
+
+# System Configuration
+timezone: "America/New_York"
+locale: "en_US.UTF-8"
+hostname: "{{ inventory_hostname }}"
+
+# User Management
+admin_user: "admin"
+admin_password: "{{ vault_admin_password | default('changeme') }}"
+admin_groups: "admin,www-data,docker"
+
+# SSH Configuration
+ssh_port: 22022
+ssh_disable_root: true
+ssh_enable_password_auth: false
+
+# Python Configuration
+python_version: "3.11"
+
+# Security
+ufw_enabled: true
+fail2ban_enabled: true
+
+# Swap Configuration
+swap_size: "2G"
+
+# Package Management
+update_cache: true
+upgrade_packages: false

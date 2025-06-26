@@ -1,0 +1,52 @@
+# Granular Task: Restart Systemd Service Safely
+# Equivalent to: cloudy-old/sys/core.py::sys_restart_service()
+# Usage: ansible-playbook tasks/sys/core/service-restart.yml -e "service_name=nginx"
+
+---
+- name: Restart systemd service safely
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    # Required variable
+    service_name: "{{ service_name | mandatory }}"
+    # Optional variables
+    stop_wait_seconds: "{{ stop_wait_seconds | default(2) }}"
+    start_wait_seconds: "{{ start_wait_seconds | default(2) }}"
+    
+  tasks:
+    - name: Stop service {{ service_name }}
+      systemd:
+        name: "{{ service_name }}"
+        state: stopped
+      register: service_stop_result
+      failed_when: false
+      
+    - name: Wait after stopping service
+      pause:
+        seconds: "{{ stop_wait_seconds }}"
+      when: service_stop_result.changed
+      
+    - name: Start service {{ service_name }}
+      systemd:
+        name: "{{ service_name }}"
+        state: started
+      register: service_start_result
+      
+    - name: Wait after starting service
+      pause:
+        seconds: "{{ start_wait_seconds }}"
+      when: service_start_result.changed
+      
+    - name: Verify service status
+      systemd:
+        name: "{{ service_name }}"
+      register: service_status
+      
+    - name: Display service status
+      debug:
+        msg: |
+          ✅ Service {{ service_name }} restarted successfully
+          Status: {{ service_status.status.ActiveState }}
+          Enabled: {{ service_status.status.UnitFileState | default('unknown') }}

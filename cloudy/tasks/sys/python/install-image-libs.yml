@@ -1,0 +1,35 @@
+# Granular Task: Install Python Image Processing Libraries
+# Split from: cloudy-old/sys/python.py::sys_python_install_common() - image libs only
+# Usage: ansible-playbook tasks/sys/python/install-image-libs.yml
+
+---
+- name: Install Python image processing libraries
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Install image processing development libraries
+      apt:
+        name:
+          - "libfreetype6-dev"
+          - "libjpeg-dev"
+          - "libpng-dev"
+          - "zlib1g-dev"
+          - "liblcms2-dev"
+          - "libwebp-dev"
+          - "libtiff5-dev"
+          - "libopenjp2-7-dev"
+        state: present
+        update_cache: true
+      register: image_libs_result
+      
+    - name: Install system Python imaging packages
+      apt:
+        name:
+          - "python3-pil"
+        state: present
+        
+    - name: Display installation status
+      debug:
+        msg: "✅ Python image processing libraries installed ({{ image_libs_result.changed | ternary('new installation', 'already present') }})"

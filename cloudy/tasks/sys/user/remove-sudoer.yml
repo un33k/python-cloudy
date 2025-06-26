@@ -1,0 +1,28 @@
+# Granular Task: Remove User from Sudoers
+# Equivalent to: cloudy-old/sys/user.py::sys_user_remove_sudoer()
+# Usage: ansible-playbook tasks/sys/user/remove-sudoer.yml -e "username=oldadmin"
+
+---
+- name: Remove user from sudoers
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    username: "{{ username | mandatory }}"
+    
+  tasks:
+    - name: Remove user from sudoers file
+      lineinfile:
+        path: /etc/sudoers
+        regexp: '^\s*{{ username }}\s+.*'
+        state: absent
+        validate: 'visudo -cf %s'
+        backup: true
+      register: sudoers_removal_result
+      
+    - name: Display sudoers removal status
+      debug:
+        msg: |
+          ✅ User removed from sudoers: {{ username }}
+          Status: {{ 'Removed' if sudoers_removal_result.changed else 'Was not in sudoers' }}

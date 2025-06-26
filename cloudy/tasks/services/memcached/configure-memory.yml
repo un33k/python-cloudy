@@ -1,0 +1,59 @@
+# Granular Task: Configure Memcached Memory
+# Equivalent to: cloudy-old/sys/memcached.py::sys_memcached_configure_memory()
+# Usage: ansible-playbook tasks/services/memcached/configure-memory.yml -e "memory_mb=256"
+
+---
+- name: Configure Memcached memory
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: true
+  become: true
+  
+  vars:
+    memory_mb: "{{ memory_mb | default(0) }}"
+    memory_divider: "{{ memory_divider | default(8) }}"
+    
+  tasks:
+    - name: Calculate memory if not specified
+      set_fact:
+        calculated_memory_mb: "{{ (ansible_memtotal_mb / memory_divider) | int }}"
+      when: memory_mb | int == 0
+      
+    - name: Use specified memory
+      set_fact:
+        calculated_memory_mb: "{{ memory_mb }}"
+      when: memory_mb | int > 0
+      
+    - name: Configure Memcached memory in config file
+      lineinfile:
+        path: /etc/memcached.conf
+        regexp: '^-m\\s+\\d+'
+        line: "-m {{ calculated_memory_mb }}"
+        backup: true
+      register: memcached_memory_config
+      
+    - name: Restart Memcached service
+      systemd:
+        name: memcached
+        state: restarted
+      when: memcached_memory_config.changed
+      
+    - name: Wait for Memcached to start
+      pause:
+        seconds: 2
+      when: memcached_memory_config.changed
+      
+    - name: Verify Memcached memory configuration
+      shell: echo "stats" | nc localhost 11211 | grep limit_maxbytes
+      register: memcached_memory_check
+      changed_when: false
+      failed_when: false
+      
+    - name: Display Memcached memory configuration status
+      debug:
+        msg: |
+          ✅ Memcached memory configured
+          Configured memory: {{ calculated_memory_mb }}MB
+          Source: {{ 'Auto-calculated from system memory' if memory_mb | int == 0 else 'User specified' }}
+          System memory: {{ ansible_memtotal_mb }}MB
+          Configuration: {{ 'Updated' if memcached_memory_config.changed else 'Already configured' }}
+          Current limit: {{ memcached_memory_check.stdout.split()[1] if memcached_memory_check.stdout else 'Unknown' }} bytes

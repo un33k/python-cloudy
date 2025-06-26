@@ -1,0 +1,181 @@
+# Recipe: Database Server Setup (PostgreSQL + MySQL)
+# Usage: ansible-playbook playbooks/recipes/database-server.yml -i inventory/hosts.yml
+
+---
+- name: Database Server Setup Recipe
+  hosts: database_servers
+  gather_facts: true
+  become: true
+  
+  vars:
+    # Override these in inventory or command line
+    setup_postgresql: true
+    setup_mysql: false
+    setup_redis: false
+    pg_version: "{{ pg_version | default('17') }}"
+    mysql_version: "{{ mysql_version | default('8.0') }}"
+    
+  pre_tasks:
+    - name: Display database server setup information
+      debug:
+        msg: |
+          🗄️  Starting Database Server Setup
+          Target: {{ inventory_hostname }} ({{ ansible_host }})
+          PostgreSQL: {{ 'Yes (v' + pg_version + ')' if setup_postgresql else 'No' }}
+          MySQL: {{ 'Yes (v' + mysql_version + ')' if setup_mysql else 'No' }}
+          Redis: {{ 'Yes' if setup_redis else 'No' }}
+          
+  tasks:
+    # Foundation Setup (reuse generic server tasks)
+    - name: Run generic server setup
+      include: generic-server.yml
+      tags: [foundation]
+      
+    # PostgreSQL Setup
+    - name: Install PostgreSQL repository
+      include_tasks: ../../tasks/db/postgresql/install-repo.yml
+      when: setup_postgresql | bool
+      tags: [postgresql, repo]
+      
+    - name: Install PostgreSQL server
+      include_tasks: ../../tasks/db/postgresql/install.yml
+      vars:
+        pg_version: "{{ pg_version }}"
+      when: setup_postgresql | bool
+      tags: [postgresql, install]
+      
+    - name: Create PostgreSQL databases
+      include_tasks: ../../tasks/db/postgresql/create-database.yml
+      vars:
+        database: "{{ item.name }}"
+        owner: "{{ item.owner }}"
+        encoding: "{{ item.encoding | default('UTF8') }}"
+        locale: "{{ item.locale | default('en_US.UTF-8') }}"
+      loop: "{{ pg_databases }}"
+      when: setup_postgresql | bool and pg_databases is defined
+      tags: [postgresql, databases]
+      
+    - name: Create PostgreSQL users
+      include_tasks: ../../tasks/db/postgresql/create-user.yml
+      vars:
+        username: "{{ item.name }}"
+        password: "{{ item.password }}"
+      loop: "{{ pg_users }}"
+      when: setup_postgresql | bool and pg_users is defined
+      tags: [postgresql, users]
+      
+    - name: Grant PostgreSQL privileges
+      include_tasks: ../../tasks/db/postgresql/grant-privileges.yml
+      vars:
+        database: "{{ item.database }}"
+        username: "{{ item.name }}"
+        privileges: "{{ item.privileges | default('ALL') }}"
+      loop: "{{ pg_users }}"
+      when: setup_postgresql | bool and pg_users is defined and item.database is defined
+      tags: [postgresql, privileges]
+      
+    # MySQL Setup
+    - name: Install MySQL server
+      include_tasks: ../../tasks/db/mysql/install-server.yml
+      vars:
+        mysql_version: "{{ mysql_version }}"
+      when: setup_mysql | bool
+      tags: [mysql, install]
+      
+    - name: Set MySQL root password
+      include_tasks: ../../tasks/db/mysql/set-root-password.yml
+      vars:
+        root_password: "{{ mysql_root_password }}"
+      when: setup_mysql | bool and mysql_root_password is defined
+      tags: [mysql, security]
+      
+    - name: Create MySQL databases
+      include_tasks: ../../tasks/db/mysql/create-database.yml
+      vars:
+        root_password: "{{ mysql_root_password }}"
+        database: "{{ item.name }}"
+        charset: "{{ item.charset | default('utf8mb4') }}"
+        collation: "{{ item.collation | default('utf8mb4_unicode_ci') }}"
+      loop: "{{ mysql_databases | default([]) }}"
+      when: setup_mysql | bool and mysql_root_password is defined
+      tags: [mysql, databases]
+      
+    - name: Create MySQL users
+      include_tasks: ../../tasks/db/mysql/create-user.yml
+      vars:
+        root_password: "{{ mysql_root_password }}"
+        username: "{{ item.name }}"
+        user_password: "{{ item.password }}"
+        host: "{{ item.host | default('localhost') }}"
+      loop: "{{ mysql_users | default([]) }}"
+      when: setup_mysql | bool and mysql_root_password is defined
+      tags: [mysql, users]
+      
+    - name: Grant MySQL privileges
+      include_tasks: ../../tasks/db/mysql/grant-privileges.yml
+      vars:
+        root_password: "{{ mysql_root_password }}"
+        username: "{{ item.name }}"
+        database: "{{ item.database }}"
+        privileges: "{{ item.privileges | default('ALL') }}"
+        host: "{{ item.host | default('localhost') }}"
+      loop: "{{ mysql_users | default([]) }}"
+      when: setup_mysql | bool and mysql_root_password is defined and item.database is defined
+      tags: [mysql, privileges]
+      
+    # Redis Setup
+    - name: Install Redis server
+      include_tasks: ../../tasks/services/redis/install.yml
+      when: setup_redis | bool
+      tags: [redis, install]
+      
+    - name: Configure Redis memory
+      include_tasks: ../../tasks/services/redis/configure-memory.yml
+      vars:
+        memory_mb: "{{ redis_maxmemory | default(0) }}"
+      when: setup_redis | bool
+      tags: [redis, config]
+      
+    - name: Configure Redis port
+      include_tasks: ../../tasks/services/redis/configure-port.yml
+      vars:
+        redis_port: "{{ redis_port | default(6379) }}"
+      when: setup_redis | bool
+      tags: [redis, config]
+      
+    # Firewall Configuration
+    - name: Allow PostgreSQL through firewall
+      include_tasks: ../../tasks/sys/firewall/allow-postgresql.yml
+      when: setup_postgresql | bool
+      tags: [firewall, postgresql]
+      
+    - name: Allow MySQL through firewall
+      include_tasks: ../../tasks/sys/firewall/allow-port.yml
+      vars:
+        port: 3306
+      when: setup_mysql | bool
+      tags: [firewall, mysql]
+      
+    - name: Allow Redis through firewall
+      include_tasks: ../../tasks/sys/firewall/allow-port.yml
+      vars:
+        port: "{{ redis_port | default(6379) }}"
+      when: setup_redis | bool
+      tags: [firewall, redis]
+      
+  post_tasks:
+    - name: Display database server completion summary
+      debug:
+        msg: |
+          🎉 ✅ DATABASE SERVER SETUP COMPLETED SUCCESSFULLY!
+          📋 Configuration Summary:
+             ├── Server: {{ inventory_hostname }} ({{ ansible_host }})
+             ├── PostgreSQL: {{ 'v' + pg_version + ' installed' if setup_postgresql else 'Not installed' }}
+             ├── MySQL: {{ 'v' + mysql_version + ' installed' if setup_mysql else 'Not installed' }}
+             ├── Redis: {{ 'Installed on port ' + (redis_port | default(6379) | string) if setup_redis else 'Not installed' }}
+             ├── Databases: {{ (pg_databases | length if pg_databases is defined else 0) + (mysql_databases | length if mysql_databases is defined else 0) }} created
+             ├── Users: {{ (pg_users | length if pg_users is defined else 0) + (mysql_users | length if mysql_users is defined else 0) }} created
+             └── Firewall: Database ports configured
+          
+          🚀 Database server is ready for applications!
+             └── Connection: {{ admin_user }}@{{ ansible_host }}:{{ ssh_port }}

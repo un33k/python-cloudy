@@ -1,0 +1,40 @@
+# Granular Task: Delete User (except root)
+# Equivalent to: cloudy-old/sys/user.py::sys_user_delete()
+# Usage: ansible-playbook tasks/sys/user/delete-user.yml -e "username=olduser"
+
+---
+- name: Delete user (except root)
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    username: "{{ username | mandatory }}"
+    
+  tasks:
+    - name: Prevent deletion of root user
+      fail:
+        msg: "Cannot delete root user"
+      when: username == "root"
+      
+    - name: Kill all processes for user
+      shell: "pkill -KILL -u {{ username }}"
+      register: kill_processes
+      failed_when: false
+      changed_when: kill_processes.rc == 0
+      
+    - name: Delete user account
+      user:
+        name: "{{ username }}"
+        state: absent
+        remove: true
+        force: true
+      register: user_deletion
+      failed_when: false
+      
+    - name: Display user deletion status
+      debug:
+        msg: |
+          ✅ User deletion completed: {{ username }}
+          Processes killed: {{ 'Yes' if kill_processes.changed else 'None found' }}
+          User removed: {{ 'Yes' if user_deletion.changed else 'User did not exist' }}

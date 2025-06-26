@@ -1,0 +1,48 @@
+# Granular Task: Install MySQL Client
+# Equivalent to: cloudy-old/db/mysql.py::db_mysql_client_install()
+# Usage: ansible-playbook tasks/db/mysql/install-client.yml -e "mysql_version=8.0"
+
+---
+- name: Install MySQL client
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    mysql_version: "{{ mysql_version | default('') }}"
+    
+  tasks:
+    - name: Get latest MySQL version if not specified
+      import_tasks: get-latest-version.yml
+      when: not mysql_version
+      
+    - name: Set MySQL version to install
+      set_fact:
+        install_mysql_version: "{{ mysql_version if mysql_version else mysql_latest_version }}"
+        
+    - name: Validate MySQL version
+      fail:
+        msg: "Could not determine MySQL version to install"
+      when: not install_mysql_version
+      
+    - name: Install MySQL client package
+      apt:
+        name: "mysql-client-{{ install_mysql_version }}"
+        state: present
+        update_cache: true
+      environment:
+        DEBIAN_FRONTEND: noninteractive
+      register: mysql_client_install
+      
+    - name: Verify MySQL client installation
+      command: mysql --version
+      register: mysql_client_version_check
+      changed_when: false
+      
+    - name: Display MySQL client installation status
+      debug:
+        msg: |
+          ✅ MySQL {{ install_mysql_version }} client installation completed
+          Installation: {{ 'New installation' if mysql_client_install.changed else 'Already installed' }}
+          Version: {{ mysql_client_version_check.stdout }}
+          Purpose: Client tools for connecting to MySQL servers

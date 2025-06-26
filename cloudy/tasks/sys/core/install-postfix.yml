@@ -1,0 +1,73 @@
+# Granular Task: Install Postfix for Outgoing Email
+# Equivalent to: cloudy-old/sys/postfix.py::sys_install_postfix()
+# Usage: ansible-playbook tasks/sys/core/install-postfix.yml
+
+---
+- name: Install Postfix for outgoing email
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Install debconf-utils for configuration
+      apt:
+        name: debconf-utils
+        state: present
+        update_cache: true
+        
+    - name: Configure Postfix debconf selections
+      debconf:
+        name: postfix
+        question: "{{ item.question }}"
+        value: "{{ item.value }}"
+        vtype: "{{ item.vtype }}"
+      loop:
+        - { question: 'postfix/main_mailer_type', value: 'Internet Site', vtype: 'select' }
+        - { question: 'postfix/mailname', value: 'localhost', vtype: 'string' }
+        - { question: 'postfix/destinations', value: 'localhost.localdomain, localhost', vtype: 'string' }
+      register: postfix_debconf
+      
+    - name: Install Postfix package
+      apt:
+        name: postfix
+        state: present
+      register: postfix_install_result
+      
+    - name: Configure Postfix for loopback-only operation
+      lineinfile:
+        path: /etc/postfix/main.cf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        backup: true
+      loop:
+        - { regexp: '^inet_interfaces\\s*=', line: 'inet_interfaces = loopback-only' }
+        - { regexp: '^mydestination\\s*=', line: 'mydestination = localhost.localdomain, localhost' }
+        - { regexp: '^myhostname\\s*=', line: 'myhostname = localhost' }
+      register: postfix_config_result
+      
+    - name: Restart Postfix service
+      systemd:
+        name: postfix
+        state: restarted
+        enabled: true
+      when: postfix_install_result.changed or postfix_config_result.changed
+      
+    - name: Verify Postfix installation
+      command: postconf -n inet_interfaces
+      register: postfix_verification
+      changed_when: false
+      
+    - name: Test Postfix service status
+      systemd:
+        name: postfix
+      register: postfix_status
+      
+    - name: Display Postfix installation status
+      debug:
+        msg: |
+          ✅ Postfix installed for outgoing email
+          Installation: {{ 'New installation' if postfix_install_result.changed else 'Already installed' }}
+          Configuration: {{ 'Updated' if postfix_config_result.changed else 'Already configured' }}
+          Interface: {{ postfix_verification.stdout }}
+          Service: {{ postfix_status.status.ActiveState }}
+          Purpose: Configured for localhost outgoing mail only

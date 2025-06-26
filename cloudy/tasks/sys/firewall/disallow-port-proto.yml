@@ -1,0 +1,47 @@
+# Granular Task: Disallow Traffic on Specific Port/Protocol
+# Equivalent to: cloudy-old/sys/firewall.py::fw_disallow_incoming_port_proto()
+# Usage: ansible-playbook tasks/sys/firewall/disallow-port-proto.yml -e "port=8080 protocol=tcp"
+
+---
+- name: Disallow traffic on specific port/protocol
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    port: "{{ port | mandatory }}"
+    protocol: "{{ protocol | mandatory }}"
+    
+  tasks:
+    - name: Validate port number
+      fail:
+        msg: "Port must be between 1-65535, got: {{ port }}"
+      when: port | int < 1 or port | int > 65535
+      
+    - name: Validate protocol
+      fail:
+        msg: "Protocol must be tcp or udp, got: {{ protocol }}"
+      when: protocol not in ['tcp', 'udp']
+      
+    - name: Remove allow rule for port {{ port }}/{{ protocol }}
+      ufw:
+        rule: allow
+        port: "{{ port }}"
+        proto: "{{ protocol }}"
+        delete: true
+      register: ufw_disallow_port_proto
+      failed_when: false
+      
+    - name: Get UFW status
+      command: ufw status
+      register: ufw_status
+      changed_when: false
+      
+    - name: Display port/protocol disallow status
+      debug:
+        msg: |
+          ✅ Traffic disallowed on port {{ port }}/{{ protocol }}
+          Status: {{ 'Rule removed' if ufw_disallow_port_proto.changed else 'Rule did not exist' }}
+          
+          Current UFW Rules:
+          {{ ufw_status.stdout }}

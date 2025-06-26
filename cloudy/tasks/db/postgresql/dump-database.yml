@@ -1,0 +1,78 @@
+# Granular Task: Dump PostgreSQL Database
+# Equivalent to: cloudy-old/db/psql.py::db_psql_dump_database()
+# Usage: ansible-playbook tasks/db/postgresql/dump-database.yml -e "database=myapp dump_file=/backup/myapp.sql"
+
+---
+- name: Dump PostgreSQL database
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    database: "{{ database | mandatory }}"
+    dump_file: "{{ dump_file | default('/tmp/' + database + '_' + ansible_date_time.epoch + '.sql') }}"
+    dump_format: "{{ dump_format | default('plain') }}"  # plain, custom, directory, tar
+    compress: "{{ compress | default(false) }}"
+    
+  tasks:
+    - name: Check if database exists
+      become_user: postgres
+      postgresql_query:
+        query: "SELECT datname FROM pg_database WHERE datname = %s"
+        positional_args:
+          - "{{ database }}"
+      register: pg_db_check
+      
+    - name: Fail if database does not exist
+      fail:
+        msg: "Database '{{ database }}' does not exist"
+      when: pg_db_check.rowcount == 0
+      
+    - name: Create backup directory
+      file:
+        path: "{{ dump_file | dirname }}"
+        state: directory
+        mode: '0755'
+        owner: postgres
+        group: postgres
+      when: dump_file | dirname != '/tmp'
+      
+    - name: Dump PostgreSQL database (plain format)
+      become_user: postgres
+      shell: "pg_dump {{ '-Z 9' if compress else '' }} -f '{{ dump_file }}' '{{ database }}'"
+      register: pg_dump_result
+      when: dump_format == 'plain'
+      
+    - name: Dump PostgreSQL database (custom format)
+      become_user: postgres
+      shell: "pg_dump -Fc {{ '-Z 9' if compress else '' }} -f '{{ dump_file }}' '{{ database }}'"
+      register: pg_dump_result
+      when: dump_format == 'custom'
+      
+    - name: Dump PostgreSQL database (directory format)
+      become_user: postgres
+      shell: "pg_dump -Fd -f '{{ dump_file }}' '{{ database }}'"
+      register: pg_dump_result
+      when: dump_format == 'directory'
+      
+    - name: Dump PostgreSQL database (tar format)
+      become_user: postgres
+      shell: "pg_dump -Ft {{ '-Z 9' if compress else '' }} -f '{{ dump_file }}' '{{ database }}'"
+      register: pg_dump_result
+      when: dump_format == 'tar'
+      
+    - name: Get dump file info
+      stat:
+        path: "{{ dump_file }}"
+      register: dump_file_info
+      
+    - name: Display database dump status
+      debug:
+        msg: |
+          ✅ PostgreSQL database dump completed
+          Database: {{ database }}
+          Dump file: {{ dump_file }}
+          Format: {{ dump_format }}
+          Compressed: {{ compress }}
+          File size: {{ (dump_file_info.stat.size / 1024 / 1024) | round(2) }}MB
+          Status: {{ 'Success' if pg_dump_result.rc == 0 else 'Failed' }}

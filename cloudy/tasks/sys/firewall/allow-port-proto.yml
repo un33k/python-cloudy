@@ -1,0 +1,45 @@
+# Granular Task: Allow Traffic on Specific Port/Protocol
+# Equivalent to: cloudy-old/sys/firewall.py::fw_allow_incoming_port_proto()
+# Usage: ansible-playbook tasks/sys/firewall/allow-port-proto.yml -e "port=8080 protocol=tcp"
+
+---
+- name: Allow traffic on specific port/protocol
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    port: "{{ port | mandatory }}"
+    protocol: "{{ protocol | mandatory }}"
+    
+  tasks:
+    - name: Validate port number
+      fail:
+        msg: "Port must be between 1-65535, got: {{ port }}"
+      when: port | int < 1 or port | int > 65535
+      
+    - name: Validate protocol
+      fail:
+        msg: "Protocol must be tcp or udp, got: {{ protocol }}"
+      when: protocol not in ['tcp', 'udp']
+      
+    - name: Allow traffic on port {{ port }}/{{ protocol }}
+      ufw:
+        rule: allow
+        port: "{{ port }}"
+        proto: "{{ protocol }}"
+      register: ufw_allow_port_proto
+      
+    - name: Get UFW status
+      command: ufw status
+      register: ufw_status
+      changed_when: false
+      
+    - name: Display port/protocol allow status
+      debug:
+        msg: |
+          ✅ Traffic allowed on port {{ port }}/{{ protocol }}
+          Status: {{ 'Rule added' if ufw_allow_port_proto.changed else 'Rule already exists' }}
+          
+          Current UFW Rules:
+          {{ ufw_status.stdout }}

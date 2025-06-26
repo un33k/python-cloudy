@@ -1,0 +1,24 @@
+# Granular Task: Install System Python Packages
+# Split from: cloudy-old/sys/python.py::sys_python_install_common() - system packages only
+# Usage: ansible-playbook tasks/sys/python/install-system-packages.yml
+
+---
+- name: Install system Python packages
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Install system Python packages (preferred over pip)
+      apt:
+        name:
+          - "python3-wheel"
+          - "python3-setuptools"
+          - "python3-pil"
+        state: present
+        update_cache: true
+      register: system_packages_result
+      
+    - name: Display system packages status
+      debug:
+        msg: "✅ System Python packages installed ({{ system_packages_result.changed | ternary('new installation', 'already present') }})"

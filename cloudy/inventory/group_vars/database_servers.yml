@@ -1,0 +1,35 @@
+# Database Server Variables (replaces [DBSERVER] section)
+
+# PostgreSQL Configuration
+pg_version: "17"
+pg_port: 5432
+pg_listen_addresses: "localhost"
+pg_max_connections: 100
+pg_shared_buffers: "256MB"
+
+# Database Users & Databases
+pg_databases: []
+  # - name: myapp
+  #   owner: myapp_user
+  #   encoding: UTF8
+  #   locale: en_US.UTF-8
+
+pg_users: []
+  # - name: myapp_user
+  #   password: "{{ vault_db_password }}"
+  #   privileges: ALL
+  #   database: myapp
+
+# MySQL Configuration (if needed)
+mysql_version: "8.0"
+mysql_port: 3306
+mysql_root_password: "{{ vault_mysql_root_password | default('changeme') }}"
+
+# Redis Configuration (if on same server)
+redis_port: 6379
+redis_password: "{{ vault_redis_password | default('') }}"
+redis_maxmemory: "256mb"
+
+# PostGIS Configuration
+postgis_enabled: false
+postgis_version: "3.4"

@@ -1,0 +1,51 @@
+# Granular Task: Install Base Python Packages
+# Split from: cloudy-old/sys/python.py::sys_python_install_common() - base packages only
+# Usage: ansible-playbook tasks/sys/python/install-base.yml -e "py_version=3.11"
+
+---
+- name: Install base Python packages
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    py_version: "{{ py_version | default('3.11') }}"
+    
+  tasks:
+    - name: Parse Python major version
+      set_fact:
+        major_version: "{{ py_version.split('.')[0] }}"
+        
+    - name: Update package cache
+      apt:
+        update_cache: true
+        
+    - name: Install base Python packages
+      apt:
+        name:
+          - "python{{ major_version }}-dev"
+          - "python{{ major_version }}-setuptools" 
+          - "python{{ major_version }}-pip"
+          - "python{{ major_version }}-venv"
+          - "python3-dev"
+          - "build-essential"
+          - "pkg-config"
+        state: present
+      register: base_install_result
+      
+    - name: Verify Python installation
+      command: "python{{ major_version }} --version"
+      register: python_version
+      changed_when: false
+      
+    - name: Verify pip installation
+      command: "pip{{ major_version }} --version"
+      register: pip_version
+      changed_when: false
+      
+    - name: Display installation status
+      debug:
+        msg: |
+          ✅ Base Python {{ py_version }} packages installed
+          Python: {{ python_version.stdout }}
+          Pip: {{ pip_version.stdout }}

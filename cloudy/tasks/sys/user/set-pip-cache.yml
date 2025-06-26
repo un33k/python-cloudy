@@ -1,0 +1,53 @@
+# Granular Task: Set Pip Cache Directory for User
+# Equivalent to: cloudy-old/sys/user.py::sys_user_set_pip_cache_dir()
+# Usage: ansible-playbook tasks/sys/user/set-pip-cache.yml -e "username=admin"
+
+---
+- name: Set pip cache directory for user
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    username: "{{ username | mandatory }}"
+    cache_dir: "{{ cache_dir | default('/srv/www/.pip_cache_dir') }}"
+    
+  tasks:
+    - name: Determine user home directory
+      set_fact:
+        user_home: "{{ '/root' if username == 'root' else '/home/' + username }}"
+        
+    - name: Create pip cache directory
+      file:
+        path: "{{ cache_dir }}"
+        state: directory
+        group: www-data
+        mode: 'ug+rwx'
+      register: cache_dir_creation
+      
+    - name: Remove existing PIP_DOWNLOAD_CACHE from .bashrc
+      lineinfile:
+        path: "{{ user_home }}/.bashrc"
+        regexp: '^\s*export\s+PIP_DOWNLOAD_CACHE\s*=.*'
+        state: absent
+        backup: true
+      register: pip_cache_removal
+      
+    - name: Add PIP_DOWNLOAD_CACHE to .bashrc
+      lineinfile:
+        path: "{{ user_home }}/.bashrc"
+        line: "export PIP_DOWNLOAD_CACHE={{ cache_dir }}"
+        insertafter: BOF
+        create: true
+        owner: "{{ username }}"
+        group: "{{ username }}"
+      register: pip_cache_addition
+      
+    - name: Display pip cache configuration status
+      debug:
+        msg: |
+          ✅ Pip cache directory configured
+          User: {{ username }}
+          Cache directory: {{ cache_dir }}
+          Directory created: {{ cache_dir_creation.changed }}
+          .bashrc updated: {{ pip_cache_removal.changed or pip_cache_addition.changed }}

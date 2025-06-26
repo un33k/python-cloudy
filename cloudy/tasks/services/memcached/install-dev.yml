@@ -1,0 +1,32 @@
+# Granular Task: Install Memcached Development Libraries
+# Equivalent to: cloudy-old/sys/memcached.py::sys_memcached_libdev_install()
+# Usage: ansible-playbook tasks/services/memcached/install-dev.yml
+
+---
+- name: Install Memcached development libraries
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Install libmemcached development package
+      apt:
+        name: libmemcached-dev
+        state: present
+        update_cache: true
+      register: memcached_dev_install_result
+      
+    - name: Verify development libraries installation
+      shell: pkg-config --exists libmemcached
+      register: libmemcached_check
+      changed_when: false
+      failed_when: false
+      
+    - name: Display Memcached development libraries status
+      debug:
+        msg: |
+          ✅ Memcached development libraries installed
+          Package: libmemcached-dev
+          Installation: {{ 'New installation' if memcached_dev_install_result.changed else 'Already installed' }}
+          Verification: {{ 'Available' if libmemcached_check.rc == 0 else 'Not found' }}
+          Purpose: Required for Python pylibmc package compilation

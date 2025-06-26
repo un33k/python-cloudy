@@ -1,0 +1,52 @@
+# Granular Task: Create PostgreSQL Cluster
+# Equivalent to: cloudy-old/db/psql.py::db_psql_create_cluster()
+# Usage: ansible-playbook tasks/db/postgresql/create-cluster.yml -e "pg_version=17 cluster_name=main"
+
+---
+- name: Create PostgreSQL cluster
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    pg_version: "{{ pg_version | mandatory }}"
+    cluster_name: "{{ cluster_name | default('main') }}"
+    port: "{{ port | default(5432) }}"
+    encoding: "{{ encoding | default('UTF8') }}"
+    locale: "{{ locale | default('en_US.UTF-8') }}"
+    
+  tasks:
+    - name: Check if cluster already exists
+      shell: "pg_lsclusters | grep '{{ pg_version }}.*{{ cluster_name }}'"
+      register: cluster_check
+      changed_when: false
+      failed_when: false
+      
+    - name: Create PostgreSQL cluster
+      shell: "pg_createcluster --port {{ port }} --encoding {{ encoding }} --locale {{ locale }} {{ pg_version }} {{ cluster_name }}"
+      register: cluster_creation
+      when: cluster_check.rc != 0
+      
+    - name: Start PostgreSQL cluster
+      shell: "pg_ctlcluster {{ pg_version }} {{ cluster_name }} start"
+      register: cluster_start
+      when: cluster_creation.changed
+      
+    - name: List PostgreSQL clusters
+      command: pg_lsclusters
+      register: clusters_list
+      changed_when: false
+      
+    - name: Display cluster creation status
+      debug:
+        msg: |
+          ✅ PostgreSQL cluster management completed
+          Version: {{ pg_version }}
+          Cluster: {{ cluster_name }}
+          Port: {{ port }}
+          Encoding: {{ encoding }}
+          Locale: {{ locale }}
+          Status: {{ 'Created' if cluster_creation.changed else 'Already exists' }}
+          
+          Current Clusters:
+          {{ clusters_list.stdout }}

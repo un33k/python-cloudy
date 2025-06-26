@@ -1,0 +1,52 @@
+# Granular Task: Configure Redis Port
+# Equivalent to: cloudy-old/sys/redis.py::sys_redis_configure_port()
+# Usage: ansible-playbook tasks/services/redis/configure-port.yml -e "redis_port=6380"
+
+---
+- name: Configure Redis port
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    redis_port: "{{ redis_port | default('6379') }}"
+    
+  tasks:
+    - name: Validate Redis port
+      fail:
+        msg: "Redis port must be between 1-65535, got: {{ redis_port }}"
+      when: redis_port | int < 1 or redis_port | int > 65535
+      
+    - name: Configure Redis port in config file
+      lineinfile:
+        path: /etc/redis/redis.conf
+        regexp: '^#?port\\s+'
+        line: "port {{ redis_port }}"
+        backup: true
+      register: redis_port_config
+      
+    - name: Restart Redis service
+      systemd:
+        name: redis-server
+        state: restarted
+      when: redis_port_config.changed
+      
+    - name: Wait for Redis to start on new port
+      pause:
+        seconds: 2
+      when: redis_port_config.changed
+      
+    - name: Test Redis connectivity on configured port
+      command: "redis-cli -p {{ redis_port }} ping"
+      register: redis_ping
+      changed_when: false
+      failed_when: false
+      
+    - name: Display Redis port configuration status
+      debug:
+        msg: |
+          ✅ Redis port configured
+          Port: {{ redis_port }}
+          Configuration: {{ 'Updated' if redis_port_config.changed else 'Already configured' }}
+          Connectivity: {{ redis_ping.stdout if redis_ping.rc == 0 else 'Connection failed - check port and service' }}
+          ⚠️  Remember to update firewall rules if needed

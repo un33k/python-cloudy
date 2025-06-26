@@ -1,0 +1,41 @@
+# Granular Task: Add User to Docker Group
+# Equivalent to: cloudy-old/sys/docker.py::sys_docker_user_group()
+# Usage: ansible-playbook tasks/sys/docker/add-user.yml -e "username=admin"
+
+---
+- name: Add user to Docker group
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    username: "{{ username | mandatory }}"
+    
+  tasks:
+    - name: Ensure docker group exists
+      group:
+        name: docker
+        state: present
+      register: docker_group_creation
+      
+    - name: Add user to docker group
+      user:
+        name: "{{ username }}"
+        groups: docker
+        append: true
+      register: user_docker_group
+      
+    - name: Get user's current groups
+      command: "groups {{ username }}"
+      register: user_groups
+      changed_when: false
+      
+    - name: Display Docker group addition status
+      debug:
+        msg: |
+          ✅ User added to Docker group
+          User: {{ username }}
+          Docker group: {{ 'Created' if docker_group_creation.changed else 'Already exists' }}
+          User added: {{ 'Yes' if user_docker_group.changed else 'Already member' }}
+          Current groups: {{ user_groups.stdout.split()[2:] | join(', ') if user_groups.stdout.split() | length > 2 else 'None' }}
+          ⚠️  User needs to log out and back in for Docker access

@@ -1,0 +1,26 @@
+# Granular Task: Create Group
+# Equivalent to: cloudy-old/sys/user.py::sys_user_create_group()
+# Usage: ansible-playbook tasks/sys/user/create-group.yml -e "group_name=myapp"
+
+---
+- name: Create group
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    group_name: "{{ group_name | mandatory }}"
+    
+  tasks:
+    - name: Create group
+      group:
+        name: "{{ group_name }}"
+        state: present
+      register: group_creation_result
+      
+    - name: Display group creation status
+      debug:
+        msg: |
+          ✅ Group creation completed
+          Group: {{ group_name }}
+          Status: {{ 'Created' if group_creation_result.changed else 'Already exists' }}

@@ -1,0 +1,50 @@
+# Granular Task: Safe System Upgrade
+# Equivalent to: cloudy-old/sys/core.py::sys_safe_upgrade()
+# Usage: ansible-playbook tasks/sys/core/safe-upgrade.yml
+
+---
+- name: Safe system upgrade
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    reboot_after_upgrade: "{{ reboot_after_upgrade | default(true) }}"
+    
+  tasks:
+    - name: Install aptitude package manager
+      apt:
+        name: aptitude
+        state: present
+        
+    - name: Update package cache
+      apt:
+        update_cache: true
+        
+    - name: Perform standard apt upgrade first
+      apt:
+        upgrade: true
+      register: apt_upgrade_result
+        
+    - name: Perform safe upgrade with aptitude
+      shell: DEBIAN_FRONTEND=noninteractive aptitude -y safe-upgrade
+      register: safe_upgrade_result
+      
+    - name: Commit change to /etc git (if git repo exists)
+      shell: |
+        if [ -d /etc/.git ]; then
+          cd /etc
+          git add -A
+          git commit -m "Upgraded the system safely" || true
+        fi
+      when: apt_upgrade_result.changed or safe_upgrade_result.changed
+      
+    - name: Display upgrade completion
+      debug:
+        msg: "✅ Safe system upgrade completed. Reboot {{ 'will be performed' if reboot_after_upgrade else 'skipped' }}"
+        
+    - name: Reboot system after upgrade
+      reboot:
+        msg: "Rebooting after safe system upgrade"
+        reboot_timeout: 300
+      when: reboot_after_upgrade | bool

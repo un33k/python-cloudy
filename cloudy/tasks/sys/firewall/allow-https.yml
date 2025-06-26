@@ -1,0 +1,30 @@
+# Granular Task: Allow HTTPS Traffic (Port 443)
+# Equivalent to: cloudy-old/sys/firewall.py::fw_allow_incoming_https()
+# Usage: ansible-playbook tasks/sys/firewall/allow-https.yml
+
+---
+- name: Allow HTTPS traffic (port 443)
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Allow HTTPS traffic
+      ufw:
+        rule: allow
+        name: 'WWW Secure'
+      register: ufw_allow_https
+      
+    - name: Get UFW status
+      command: ufw status
+      register: ufw_status
+      changed_when: false
+      
+    - name: Display HTTPS allow status
+      debug:
+        msg: |
+          ✅ HTTPS traffic allowed (port 443)
+          Status: {{ 'Rule added' if ufw_allow_https.changed else 'Rule already exists' }}
+          
+          Current UFW Rules:
+          {{ ufw_status.stdout }}

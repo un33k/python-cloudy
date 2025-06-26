@@ -1,0 +1,186 @@
+# Example Production Inventory
+# Copy to hosts.yml and customize for your environment
+
+all:
+  children:
+    # Generic Servers - Foundation setup only
+    generic_servers:
+      hosts:
+        bastion:
+          ansible_host: 10.10.10.10
+          ansible_user: root
+          ansible_port: 22
+          hostname: bastion.example.com
+          
+    # Database Servers - PostgreSQL + MySQL + Redis
+    database_servers:
+      hosts:
+        db-primary:
+          ansible_host: 10.10.10.20
+          ansible_user: root
+          ansible_port: 22
+          hostname: db-primary.example.com
+          setup_postgresql: true
+          setup_mysql: false
+          setup_redis: true
+          pg_version: "17"
+          
+        db-secondary:
+          ansible_host: 10.10.10.21
+          ansible_user: admin
+          ansible_port: 22022
+          hostname: db-secondary.example.com
+          setup_postgresql: true
+          setup_mysql: true
+          setup_redis: false
+          
+    # Web Servers - Application hosting
+    web_servers:
+      hosts:
+        web-01:
+          ansible_host: 10.10.10.30
+          ansible_user: admin
+          ansible_port: 22022
+          hostname: web-01.example.com
+          
+        web-02:
+          ansible_host: 10.10.10.31
+          ansible_user: admin
+          ansible_port: 22022
+          hostname: web-02.example.com
+          
+    # Cache Servers - Redis only
+    cache_servers:
+      hosts:
+        cache-01:
+          ansible_host: 10.10.10.40
+          ansible_user: admin
+          ansible_port: 22022
+          hostname: cache-01.example.com
+          
+    # Load Balancers - Nginx
+    load_balancers:
+      hosts:
+        lb-01:
+          ansible_host: 10.10.10.50
+          ansible_user: admin
+          ansible_port: 22022
+          hostname: lb-01.example.com
+
+  vars:
+    # Global SSH configuration
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null'
+    ansible_python_interpreter: /usr/bin/python3
+    
+    # Global system configuration
+    git_user_full_name: "DevOps Team"
+    git_user_email: "devops@example.com"
+    timezone: "America/New_York"
+    locale: "en_US.UTF-8"
+    
+    # Global user configuration
+    admin_user: "admin"
+    admin_password: "{{ vault_admin_password }}"
+    admin_groups: "admin,www-data,docker"
+    
+    # Global SSH security
+    ssh_port: 22022
+    ssh_disable_root: true
+    ssh_enable_password_auth: false
+    
+    # Global firewall
+    ufw_enabled: true
+    
+    # Global swap
+    swap_size: "2G"
+
+# Group-specific variables
+database_servers:
+  vars:
+    # PostgreSQL configuration
+    pg_version: "17"
+    pg_port: 5432
+    pg_listen_addresses: "localhost"
+    pg_max_connections: 200
+    pg_shared_buffers: "512MB"
+    
+    # Example databases and users
+    pg_databases:
+      - name: myapp_production
+        owner: myapp_user
+        encoding: UTF8
+        locale: en_US.UTF-8
+      - name: analytics
+        owner: analytics_user
+        encoding: UTF8
+        locale: en_US.UTF-8
+        
+    pg_users:
+      - name: myapp_user
+        password: "{{ vault_myapp_db_password }}"
+        database: myapp_production
+        privileges: ALL
+      - name: analytics_user
+        password: "{{ vault_analytics_db_password }}"
+        database: analytics
+        privileges: ALL
+      - name: readonly_user
+        password: "{{ vault_readonly_db_password }}"
+        # No database specified = no auto-privileges
+        
+    # MySQL configuration (if enabled)
+    mysql_version: "8.0"
+    mysql_root_password: "{{ vault_mysql_root_password }}"
+    mysql_databases:
+      - name: wordpress
+        charset: utf8mb4
+        collation: utf8mb4_unicode_ci
+        
+    mysql_users:
+      - name: wp_user
+        password: "{{ vault_wp_db_password }}"
+        database: wordpress
+        host: localhost
+        privileges: ALL
+        
+    # Redis configuration
+    redis_port: 6379
+    redis_maxmemory: "1024"  # MB
+    redis_password: "{{ vault_redis_password }}"
+
+web_servers:
+  vars:
+    # Web server configuration
+    webserver: "nginx"
+    webserver_port: 80
+    webserver_ssl_port: 443
+    domain_name: "example.com"
+    ssl_enabled: true
+    
+    # Application configuration
+    app_user: "www-data"
+    app_group: "www-data"
+    app_root: "/srv/www"
+    app_port: 8000
+
+cache_servers:
+  vars:
+    # Redis-only configuration
+    setup_postgresql: false
+    setup_mysql: false
+    setup_redis: true
+    redis_port: 6379
+    redis_maxmemory: "2048"  # MB
+    redis_interface: "0.0.0.0"  # Allow external connections
+
+load_balancers:
+  vars:
+    # Nginx load balancer configuration
+    nginx_worker_processes: "auto"
+    nginx_worker_connections: 2048
+    nginx_client_max_body_size: "100M"
+    
+    # Backend servers
+    backend_servers:
+      - { name: "web-01", address: "10.10.10.30:8000" }
+      - { name: "web-02", address: "10.10.10.31:8000" }

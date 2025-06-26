@@ -1,0 +1,167 @@
+# Recipe: Generic Server Setup
+# Equivalent to: cloudy-old/srv/recipe_generic_server.py::setup_server()
+# Usage: ansible-playbook playbooks/recipes/generic-server.yml -i inventory/hosts.yml
+
+---
+- name: Generic Server Setup Recipe
+  hosts: generic_servers
+  gather_facts: true
+  become: true
+  
+  vars:
+    # Override these in inventory or command line
+    setup_admin_user: true
+    setup_ssh_security: true
+    setup_firewall: true
+    setup_swap: true
+    
+  pre_tasks:
+    - name: Display server information
+      debug:
+        msg: |
+          🚀 Starting Generic Server Setup
+          Target: {{ inventory_hostname }} ({{ ansible_host }})
+          User: {{ ansible_user }}
+          Port: {{ ansible_port | default(22) }}
+          
+  tasks:
+    # System Initialization
+    - name: Initialize system
+      include_tasks: ../../tasks/sys/core/init.yml
+      tags: [system, init]
+      
+    - name: Update system packages
+      include_tasks: ../../tasks/sys/core/update.yml
+      tags: [system, update]
+      
+    - name: Install common utilities
+      include_tasks: ../../tasks/sys/core/install-common.yml
+      tags: [system, packages]
+      
+    # Hostname Configuration
+    - name: Configure hostname
+      include_tasks: ../../tasks/sys/core/hostname.yml
+      vars:
+        target_hostname: "{{ hostname }}"
+      tags: [system, hostname]
+      
+    # Git Configuration
+    - name: Install git
+      include_tasks: ../../tasks/sys/core/install-git.yml
+      tags: [system, git]
+      
+    - name: Configure git for root
+      include_tasks: ../../tasks/sys/core/configure-git.yml
+      vars:
+        target_user: root
+        git_name: "{{ git_user_full_name }}"
+        git_email: "{{ git_user_email }}"
+      tags: [system, git]
+      
+    # User Management
+    - name: Create admin user
+      include_tasks: ../../tasks/sys/user/add-user.yml
+      vars:
+        username: "{{ admin_user }}"
+      when: setup_admin_user | bool
+      tags: [users, admin]
+      
+    - name: Set admin user password
+      include_tasks: ../../tasks/sys/user/change-password.yml
+      vars:
+        username: "{{ admin_user }}"
+        password: "{{ admin_password }}"
+      when: setup_admin_user | bool
+      tags: [users, admin, password]
+      
+    - name: Add admin user to sudoers
+      include_tasks: ../../tasks/sys/user/add-sudoer.yml
+      vars:
+        username: "{{ admin_user }}"
+      when: setup_admin_user | bool
+      tags: [users, admin, sudo]
+      
+    - name: Add admin user to groups
+      include_tasks: ../../tasks/sys/user/add-to-groups.yml
+      vars:
+        username: "{{ admin_user }}"
+        group_list: "{{ admin_groups }}"
+      when: setup_admin_user | bool
+      tags: [users, admin, groups]
+      
+    - name: Configure git for admin user
+      include_tasks: ../../tasks/sys/core/configure-git.yml
+      vars:
+        target_user: "{{ admin_user }}"
+        git_name: "{{ git_user_full_name }}"
+        git_email: "{{ git_user_email }}"
+      when: setup_admin_user | bool
+      tags: [users, admin, git]
+      
+    # SSH Security
+    - name: Configure SSH port
+      include_tasks: ../../tasks/sys/ssh/set-port.yml
+      vars:
+        ssh_port: "{{ ssh_port }}"
+      when: setup_ssh_security | bool
+      tags: [ssh, security]
+      
+    - name: Disable root login
+      include_tasks: ../../tasks/sys/ssh/disable-root-login.yml
+      when: setup_ssh_security | bool and ssh_disable_root | bool
+      tags: [ssh, security]
+      
+    - name: Disable password authentication
+      include_tasks: ../../tasks/sys/ssh/disable-password-auth.yml
+      when: setup_ssh_security | bool and not ssh_enable_password_auth | bool
+      tags: [ssh, security]
+      
+    # Firewall Setup
+    - name: Install UFW firewall
+      include_tasks: ../../tasks/sys/firewall/install.yml
+      when: setup_firewall | bool
+      tags: [firewall, security]
+      
+    - name: Secure server with firewall
+      include_tasks: ../../tasks/sys/firewall/secure-server.yml
+      vars:
+        ssh_port: "{{ ssh_port }}"
+      when: setup_firewall | bool
+      tags: [firewall, security]
+      
+    # System Configuration
+    - name: Configure timezone
+      include_tasks: ../../tasks/sys/timezone/configure.yml
+      vars:
+        timezone: "{{ timezone }}"
+      tags: [system, timezone]
+      
+    - name: Configure swap
+      include_tasks: ../../tasks/sys/swap/configure.yml
+      vars:
+        swap_size: "{{ swap_size }}"
+      when: setup_swap | bool
+      tags: [system, swap]
+      
+    # Security Hardening
+    - name: Install security packages
+      include_tasks: ../../tasks/sys/security/install-common.yml
+      when: setup_security | default(true) | bool
+      tags: [security, packages]
+      
+  post_tasks:
+    - name: Display completion summary
+      debug:
+        msg: |
+          🎉 ✅ GENERIC SERVER SETUP COMPLETED SUCCESSFULLY!
+          📋 Configuration Summary:
+             ├── Hostname: {{ hostname }}
+             ├── Timezone: {{ timezone }}
+             ├── Admin User: {{ admin_user }} (groups: {{ admin_groups }})
+             ├── SSH Port: {{ ssh_port }}
+             ├── Root Login: {{ 'Disabled' if ssh_disable_root else 'Enabled' }}
+             ├── SSH Keys: {{ 'Configured' if ansible_ssh_private_key_file is defined else 'Password Auth' }}
+             └── Firewall: {{ 'UFW enabled and configured' if setup_firewall else 'Not configured' }}
+          
+          🚀 Generic server foundation is ready for specialized deployments!
+             └── SSH Access: {{ admin_user }}@{{ ansible_host }}:{{ ssh_port }} (key-based authentication)

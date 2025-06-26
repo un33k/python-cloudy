@@ -1,0 +1,26 @@
+# Granular Task: Install NTP Time Packages
+# Split from: cloudy-old/sys/timezone.py::sys_time_install_common()
+# Usage: ansible-playbook tasks/sys/timezone/install-ntp.yml
+
+---
+- name: Install NTP time packages
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Install NTP packages
+      apt:
+        name:
+          - ntpsec
+          - ntpdate
+        state: present
+        update_cache: true
+      register: ntp_install_result
+      
+    - name: Display NTP installation status
+      debug:
+        msg: |
+          ✅ NTP packages installed
+          Status: {{ 'Installed' if ntp_install_result.changed else 'Already present' }}
+          Packages: ntpsec, ntpdate

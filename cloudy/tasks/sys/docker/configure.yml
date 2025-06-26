@@ -1,0 +1,62 @@
+# Granular Task: Configure Docker Daemon
+# Equivalent to: cloudy-old/sys/docker.py::sys_docker_config()
+# Usage: ansible-playbook tasks/sys/docker/configure.yml
+
+---
+- name: Configure Docker daemon
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    docker_data_root: "{{ docker_data_root | default('/docker') }}"
+    
+  tasks:
+    - name: Create Docker data directory
+      file:
+        path: "{{ docker_data_root }}"
+        state: directory
+        mode: '0755'
+      register: docker_dir_creation
+      
+    - name: Create Docker daemon configuration
+      copy:
+        content: |
+          {
+            "data-root": "{{ docker_data_root }}",
+            "storage-driver": "overlay2",
+            "log-driver": "json-file",
+            "log-opts": {
+              "max-size": "10m",
+              "max-file": "3"
+            }
+          }
+        dest: /etc/docker/daemon.json
+        backup: true
+        mode: '0644'
+      register: docker_config_result
+      
+    - name: Restart Docker service to apply configuration
+      systemd:
+        name: docker
+        state: restarted
+      when: docker_config_result.changed
+      
+    - name: Wait for Docker service to be ready
+      pause:
+        seconds: 3
+      when: docker_config_result.changed
+      
+    - name: Verify Docker configuration
+      command: docker info --format '{{ "{{" }}.DockerRootDir{{ "}}" }}'
+      register: docker_root_dir
+      changed_when: false
+      
+    - name: Display Docker configuration status
+      debug:
+        msg: |
+          ✅ Docker daemon configured
+          Data root: {{ docker_data_root }}
+          Current root: {{ docker_root_dir.stdout }}
+          Configuration: {{ 'Updated' if docker_config_result.changed else 'Already configured' }}
+          Directory: {{ 'Created' if docker_dir_creation.changed else 'Already exists' }}

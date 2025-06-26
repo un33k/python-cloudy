@@ -1,0 +1,40 @@
+# Granular Task: Create Directory with Optional Owner/Group
+# Equivalent to: cloudy-old/sys/core.py::sys_mkdir()
+# Usage: ansible-playbook tasks/sys/core/mkdir.yml -e "dir_path=/srv/myapp dir_owner=www-data dir_group=www-data"
+
+---
+- name: Create directory with optional ownership
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    # Required variable
+    dir_path: "{{ dir_path | mandatory }}"
+    # Optional variables
+    dir_owner: "{{ dir_owner | default('') }}"
+    dir_group: "{{ dir_group | default('') }}"
+    dir_mode: "{{ dir_mode | default('0755') }}"
+    
+  tasks:
+    - name: Validate directory path
+      fail:
+        msg: "Directory path cannot be empty"
+      when: dir_path == ""
+      
+    - name: Create directory {{ dir_path }}
+      file:
+        path: "{{ dir_path }}"
+        state: directory
+        mode: "{{ dir_mode }}"
+        owner: "{{ dir_owner if dir_owner != '' else omit }}"
+        group: "{{ dir_group if dir_group != '' else omit }}"
+      register: mkdir_result
+      
+    - name: Display directory creation status
+      debug:
+        msg: |
+          ✅ Directory created successfully: {{ dir_path }}
+          Owner: {{ dir_owner if dir_owner != '' else 'default' }}
+          Group: {{ dir_group if dir_group != '' else 'default' }}
+          Mode: {{ dir_mode }}

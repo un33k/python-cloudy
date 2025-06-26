@@ -1,0 +1,45 @@
+# Granular Task: Set User Umask
+# Equivalent to: cloudy-old/sys/user.py::sys_user_set_group_umask()
+# Usage: ansible-playbook tasks/sys/user/set-umask.yml -e "username=admin umask_value=0002"
+
+---
+- name: Set user umask in .bashrc
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    username: "{{ username | mandatory }}"
+    umask_value: "{{ umask_value | default('0002') }}"
+    
+  tasks:
+    - name: Determine user home directory
+      set_fact:
+        user_home: "{{ '/root' if username == 'root' else '/home/' + username }}"
+        
+    - name: Remove existing umask lines from .bashrc
+      lineinfile:
+        path: "{{ user_home }}/.bashrc"
+        regexp: '^\s*umask\s+.*'
+        state: absent
+        backup: true
+      register: umask_removal
+      
+    - name: Add umask to beginning of .bashrc
+      lineinfile:
+        path: "{{ user_home }}/.bashrc"
+        line: "umask {{ umask_value }}"
+        insertafter: BOF
+        create: true
+        owner: "{{ username }}"
+        group: "{{ username }}"
+      register: umask_addition
+      
+    - name: Display umask configuration status
+      debug:
+        msg: |
+          ✅ User umask configured
+          User: {{ username }}
+          Umask: {{ umask_value }}
+          File: {{ user_home }}/.bashrc
+          Status: {{ 'Updated' if umask_removal.changed or umask_addition.changed else 'Already configured' }}

@@ -1,0 +1,32 @@
+# Granular Task: Stop Systemd Service
+# Equivalent to: cloudy-old/sys/core.py::sys_stop_service()
+# Usage: ansible-playbook tasks/sys/core/service-stop.yml -e "service_name=nginx"
+
+---
+- name: Stop systemd service
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    # Required variable
+    service_name: "{{ service_name | mandatory }}"
+    
+  tasks:
+    - name: Stop service {{ service_name }}
+      systemd:
+        name: "{{ service_name }}"
+        state: stopped
+      register: service_stop_result
+      
+    - name: Verify service status
+      systemd:
+        name: "{{ service_name }}"
+      register: service_status
+      
+    - name: Display service status
+      debug:
+        msg: |
+          ✅ Service {{ service_name }} stopped successfully
+          Status: {{ service_status.status.ActiveState }}
+          Enabled: {{ service_status.status.UnitFileState | default('unknown') }}

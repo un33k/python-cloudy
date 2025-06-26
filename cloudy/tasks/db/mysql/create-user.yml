@@ -1,0 +1,45 @@
+# Granular Task: Create MySQL User
+# Equivalent to: cloudy-old/db/mysql.py::db_mysql_create_user()
+# Usage: ansible-playbook tasks/db/mysql/create-user.yml -e "root_password=secret username=myapp user_password=apppass"
+
+---
+- name: Create MySQL user
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    root_password: "{{ root_password | mandatory }}"
+    username: "{{ username | mandatory }}"
+    user_password: "{{ user_password | mandatory }}"
+    host: "{{ host | default('localhost') }}"
+    
+  tasks:
+    - name: Create MySQL user
+      mysql_user:
+        name: "{{ username }}"
+        password: "{{ user_password }}"
+        host: "{{ host }}"
+        state: present
+        login_user: root
+        login_password: "{{ root_password }}"
+      register: mysql_user_creation
+      
+    - name: Verify user creation
+      mysql_query:
+        login_user: root
+        login_password: "{{ root_password }}"
+        query: "SELECT User, Host FROM mysql.user WHERE User = %s AND Host = %s"
+        positional_args:
+          - "{{ username }}"
+          - "{{ host }}"
+      register: mysql_user_verify
+      
+    - name: Display MySQL user creation status
+      debug:
+        msg: |
+          ✅ MySQL user created
+          Username: {{ username }}
+          Host: {{ host }}
+          Status: {{ 'Created' if mysql_user_creation.changed else 'Already exists' }}
+          Verification: {{ 'Found' if mysql_user_verify.rowcount[0] > 0 else 'Not found' }}

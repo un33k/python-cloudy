@@ -1,0 +1,86 @@
+# Granular Task: Install PostgreSQL Server
+# Equivalent to: cloudy-old/db/psql.py::db_psql_install()
+# Usage: ansible-playbook tasks/db/postgresql/install.yml -e "pg_version=17"
+
+---
+- name: Install PostgreSQL server
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    pg_version: "{{ pg_version | default('') }}"
+    
+  tasks:
+    - name: Get latest PostgreSQL version if not specified
+      import_tasks: get-latest-version.yml
+      when: not pg_version
+      
+    - name: Set PostgreSQL version to install
+      set_fact:
+        install_pg_version: "{{ pg_version if pg_version else postgresql_latest_version }}"
+        
+    - name: Validate PostgreSQL version
+      fail:
+        msg: "Could not determine PostgreSQL version to install"
+      when: not install_pg_version
+      
+    - name: Define core PostgreSQL packages
+      set_fact:
+        pg_core_packages:
+          - "postgresql-{{ install_pg_version }}"
+          - "postgresql-client-{{ install_pg_version }}"
+          - "postgresql-contrib-{{ install_pg_version }}"
+          - "postgresql-client-common"
+          
+    - name: Check if development package exists
+      shell: "apt-cache show postgresql-server-dev-{{ install_pg_version }}"
+      register: pg_dev_check
+      changed_when: false
+      failed_when: false
+      
+    - name: Add development package if available
+      set_fact:
+        pg_all_packages: "{{ pg_core_packages + ['postgresql-server-dev-' + install_pg_version] }}"
+      when: pg_dev_check.rc == 0
+      
+    - name: Use core packages only if dev package unavailable
+      set_fact:
+        pg_all_packages: "{{ pg_core_packages }}"
+      when: pg_dev_check.rc != 0
+      
+    - name: Install PostgreSQL packages
+      apt:
+        name: "{{ pg_all_packages }}"
+        state: present
+        update_cache: true
+      register: pg_install_result
+      
+    - name: Start and enable PostgreSQL service
+      systemd:
+        name: postgresql
+        state: started
+        enabled: true
+      register: pg_service_result
+      
+    - name: Verify PostgreSQL installation
+      shell: "dpkg -l | grep postgresql-{{ install_pg_version }}"
+      register: pg_verify
+      changed_when: false
+      
+    - name: Test PostgreSQL connectivity
+      become_user: postgres
+      command: psql -c "SELECT version();"
+      register: pg_connection_test
+      changed_when: false
+      failed_when: false
+      
+    - name: Display PostgreSQL installation status
+      debug:
+        msg: |
+          ✅ PostgreSQL {{ install_pg_version }} installation completed
+          Packages: {{ pg_all_packages | join(', ') }}
+          Installation: {{ 'New installation' if pg_install_result.changed else 'Already installed' }}
+          Service: {{ 'Started and enabled' if pg_service_result.changed else 'Already running' }}
+          Dev package: {{ 'Included' if pg_dev_check.rc == 0 else 'Not available' }}
+          Connectivity: {{ 'Connected' if pg_connection_test.rc == 0 else 'Connection failed' }}

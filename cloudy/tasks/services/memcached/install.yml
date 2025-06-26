@@ -1,0 +1,44 @@
+# Granular Task: Install Memcached Server
+# Equivalent to: cloudy-old/sys/memcached.py::sys_memcached_install()
+# Usage: ansible-playbook tasks/services/memcached/install.yml
+
+---
+- name: Install Memcached server
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Install Memcached package
+      apt:
+        name: memcached
+        state: present
+        update_cache: true
+      register: memcached_install_result
+      
+    - name: Start and enable Memcached service
+      systemd:
+        name: memcached
+        state: started
+        enabled: true
+      register: memcached_service_result
+      
+    - name: Verify Memcached installation
+      command: memcached -h
+      register: memcached_help
+      changed_when: false
+      failed_when: false
+      
+    - name: Test Memcached connectivity
+      shell: echo "stats" | nc localhost 11211
+      register: memcached_stats
+      changed_when: false
+      failed_when: false
+      
+    - name: Display Memcached installation status
+      debug:
+        msg: |
+          ✅ Memcached server installed successfully
+          Service: {{ 'Started and enabled' if memcached_service_result.changed else 'Already running' }}
+          Installation: {{ 'New installation' if memcached_install_result.changed else 'Already installed' }}
+          Connectivity: {{ 'Connected' if memcached_stats.rc == 0 else 'Connection failed' }}

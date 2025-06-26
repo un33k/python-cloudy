@@ -1,0 +1,67 @@
+# Granular Task: Install PostgreSQL Client Only
+# Equivalent to: cloudy-old/db/psql.py::db_psql_client_install()
+# Usage: ansible-playbook tasks/db/postgresql/install-client.yml -e "pg_version=17"
+
+---
+- name: Install PostgreSQL client
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    pg_version: "{{ pg_version | default('') }}"
+    
+  tasks:
+    - name: Get latest PostgreSQL version if not specified
+      import_tasks: get-latest-version.yml
+      when: not pg_version
+      
+    - name: Set PostgreSQL version to install
+      set_fact:
+        install_pg_version: "{{ pg_version if pg_version else postgresql_latest_version }}"
+        
+    - name: Validate PostgreSQL version
+      fail:
+        msg: "Could not determine PostgreSQL version to install"
+      when: not install_pg_version
+      
+    - name: Check if development package exists
+      shell: "apt-cache show postgresql-server-dev-{{ install_pg_version }}"
+      register: pg_dev_check
+      changed_when: false
+      failed_when: false
+      
+    - name: Install PostgreSQL client with development package
+      apt:
+        name:
+          - "postgresql-client-{{ install_pg_version }}"
+          - "postgresql-server-dev-{{ install_pg_version }}"
+          - "postgresql-client-common"
+        state: present
+        update_cache: true
+      register: pg_client_install_with_dev
+      when: pg_dev_check.rc == 0
+      
+    - name: Install PostgreSQL client without development package
+      apt:
+        name:
+          - "postgresql-client-{{ install_pg_version }}"
+          - "postgresql-client-common"
+        state: present
+        update_cache: true
+      register: pg_client_install_without_dev
+      when: pg_dev_check.rc != 0
+      
+    - name: Verify PostgreSQL client installation
+      command: "psql --version"
+      register: pg_client_verify
+      changed_when: false
+      
+    - name: Display PostgreSQL client installation status
+      debug:
+        msg: |
+          ✅ PostgreSQL {{ install_pg_version }} client installation completed
+          Installation: {{ 'New installation' if (pg_client_install_with_dev.changed or pg_client_install_without_dev.changed) else 'Already installed' }}
+          Dev package: {{ 'Included' if pg_dev_check.rc == 0 else 'Not available' }}
+          Version: {{ pg_client_verify.stdout }}
+          Purpose: Client tools for connecting to PostgreSQL servers

@@ -1,0 +1,45 @@
+# Granular Task: Full System Upgrade
+# Equivalent to: cloudy-old/sys/core.py::sys_upgrade()
+# Usage: ansible-playbook tasks/sys/core/upgrade.yml
+
+---
+- name: Full system upgrade
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    reboot_after_upgrade: "{{ reboot_after_upgrade | default(true) }}"
+    
+  tasks:
+    - name: Install aptitude package manager
+      apt:
+        name: aptitude
+        state: present
+        
+    - name: Update package cache
+      apt:
+        update_cache: true
+        
+    - name: Perform full system upgrade with aptitude
+      shell: DEBIAN_FRONTEND=noninteractive aptitude -y upgrade
+      register: upgrade_result
+      
+    - name: Commit change to /etc git (if git repo exists)
+      shell: |
+        if [ -d /etc/.git ]; then
+          cd /etc
+          git add -A
+          git commit -m "Upgraded the system" || true
+        fi
+      when: upgrade_result.changed
+      
+    - name: Display upgrade completion
+      debug:
+        msg: "✅ System upgrade completed. Reboot {{ 'will be performed' if reboot_after_upgrade else 'skipped' }}"
+        
+    - name: Reboot system after upgrade
+      reboot:
+        msg: "Rebooting after system upgrade"
+        reboot_timeout: 300
+      when: reboot_after_upgrade | bool

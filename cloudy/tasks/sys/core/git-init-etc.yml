@@ -1,0 +1,45 @@
+# Granular Task: Initialize Git Tracking in /etc
+# Equivalent to: cloudy-old/sys/etc.py::sys_etc_git_init()
+# Usage: ansible-playbook tasks/sys/core/git-init-etc.yml
+
+---
+- name: Initialize git tracking in /etc directory
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Check if git is installed
+      command: which git
+      register: git_check
+      changed_when: false
+      failed_when: false
+      
+    - name: Skip if git not installed
+      debug:
+        msg: "⚠️  Git not installed, skipping /etc git initialization"
+      when: git_check.rc != 0
+      
+    - name: Check if /etc/.git already exists
+      stat:
+        path: /etc/.git
+      register: etc_git_check
+      when: git_check.rc == 0
+      
+    - name: Initialize git repository in /etc
+      shell: |
+        cd /etc
+        git init
+        git add .
+        git commit -a -m "Initial Submission"
+      when: 
+        - git_check.rc == 0
+        - not etc_git_check.stat.exists
+      register: git_init_result
+      
+    - name: Display git initialization status
+      debug:
+        msg: |
+          ✅ Git repository initialized in /etc
+          Status: {{ 'Created new repository' if git_init_result.changed else 'Repository already exists' }}
+      when: git_check.rc == 0

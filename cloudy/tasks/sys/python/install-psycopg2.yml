@@ -1,0 +1,38 @@
+# Granular Task: Install PostgreSQL Python Driver (psycopg2)
+# Split from: cloudy-old/sys/python.py::sys_python_install_common() - psycopg2 only
+# Usage: ansible-playbook tasks/sys/python/install-psycopg2.yml -e "py_version=3.11"
+
+---
+- name: Install PostgreSQL Python driver (psycopg2)
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    py_version: "{{ py_version | default('3.11') }}"
+    
+  tasks:
+    - name: Parse Python major version
+      set_fact:
+        major_version: "{{ py_version.split('.')[0] }}"
+        
+    - name: Try to install psycopg2 via system package (preferred)
+      apt:
+        name: "python3-psycopg2"
+        state: present
+      register: psycopg2_system_install
+      failed_when: false
+      
+    - name: Install psycopg2-binary via pip if system package failed
+      pip:
+        name: psycopg2-binary
+        executable: "pip{{ major_version }}"
+        break_system_packages: true
+      when: psycopg2_system_install.failed
+      register: psycopg2_pip_install
+      
+    - name: Display psycopg2 installation status
+      debug:
+        msg: |
+          ✅ PostgreSQL Python driver installed
+          Method: {{ 'System package (python3-psycopg2)' if not psycopg2_system_install.failed else 'Pip package (psycopg2-binary)' }}

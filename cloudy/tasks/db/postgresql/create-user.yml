@@ -1,0 +1,40 @@
+# Granular Task: Create PostgreSQL User
+# Equivalent to: cloudy-old/db/psql.py::db_psql_create_user()
+# Usage: ansible-playbook tasks/db/postgresql/create-user.yml -e "username=myapp password=secret123"
+
+---
+- name: Create PostgreSQL user
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    username: "{{ username | mandatory }}"
+    password: "{{ password | mandatory }}"
+    
+  tasks:
+    - name: Create PostgreSQL user
+      become_user: postgres
+      postgresql_user:
+        name: "{{ username }}"
+        password: "{{ password }}"
+        state: present
+        encrypted: true
+      register: pg_user_creation
+      
+    - name: Verify user creation
+      become_user: postgres
+      postgresql_query:
+        query: "SELECT usename FROM pg_user WHERE usename = %s"
+        positional_args:
+          - "{{ username }}"
+      register: pg_user_verify
+      
+    - name: Display PostgreSQL user creation status
+      debug:
+        msg: |
+          ✅ PostgreSQL user created
+          Username: {{ username }}
+          Status: {{ 'Created' if pg_user_creation.changed else 'Already exists' }}
+          Encrypted: Yes
+          Verification: {{ 'Found' if pg_user_verify.rowcount > 0 else 'Not found' }}

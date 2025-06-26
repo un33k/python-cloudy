@@ -1,0 +1,31 @@
+# Granular Task: Disable UFW Firewall
+# Equivalent to: cloudy-old/sys/firewall.py::fw_disable()
+# Usage: ansible-playbook tasks/sys/firewall/disable.yml
+
+---
+- name: Disable UFW firewall
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Disable UFW
+      ufw:
+        state: disabled
+      register: ufw_disable
+      
+    - name: Get UFW status
+      command: ufw status verbose
+      register: ufw_status
+      changed_when: false
+      
+    - name: Display firewall disable status
+      debug:
+        msg: |
+          ⚠️  UFW firewall disabled
+          Status: {{ 'Disabled' if ufw_disable.changed else 'Was already disabled' }}
+          
+          Current UFW Status:
+          {{ ufw_status.stdout }}
+          
+          🚨 SECURITY WARNING: Firewall is now disabled!

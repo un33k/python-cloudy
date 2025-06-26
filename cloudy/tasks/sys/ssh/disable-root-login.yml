@@ -1,0 +1,38 @@
+# Granular Task: Disable SSH Root Login
+# Equivalent to: cloudy-old/sys/ssh.py::sys_ssh_disable_root_login()
+# Usage: ansible-playbook tasks/sys/ssh/disable-root-login.yml
+
+---
+- name: Disable SSH root login
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Disable root login in sshd_config
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin\s+'
+        line: "PermitRootLogin no"
+        backup: true
+      register: root_login_config
+      
+    - name: Lock root password
+      user:
+        name: root
+        password_lock: true
+      register: root_password_lock
+      
+    - name: Reload SSH service
+      systemd:
+        name: ssh
+        state: reloaded
+      when: root_login_config.changed
+      
+    - name: Display root login disable status
+      debug:
+        msg: |
+          ✅ SSH root login disabled
+          Config changed: {{ root_login_config.changed }}
+          Password locked: {{ root_password_lock.changed }}
+          ⚠️  Ensure you have another user with sudo access!

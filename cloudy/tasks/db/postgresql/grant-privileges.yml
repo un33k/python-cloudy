@@ -1,0 +1,72 @@
+# Granular Task: Grant PostgreSQL Database Privileges
+# Equivalent to: cloudy-old/db/psql.py::db_psql_grant_database_privileges()
+# Usage: ansible-playbook tasks/db/postgresql/grant-privileges.yml -e "database=myapp username=myapp_user"
+
+---
+- name: Grant PostgreSQL database privileges
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    database: "{{ database | mandatory }}"
+    username: "{{ username | mandatory }}"
+    privileges: "{{ privileges | default('ALL') }}"
+    
+  tasks:
+    - name: Check if database exists
+      become_user: postgres
+      postgresql_query:
+        query: "SELECT datname FROM pg_database WHERE datname = %s"
+        positional_args:
+          - "{{ database }}"
+      register: pg_db_check
+      
+    - name: Check if user exists
+      become_user: postgres
+      postgresql_query:
+        query: "SELECT usename FROM pg_user WHERE usename = %s"
+        positional_args:
+          - "{{ username }}"
+      register: pg_user_check
+      
+    - name: Fail if database does not exist
+      fail:
+        msg: "Database '{{ database }}' does not exist"
+      when: pg_db_check.rowcount == 0
+      
+    - name: Fail if user does not exist
+      fail:
+        msg: "User '{{ username }}' does not exist"
+      when: pg_user_check.rowcount == 0
+      
+    - name: Grant database privileges
+      become_user: postgres
+      postgresql_privs:
+        database: "{{ database }}"
+        roles: "{{ username }}"
+        type: database
+        privs: "{{ privileges }}"
+        state: present
+      register: pg_privs_grant
+      
+    - name: Grant schema privileges
+      become_user: postgres
+      postgresql_privs:
+        database: "{{ database }}"
+        roles: "{{ username }}"
+        type: schema
+        objs: public
+        privs: "{{ privileges }}"
+        state: present
+      register: pg_schema_privs_grant
+      
+    - name: Display privilege grant status
+      debug:
+        msg: |
+          ✅ PostgreSQL database privileges granted
+          Database: {{ database }}
+          User: {{ username }}
+          Privileges: {{ privileges }}
+          Database privs: {{ 'Granted' if pg_privs_grant.changed else 'Already granted' }}
+          Schema privs: {{ 'Granted' if pg_schema_privs_grant.changed else 'Already granted' }}

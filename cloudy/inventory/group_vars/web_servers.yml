@@ -1,0 +1,45 @@
+# Web Server Variables (replaces [WEBSERVER] section)
+
+# Web Server Choice
+webserver: "nginx"  # nginx, apache, or both
+webserver_port: 80
+webserver_ssl_port: 443
+
+# Domain Configuration
+domain_name: "example.com"
+server_aliases: []
+  # - www.example.com
+  # - api.example.com
+
+# SSL Configuration
+ssl_enabled: true
+ssl_cert_path: "/etc/ssl/certs"
+ssl_key_path: "/etc/ssl/private"
+letsencrypt_enabled: false
+letsencrypt_email: "admin@{{ domain_name }}"
+
+# Nginx Specific
+nginx_worker_processes: "auto"
+nginx_worker_connections: 1024
+nginx_client_max_body_size: "64M"
+nginx_keepalive_timeout: 65
+
+# Apache Specific  
+apache_mpm: "prefork"
+apache_max_request_workers: 256
+
+# Application Configuration
+app_user: "www-data"
+app_group: "www-data"
+app_root: "/srv/www"
+app_port: 8000
+
+# Supervisor Configuration
+supervisor_enabled: false
+supervisor_programs: []
+  # - name: myapp
+  #   command: /srv/www/myapp/venv/bin/gunicorn app:application
+  #   directory: /srv/www/myapp
+  #   user: www-data
+  #   autostart: true
+  #   autorestart: true

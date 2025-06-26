@@ -1,0 +1,30 @@
+# Granular Task: Allow HTTP Traffic (Port 80)
+# Equivalent to: cloudy-old/sys/firewall.py::fw_allow_incoming_http()
+# Usage: ansible-playbook tasks/sys/firewall/allow-http.yml
+
+---
+- name: Allow HTTP traffic (port 80)
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Allow HTTP traffic
+      ufw:
+        rule: allow
+        name: 'WWW'
+      register: ufw_allow_http
+      
+    - name: Get UFW status
+      command: ufw status
+      register: ufw_status
+      changed_when: false
+      
+    - name: Display HTTP allow status
+      debug:
+        msg: |
+          ✅ HTTP traffic allowed (port 80)
+          Status: {{ 'Rule added' if ufw_allow_http.changed else 'Rule already exists' }}
+          
+          Current UFW Rules:
+          {{ ufw_status.stdout }}

@@ -1,0 +1,54 @@
+# Granular Task: Create PostgreSQL Database
+# Equivalent to: cloudy-old/db/psql.py::db_psql_create_database()
+# Usage: ansible-playbook tasks/db/postgresql/create-database.yml -e "database=myapp owner=myapp_user"
+
+---
+- name: Create PostgreSQL database
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    database: "{{ database | mandatory }}"
+    owner: "{{ owner | mandatory }}"
+    encoding: "{{ encoding | default('UTF8') }}"
+    locale: "{{ locale | default('en_US.UTF-8') }}"
+    
+  tasks:
+    - name: Check if database exists
+      become_user: postgres
+      postgresql_query:
+        query: "SELECT datname FROM pg_database WHERE datname = %s"
+        positional_args:
+          - "{{ database }}"
+      register: pg_db_check
+      
+    - name: Create PostgreSQL database
+      become_user: postgres
+      postgresql_db:
+        name: "{{ database }}"
+        owner: "{{ owner }}"
+        encoding: "{{ encoding }}"
+        lc_collate: "{{ locale }}"
+        lc_ctype: "{{ locale }}"
+        state: present
+      register: pg_db_creation
+      
+    - name: Verify database creation
+      become_user: postgres
+      postgresql_query:
+        query: "SELECT datname, datdba::regrole as owner FROM pg_database WHERE datname = %s"
+        positional_args:
+          - "{{ database }}"
+      register: pg_db_verify
+      
+    - name: Display PostgreSQL database creation status
+      debug:
+        msg: |
+          ✅ PostgreSQL database created
+          Database: {{ database }}
+          Owner: {{ owner }}
+          Encoding: {{ encoding }}
+          Locale: {{ locale }}
+          Status: {{ 'Created' if pg_db_creation.changed else 'Already exists' }}
+          Verification: {{ pg_db_verify.query_result[0] if pg_db_verify.rowcount > 0 else 'Not found' }}

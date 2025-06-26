@@ -1,0 +1,47 @@
+# Granular Task: Configure Redis Bind Interface
+# Equivalent to: cloudy-old/sys/redis.py::sys_redis_configure_interface()
+# Usage: ansible-playbook tasks/services/redis/configure-interface.yml -e "bind_interface=127.0.0.1"
+
+---
+- name: Configure Redis bind interface
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    bind_interface: "{{ bind_interface | default('0.0.0.0') }}"
+    
+  tasks:
+    - name: Configure Redis bind interface in config file
+      lineinfile:
+        path: /etc/redis/redis.conf
+        regexp: '^#?bind\\s+'
+        line: "bind {{ bind_interface }}"
+        backup: true
+      register: redis_bind_config
+      
+    - name: Restart Redis service
+      systemd:
+        name: redis-server
+        state: restarted
+      when: redis_bind_config.changed
+      
+    - name: Wait for Redis to start with new interface
+      pause:
+        seconds: 2
+      when: redis_bind_config.changed
+      
+    - name: Test Redis connectivity
+      command: redis-cli ping
+      register: redis_ping
+      changed_when: false
+      failed_when: false
+      
+    - name: Display Redis interface configuration status
+      debug:
+        msg: |
+          ✅ Redis bind interface configured
+          Interface: {{ bind_interface }}
+          Configuration: {{ 'Updated' if redis_bind_config.changed else 'Already configured' }}
+          Connectivity: {{ redis_ping.stdout if redis_ping.rc == 0 else 'Connection failed' }}
+          ⚠️  Security note: {{ '0.0.0.0 allows connections from any IP' if bind_interface == '0.0.0.0' else 'Restricted to specified interface' }}

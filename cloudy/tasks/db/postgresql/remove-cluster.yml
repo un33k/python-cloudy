@@ -1,0 +1,48 @@
+# Granular Task: Remove PostgreSQL Cluster
+# Equivalent to: cloudy-old/db/psql.py::db_psql_remove_cluster()
+# Usage: ansible-playbook tasks/db/postgresql/remove-cluster.yml -e "pg_version=17 cluster_name=old_cluster"
+
+---
+- name: Remove PostgreSQL cluster
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    pg_version: "{{ pg_version | mandatory }}"
+    cluster_name: "{{ cluster_name | mandatory }}"
+    
+  tasks:
+    - name: Check if cluster exists
+      shell: "pg_lsclusters | grep '{{ pg_version }}.*{{ cluster_name }}'"
+      register: cluster_check
+      changed_when: false
+      failed_when: false
+      
+    - name: Stop PostgreSQL cluster
+      shell: "pg_ctlcluster {{ pg_version }} {{ cluster_name }} stop"
+      register: cluster_stop
+      failed_when: false
+      when: cluster_check.rc == 0
+      
+    - name: Remove PostgreSQL cluster
+      shell: "pg_dropcluster --stop {{ pg_version }} {{ cluster_name }}"
+      register: cluster_removal
+      when: cluster_check.rc == 0
+      
+    - name: List remaining PostgreSQL clusters
+      command: pg_lsclusters
+      register: clusters_list
+      changed_when: false
+      
+    - name: Display cluster removal status
+      debug:
+        msg: |
+          ✅ PostgreSQL cluster removal completed
+          Version: {{ pg_version }}
+          Cluster: {{ cluster_name }}
+          Existed: {{ 'Yes' if cluster_check.rc == 0 else 'No' }}
+          Status: {{ 'Removed' if cluster_removal.changed else 'Did not exist' }}
+          
+          Remaining Clusters:
+          {{ clusters_list.stdout }}

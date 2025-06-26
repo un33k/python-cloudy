@@ -1,0 +1,113 @@
+# Granular Task: Install Python and Common Packages
+# Equivalent to: cloudy-old/sys/python.py::sys_python_install_common()
+# Usage: ansible-playbook tasks/sys/python/install-common.yml -e "py_version=3.11"
+
+---
+- name: Install Python and common packages
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    # Optional variable
+    py_version: "{{ py_version | default('3.11') }}"
+    
+  tasks:
+    - name: Parse Python major version
+      set_fact:
+        major_version: "{{ py_version.split('.')[0] }}"
+        
+    - name: Define base Python packages
+      set_fact:
+        base_packages:
+          - "python{{ major_version }}-dev"
+          - "python{{ major_version }}-setuptools" 
+          - "python{{ major_version }}-pip"
+          - "python{{ major_version }}-venv"
+          - "python3-dev"
+          - "build-essential"
+          - "pkg-config"
+          
+    - name: Define image processing packages
+      set_fact:
+        image_packages:
+          - "libfreetype6-dev"
+          - "libjpeg-dev"
+          - "libpng-dev"
+          - "zlib1g-dev"
+          - "liblcms2-dev"
+          - "libwebp-dev"
+          - "libtiff5-dev"
+          - "libopenjp2-7-dev"
+          
+    - name: Define utility packages
+      set_fact:
+        utility_packages:
+          - "gettext"
+          - "curl"
+          - "wget"
+          - "git"
+          
+    - name: Combine all packages
+      set_fact:
+        all_packages: "{{ base_packages + image_packages + utility_packages }}"
+        
+    - name: Update package cache
+      apt:
+        update_cache: true
+        
+    - name: Install Python and development packages
+      apt:
+        name: "{{ all_packages }}"
+        state: present
+      register: python_install_result
+      
+    - name: Install system Python packages
+      apt:
+        name:
+          - "python3-wheel"
+          - "python3-setuptools"
+          - "python3-pil"
+        state: present
+        
+    - name: Try to install psycopg2 via system package
+      apt:
+        name: "python3-psycopg2"
+        state: present
+      register: psycopg2_system_install
+      failed_when: false
+      
+    - name: Install psycopg2-binary via pip if system package failed
+      pip:
+        name: psycopg2-binary
+        executable: "pip{{ major_version }}"
+        break_system_packages: true
+      when: psycopg2_system_install.failed
+      
+    - name: Verify Python installation
+      command: "python{{ major_version }} --version"
+      register: python_version_check
+      changed_when: false
+      
+    - name: Verify pip installation
+      command: "pip{{ major_version }} --version"
+      register: pip_version_check
+      changed_when: false
+      
+    - name: Commit change to /etc git (if git repo exists)
+      shell: |
+        if [ -d /etc/.git ]; then
+          cd /etc
+          git add -A
+          git commit -m "Installed Python {{ py_version }} and common packages" || true
+        fi
+      when: python_install_result.changed
+      
+    - name: Display installation summary
+      debug:
+        msg: |
+          ✅ Python {{ py_version }} installation completed successfully
+          Python: {{ python_version_check.stdout }}
+          Pip: {{ pip_version_check.stdout }}
+          Packages installed: {{ all_packages | length }} packages
+          Psycopg2: {{ 'System package' if not psycopg2_system_install.failed else 'Pip package' }}

@@ -1,0 +1,47 @@
+# Granular Task: Find Next Available TCP Port
+# Equivalent to: cloudy-old/sys/ports.py::sys_show_next_available_port()
+# Usage: ansible-playbook tasks/sys/core/find-available-port.yml -e "start_port=8181 max_tries=50"
+
+---
+- name: Find next available TCP port
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: false
+  
+  vars:
+    start_port: "{{ start_port | default(8181) }}"
+    max_tries: "{{ max_tries | default(50) }}"
+    
+  tasks:
+    - name: Validate start port
+      fail:
+        msg: "Start port must be between 1-65535, got: {{ start_port }}"
+      when: start_port | int < 1 or start_port | int > 65535
+      
+    - name: Find available port
+      shell: |
+        port={{ start_port }}
+        max_port=$(({{ start_port }} + {{ max_tries }}))
+        while [ $port -lt $max_port ]; do
+          if ! netstat -lt 2>/dev/null | grep -q ":$port "; then
+            echo $port
+            exit 0
+          fi
+          port=$((port + 1))
+        done
+        echo -1
+      register: available_port_result
+      changed_when: false
+      
+    - name: Set available port fact
+      set_fact:
+        available_port: "{{ available_port_result.stdout.strip() }}"
+        
+    - name: Display port search results
+      debug:
+        msg: |
+          🔍 Port search completed
+          Start port: {{ start_port }}
+          Max tries: {{ max_tries }}
+          Available port: {{ available_port if available_port != '-1' else 'None found in range' }}
+          Status: {{ 'Found' if available_port != '-1' else 'No available ports in range' }}

@@ -1,0 +1,30 @@
+# Granular Task: Allow PostgreSQL Traffic (Port 5432)
+# Equivalent to: cloudy-old/sys/firewall.py::fw_allow_incoming_postgresql()
+# Usage: ansible-playbook tasks/sys/firewall/allow-postgresql.yml
+
+---
+- name: Allow PostgreSQL traffic (port 5432)
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Allow PostgreSQL traffic
+      ufw:
+        rule: allow
+        name: 'PostgreSQL'
+      register: ufw_allow_postgresql
+      
+    - name: Get UFW status
+      command: ufw status
+      register: ufw_status
+      changed_when: false
+      
+    - name: Display PostgreSQL allow status
+      debug:
+        msg: |
+          ✅ PostgreSQL traffic allowed (port 5432)
+          Status: {{ 'Rule added' if ufw_allow_postgresql.changed else 'Rule already exists' }}
+          
+          Current UFW Rules:
+          {{ ufw_status.stdout }}

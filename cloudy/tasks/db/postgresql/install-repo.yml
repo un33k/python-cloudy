@@ -1,0 +1,50 @@
+# Granular Task: Install PostgreSQL Official Repository
+# Equivalent to: cloudy-old/db/psql.py::db_psql_install_postgres_repo()
+# Usage: ansible-playbook tasks/db/postgresql/install-repo.yml
+
+---
+- name: Install PostgreSQL official repository
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: true
+  become: true
+  
+  tasks:
+    - name: Create APT keyrings directory
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+        
+    - name: Download PostgreSQL signing key
+      get_url:
+        url: https://www.postgresql.org/media/keys/ACCC4CF8.asc
+        dest: /tmp/postgresql.asc
+        mode: '0644'
+      register: key_download
+      
+    - name: Convert and install PostgreSQL GPG key
+      shell: |
+        gpg --dearmor --yes -o /etc/apt/keyrings/postgresql.gpg /tmp/postgresql.asc
+        chmod 644 /etc/apt/keyrings/postgresql.gpg
+        rm -f /tmp/postgresql.asc
+      when: key_download.changed
+      
+    - name: Add PostgreSQL repository
+      apt_repository:
+        repo: "deb [signed-by=/etc/apt/keyrings/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt/ {{ ansible_distribution_release }}-pgdg main"
+        filename: pgdg
+        state: present
+      register: repo_addition
+      
+    - name: Update package cache after adding PostgreSQL repo
+      apt:
+        update_cache: true
+      when: repo_addition.changed
+      
+    - name: Display PostgreSQL repository status
+      debug:
+        msg: |
+          ✅ PostgreSQL official repository installed
+          Repository: {{ ansible_distribution_release }}-pgdg
+          Key: /etc/apt/keyrings/postgresql.gpg
+          Status: {{ 'Added' if repo_addition.changed else 'Already present' }}

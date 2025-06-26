@@ -1,0 +1,45 @@
+# Granular Task: Create MySQL Database
+# Equivalent to: cloudy-old/db/mysql.py::db_mysql_create_database()
+# Usage: ansible-playbook tasks/db/mysql/create-database.yml -e "root_password=secret database=myapp"
+
+---
+- name: Create MySQL database
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    root_password: "{{ root_password | mandatory }}"
+    database: "{{ database | mandatory }}"
+    charset: "{{ charset | default('utf8mb4') }}"
+    collation: "{{ collation | default('utf8mb4_unicode_ci') }}"
+    
+  tasks:
+    - name: Create MySQL database
+      mysql_db:
+        name: "{{ database }}"
+        encoding: "{{ charset }}"
+        collation: "{{ collation }}"
+        state: present
+        login_user: root
+        login_password: "{{ root_password }}"
+      register: mysql_db_creation
+      
+    - name: Verify database creation
+      mysql_query:
+        login_user: root
+        login_password: "{{ root_password }}"
+        query: "SHOW DATABASES LIKE %s"
+        positional_args:
+          - "{{ database }}"
+      register: mysql_db_verify
+      
+    - name: Display MySQL database creation status
+      debug:
+        msg: |
+          ✅ MySQL database created
+          Database: {{ database }}
+          Charset: {{ charset }}
+          Collation: {{ collation }}
+          Status: {{ 'Created' if mysql_db_creation.changed else 'Already exists' }}
+          Verification: {{ 'Found' if mysql_db_verify.rowcount[0] > 0 else 'Not found' }}

@@ -1,0 +1,72 @@
+# Granular Task: Grant MySQL User Privileges
+# Equivalent to: cloudy-old/db/mysql.py::db_mysql_grant_user()
+# Usage: ansible-playbook tasks/db/mysql/grant-privileges.yml -e "root_password=secret username=myapp database=myapp"
+
+---
+- name: Grant MySQL user privileges
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    root_password: "{{ root_password | mandatory }}"
+    username: "{{ username | mandatory }}"
+    database: "{{ database | mandatory }}"
+    privileges: "{{ privileges | default('ALL') }}"
+    host: "{{ host | default('localhost') }}"
+    
+  tasks:
+    - name: Check if user exists
+      mysql_query:
+        login_user: root
+        login_password: "{{ root_password }}"
+        query: "SELECT User FROM mysql.user WHERE User = %s AND Host = %s"
+        positional_args:
+          - "{{ username }}"
+          - "{{ host }}"
+      register: mysql_user_check
+      
+    - name: Check if database exists
+      mysql_query:
+        login_user: root
+        login_password: "{{ root_password }}"
+        query: "SHOW DATABASES LIKE %s"
+        positional_args:
+          - "{{ database }}"
+      register: mysql_db_check
+      
+    - name: Fail if user does not exist
+      fail:
+        msg: "MySQL user '{{ username }}'@'{{ host }}' does not exist"
+      when: mysql_user_check.rowcount[0] == 0
+      
+    - name: Fail if database does not exist
+      fail:
+        msg: "MySQL database '{{ database }}' does not exist"
+      when: mysql_db_check.rowcount[0] == 0
+      
+    - name: Grant privileges to user
+      mysql_user:
+        name: "{{ username }}"
+        host: "{{ host }}"
+        priv: "{{ database }}.*:{{ privileges }}"
+        state: present
+        login_user: root
+        login_password: "{{ root_password }}"
+      register: mysql_privs_grant
+      
+    - name: Flush privileges
+      mysql_query:
+        login_user: root
+        login_password: "{{ root_password }}"
+        query: "FLUSH PRIVILEGES"
+      when: mysql_privs_grant.changed
+      
+    - name: Display privilege grant status
+      debug:
+        msg: |
+          ✅ MySQL user privileges granted
+          User: {{ username }}@{{ host }}
+          Database: {{ database }}
+          Privileges: {{ privileges }}
+          Status: {{ 'Granted' if mysql_privs_grant.changed else 'Already granted' }}

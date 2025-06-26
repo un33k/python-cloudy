@@ -1,0 +1,29 @@
+# Granular Task: Add User to Group
+# Equivalent to: cloudy-old/sys/user.py::sys_user_add_to_group()
+# Usage: ansible-playbook tasks/sys/user/add-to-group.yml -e "username=admin group_name=docker"
+
+---
+- name: Add user to group
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    username: "{{ username | mandatory }}"
+    group_name: "{{ group_name | mandatory }}"
+    
+  tasks:
+    - name: Add user to group
+      user:
+        name: "{{ username }}"
+        groups: "{{ group_name }}"
+        append: true
+      register: group_addition_result
+      
+    - name: Display group addition status
+      debug:
+        msg: |
+          ✅ User added to group
+          User: {{ username }}
+          Group: {{ group_name }}
+          Status: {{ 'Added' if group_addition_result.changed else 'Already member' }}

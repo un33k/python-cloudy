@@ -1,9 +1,0 @@
-To restart the supervisor in order to pick up your new project.
-DO NOT user: sudo service supervisor restart (it won't work)
-
-Instead USE:
-sudo /etc/init.d/supervisor stop
-sudo /etc/init.d/supervisor start
-
-
-

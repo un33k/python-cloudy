@@ -1,0 +1,52 @@
+# Granular Task: Add Entry to /etc/hosts
+# Equivalent to: cloudy-old/sys/core.py::sys_add_hosts()
+# Usage: ansible-playbook tasks/sys/core/add-hosts.yml -e "host_name=myserver.com host_ip=10.10.10.100"
+
+---
+- name: Add entry to /etc/hosts
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    # Required variables
+    host_name: "{{ host_name | mandatory }}"
+    host_ip: "{{ host_ip | mandatory }}"
+    
+  tasks:
+    - name: Remove existing entry for hostname
+      lineinfile:
+        path: /etc/hosts
+        regexp: ".*\\s+{{ host_name }}(\\s|$)"
+        state: absent
+        backup: true
+      register: hosts_removal
+      
+    - name: Add new hosts entry
+      lineinfile:
+        path: /etc/hosts
+        line: "{{ host_ip }}\t{{ host_name }}"
+        insertafter: "^127\\.0\\.0\\.1"
+        state: present
+      register: hosts_addition
+      
+    - name: Commit change to /etc git (if git repo exists)
+      shell: |
+        if [ -d /etc/.git ]; then
+          cd /etc
+          git add -A
+          git commit -m "Added host:{{ host_name }}, ip:{{ host_ip }} to: /etc/hosts" || true
+        fi
+      when: hosts_removal.changed or hosts_addition.changed
+      
+    - name: Verify hosts entry
+      shell: grep "{{ host_name }}" /etc/hosts
+      register: hosts_verification
+      changed_when: false
+      
+    - name: Display hosts entry status
+      debug:
+        msg: |
+          ✅ Hosts entry added successfully
+          Entry: {{ host_ip }} {{ host_name }}
+          Verification: {{ hosts_verification.stdout }}

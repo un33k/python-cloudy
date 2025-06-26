@@ -1,0 +1,61 @@
+# Granular Task: Install Docker CE
+# Equivalent to: cloudy-old/sys/docker.py::sys_docker_install()
+# Usage: ansible-playbook tasks/sys/docker/install.yml
+
+---
+- name: Install Docker CE
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: true
+  become: true
+  
+  tasks:
+    - name: Install required packages for Docker repository
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+        update_cache: true
+        
+    - name: Add Docker GPG key
+      apt_key:
+        url: "https://download.docker.com/linux/ubuntu/gpg"
+        state: present
+        
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+        
+    - name: Update package cache after adding Docker repo
+      apt:
+        update_cache: true
+        
+    - name: Install Docker CE
+      apt:
+        name: docker-ce
+        state: present
+      register: docker_install_result
+      
+    - name: Enable Docker service
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+      register: docker_service_result
+      
+    - name: Verify Docker installation
+      command: docker --version
+      register: docker_version
+      changed_when: false
+      
+    - name: Display Docker installation status
+      debug:
+        msg: |
+          ✅ Docker CE installed successfully
+          Version: {{ docker_version.stdout }}
+          Service: {{ 'Started and enabled' if docker_service_result.changed else 'Already running' }}
+          Installation: {{ 'New installation' if docker_install_result.changed else 'Already installed' }}

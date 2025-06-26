@@ -1,0 +1,57 @@
+# Granular Task: Configure Redis Memory
+# Equivalent to: cloudy-old/sys/redis.py::sys_redis_configure_memory()
+# Usage: ansible-playbook tasks/services/redis/configure-memory.yml -e "memory_mb=512"
+
+---
+- name: Configure Redis memory
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: true
+  become: true
+  
+  vars:
+    memory_mb: "{{ memory_mb | default(0) }}"
+    memory_divider: "{{ memory_divider | default(8) }}"
+    
+  tasks:
+    - name: Calculate memory if not specified
+      set_fact:
+        calculated_memory_mb: "{{ (ansible_memtotal_mb / memory_divider) | int }}"
+      when: memory_mb | int == 0
+      
+    - name: Use specified memory
+      set_fact:
+        calculated_memory_mb: "{{ memory_mb }}"
+      when: memory_mb | int > 0
+      
+    - name: Convert memory to bytes
+      set_fact:
+        memory_bytes: "{{ (calculated_memory_mb | int * 1024 * 1024) | int }}"
+        
+    - name: Configure Redis maxmemory
+      lineinfile:
+        path: /etc/redis/redis.conf
+        regexp: '^#?maxmemory\\s+'
+        line: "maxmemory {{ memory_bytes }}"
+        backup: true
+      register: redis_memory_config
+      
+    - name: Restart Redis service
+      systemd:
+        name: redis-server
+        state: restarted
+      when: redis_memory_config.changed
+      
+    - name: Verify Redis memory configuration
+      shell: redis-cli config get maxmemory
+      register: redis_memory_check
+      changed_when: false
+      
+    - name: Display Redis memory configuration status
+      debug:
+        msg: |
+          ✅ Redis memory configured
+          Configured memory: {{ calculated_memory_mb }}MB ({{ memory_bytes }} bytes)
+          Source: {{ 'Auto-calculated from system memory' if memory_mb | int == 0 else 'User specified' }}
+          System memory: {{ ansible_memtotal_mb }}MB
+          Configuration: {{ 'Updated' if redis_memory_config.changed else 'Already configured' }}
+          Current setting: {{ redis_memory_check.stdout_lines[1] if redis_memory_check.stdout_lines | length > 1 else 'Unknown' }} bytes

@@ -1,0 +1,37 @@
+# Granular Task: Delete PostgreSQL User
+# Equivalent to: cloudy-old/db/psql.py::db_psql_delete_user()
+# Usage: ansible-playbook tasks/db/postgresql/delete-user.yml -e "username=olduser"
+
+---
+- name: Delete PostgreSQL user
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    username: "{{ username | mandatory }}"
+    
+  tasks:
+    - name: Check if user exists
+      become_user: postgres
+      postgresql_query:
+        query: "SELECT usename FROM pg_user WHERE usename = %s"
+        positional_args:
+          - "{{ username }}"
+      register: pg_user_check
+      
+    - name: Delete PostgreSQL user
+      become_user: postgres
+      postgresql_user:
+        name: "{{ username }}"
+        state: absent
+      register: pg_user_deletion
+      when: pg_user_check.rowcount > 0
+      
+    - name: Display PostgreSQL user deletion status
+      debug:
+        msg: |
+          ✅ PostgreSQL user deletion completed
+          Username: {{ username }}
+          Existed: {{ 'Yes' if pg_user_check.rowcount > 0 else 'No' }}
+          Status: {{ 'Deleted' if pg_user_deletion.changed else 'Did not exist' }}

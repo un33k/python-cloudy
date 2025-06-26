@@ -1,0 +1,74 @@
+# Granular Task: Install Shared SSH Keys for User
+# Equivalent to: cloudy-old/sys/ssh.py::sys_ssh_push_server_shared_keys()
+# Usage: ansible-playbook tasks/sys/ssh/push-shared-keys.yml -e "target_user=admin shared_dir=~/.ssh/shared/"
+
+---
+- name: Install shared SSH keys for user
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    target_user: "{{ target_user | mandatory }}"
+    shared_dir: "{{ shared_dir | default('~/.ssh/shared/ssh/') }}"
+    
+  tasks:
+    - name: Expand shared directory path
+      set_fact:
+        expanded_shared_dir: "{{ shared_dir | expanduser }}"
+      delegate_to: localhost
+      
+    - name: Check if private key exists
+      stat:
+        path: "{{ expanded_shared_dir }}/id_rsa"
+      register: private_key_check
+      delegate_to: localhost
+      
+    - name: Check if public key exists
+      stat:
+        path: "{{ expanded_shared_dir }}/id_rsa.pub"
+      register: public_key_check
+      delegate_to: localhost
+      
+    - name: Fail if keys are missing
+      fail:
+        msg: "Missing SSH keys in {{ expanded_shared_dir }}"
+      when: not private_key_check.stat.exists or not public_key_check.stat.exists
+      
+    - name: Determine user home directory
+      set_fact:
+        user_home: "{{ '~' if target_user == 'root' else '/home/' + target_user }}"
+        
+    - name: Create .ssh directory for user
+      file:
+        path: "{{ user_home }}/.ssh"
+        state: directory
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: '0700'
+        
+    - name: Copy private key
+      copy:
+        src: "{{ expanded_shared_dir }}/id_rsa"
+        dest: "{{ user_home }}/.ssh/id_rsa"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: '0600'
+      register: private_key_copy
+      
+    - name: Copy public key
+      copy:
+        src: "{{ expanded_shared_dir }}/id_rsa.pub"
+        dest: "{{ user_home }}/.ssh/id_rsa.pub"
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: '0644'
+      register: public_key_copy
+      
+    - name: Display shared keys installation status
+      debug:
+        msg: |
+          ✅ Shared SSH keys installed for user: {{ target_user }}
+          Source: {{ expanded_shared_dir }}
+          Private key: {{ 'Updated' if private_key_copy.changed else 'Already present' }}
+          Public key: {{ 'Updated' if public_key_copy.changed else 'Already present' }}

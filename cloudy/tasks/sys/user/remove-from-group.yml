@@ -1,0 +1,40 @@
+# Granular Task: Remove User from Group
+# Equivalent to: cloudy-old/sys/user.py::sys_user_remove_from_group()
+# Usage: ansible-playbook tasks/sys/user/remove-from-group.yml -e "username=admin group_name=docker"
+
+---
+- name: Remove user from group
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    username: "{{ username | mandatory }}"
+    group_name: "{{ group_name | mandatory }}"
+    
+  tasks:
+    - name: Get current user groups
+      getent:
+        database: passwd
+        key: "{{ username }}"
+      register: user_info
+      
+    - name: Get user's current groups
+      command: "groups {{ username }}"
+      register: current_groups
+      changed_when: false
+      
+    - name: Remove user from group using gpasswd
+      command: "gpasswd -d {{ username }} {{ group_name }}"
+      register: group_removal_result
+      failed_when: false
+      changed_when: group_removal_result.rc == 0
+      
+    - name: Display group removal status
+      debug:
+        msg: |
+          ✅ User group removal completed
+          User: {{ username }}
+          Group: {{ group_name }}
+          Status: {{ 'Removed' if group_removal_result.changed else 'Was not member or group does not exist' }}
+          Current groups: {{ current_groups.stdout.split()[2:] | join(', ') if current_groups.stdout.split() | length > 2 else 'None' }}

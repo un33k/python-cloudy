@@ -1,0 +1,40 @@
+# Granular Task: Get Latest Available MySQL Version
+# Equivalent to: cloudy-old/db/mysql.py::db_mysql_latest_version()
+# Usage: ansible-playbook tasks/db/mysql/get-latest-version.yml
+
+---
+- name: Get latest available MySQL version
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Search for available MySQL client packages
+      shell: apt-cache search --names-only mysql-client
+      register: mysql_packages_search
+      changed_when: false
+      
+    - name: Parse MySQL versions
+      set_fact:
+        mysql_versions: "{{ mysql_packages_search.stdout_lines | map('regex_search', 'mysql-client-([0-9.]+)\\s-', '\\1') | select('string') | list }}"
+        
+    - name: Sort versions and get latest
+      set_fact:
+        latest_mysql_version: "{{ mysql_versions | sort(reverse=true) | first }}"
+      when: mysql_versions | length > 0
+      
+    - name: Set latest version fact
+      set_fact:
+        mysql_latest_version: "{{ latest_mysql_version | default('') }}"
+        
+    - name: Display latest MySQL version
+      debug:
+        msg: |
+          🔍 MySQL version discovery completed
+          Available versions: {{ mysql_versions | join(', ') if mysql_versions else 'None found' }}
+          Latest version: {{ mysql_latest_version if mysql_latest_version else 'Not determined' }}
+          
+    - name: Fail if no version found
+      fail:
+        msg: "No MySQL versions found in repository"
+      when: not mysql_latest_version

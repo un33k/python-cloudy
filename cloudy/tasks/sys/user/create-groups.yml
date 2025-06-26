@@ -1,0 +1,32 @@
+# Granular Task: Create Multiple Groups
+# Equivalent to: cloudy-old/sys/user.py::sys_user_create_groups()
+# Usage: ansible-playbook tasks/sys/user/create-groups.yml -e "group_list='myapp,deploy,backup'"
+
+---
+- name: Create multiple groups
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    group_list: "{{ group_list | mandatory }}"
+    
+  tasks:
+    - name: Parse group list
+      set_fact:
+        groups_array: "{{ group_list.split(',') | map('trim') | list }}"
+        
+    - name: Create multiple groups
+      group:
+        name: "{{ item }}"
+        state: present
+      loop: "{{ groups_array }}"
+      register: groups_creation_results
+      
+    - name: Display groups creation status
+      debug:
+        msg: |
+          ✅ Multiple groups creation completed
+          Groups: {{ groups_array | join(', ') }}
+          Created: {{ groups_creation_results.results | selectattr('changed') | map(attribute='item') | list | join(', ') or 'None (all existed)' }}
+          Existing: {{ groups_creation_results.results | rejectattr('changed') | map(attribute='item') | list | join(', ') or 'None' }}

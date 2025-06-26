@@ -1,0 +1,39 @@
+# Granular Task: List PostgreSQL Databases
+# Equivalent to: cloudy-old/db/psql.py::db_psql_list_databases()
+# Usage: ansible-playbook tasks/db/postgresql/list-databases.yml
+
+---
+- name: List PostgreSQL databases
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Get PostgreSQL databases list
+      become_user: postgres
+      postgresql_query:
+        query: |
+          SELECT 
+            d.datname as database_name,
+            pg_catalog.pg_get_userbyid(d.datdba) as owner,
+            pg_encoding_to_char(d.encoding) as encoding,
+            d.datcollate as collate,
+            d.datctype as ctype,
+            pg_size_pretty(pg_database_size(d.datname)) as size
+          FROM pg_catalog.pg_database d
+          WHERE d.datname NOT IN ('template0', 'template1')
+          ORDER BY d.datname
+      register: pg_databases_list
+      
+    - name: Display PostgreSQL databases
+      debug:
+        msg: |
+          📋 PostgreSQL Databases ({{ pg_databases_list.rowcount }} total):
+          {% for db in pg_databases_list.query_result %}
+          ├── {{ db.database_name }}
+          │   ├── Owner: {{ db.owner }}
+          │   ├── Encoding: {{ db.encoding }}
+          │   ├── Collate: {{ db.collate }}
+          │   ├── Ctype: {{ db.ctype }}
+          │   └── Size: {{ db.size }}
+          {% endfor %}

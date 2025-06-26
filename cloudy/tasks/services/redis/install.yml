@@ -1,0 +1,44 @@
+# Granular Task: Install Redis Server
+# Equivalent to: cloudy-old/sys/redis.py::sys_redis_install()
+# Usage: ansible-playbook tasks/services/redis/install.yml
+
+---
+- name: Install Redis server
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Install Redis server package
+      apt:
+        name: redis-server
+        state: present
+        update_cache: true
+      register: redis_install_result
+      
+    - name: Start and enable Redis service
+      systemd:
+        name: redis-server
+        state: started
+        enabled: true
+      register: redis_service_result
+      
+    - name: Verify Redis installation
+      command: redis-server --version
+      register: redis_version
+      changed_when: false
+      
+    - name: Test Redis connectivity
+      command: redis-cli ping
+      register: redis_ping
+      changed_when: false
+      failed_when: false
+      
+    - name: Display Redis installation status
+      debug:
+        msg: |
+          ✅ Redis server installed successfully
+          Version: {{ redis_version.stdout }}
+          Service: {{ 'Started and enabled' if redis_service_result.changed else 'Already running' }}
+          Installation: {{ 'New installation' if redis_install_result.changed else 'Already installed' }}
+          Connectivity: {{ redis_ping.stdout if redis_ping.rc == 0 else 'Connection failed' }}

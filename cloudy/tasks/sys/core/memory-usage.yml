@@ -1,0 +1,36 @@
+# Granular Task: Show Process Memory Usage
+# Equivalent to: cloudy-old/sys/core.py::sys_show_process_by_memory_usage()
+# Usage: ansible-playbook tasks/sys/core/memory-usage.yml
+
+---
+- name: Show process memory usage
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: false
+  
+  vars:
+    # Optional variables
+    top_processes: "{{ top_processes | default(20) }}"
+    
+  tasks:
+    - name: Get processes sorted by memory usage
+      shell: ps -eo pmem,pcpu,rss,vsize,args --sort=-pmem | head -{{ top_processes + 1 }}
+      register: memory_usage
+      changed_when: false
+      
+    - name: Display memory usage information
+      debug:
+        msg: |
+          📊 Top {{ top_processes }} Processes by Memory Usage:
+          {{ memory_usage.stdout }}
+          
+    - name: Get system memory information
+      shell: free -h
+      register: system_memory
+      changed_when: false
+      
+    - name: Display system memory summary
+      debug:
+        msg: |
+          💾 System Memory Summary:
+          {{ system_memory.stdout }}

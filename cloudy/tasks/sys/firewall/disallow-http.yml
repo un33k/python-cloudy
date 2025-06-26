@@ -1,0 +1,32 @@
+# Granular Task: Disallow HTTP Traffic (Port 80)
+# Equivalent to: cloudy-old/sys/firewall.py::fw_disallow_incoming_http()
+# Usage: ansible-playbook tasks/sys/firewall/disallow-http.yml
+
+---
+- name: Disallow HTTP traffic (port 80)
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  tasks:
+    - name: Remove HTTP allow rule
+      ufw:
+        rule: allow
+        name: 'WWW'
+        delete: true
+      register: ufw_disallow_http
+      failed_when: false
+      
+    - name: Get UFW status
+      command: ufw status
+      register: ufw_status
+      changed_when: false
+      
+    - name: Display HTTP disallow status
+      debug:
+        msg: |
+          ✅ HTTP traffic disallowed (port 80)
+          Status: {{ 'Rule removed' if ufw_disallow_http.changed else 'Rule did not exist' }}
+          
+          Current UFW Rules:
+          {{ ufw_status.stdout }}

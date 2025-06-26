@@ -1,0 +1,52 @@
+# Granular Task: Configure Memcached Port
+# Equivalent to: cloudy-old/sys/memcached.py::sys_memcached_configure_port()
+# Usage: ansible-playbook tasks/services/memcached/configure-port.yml -e "memcached_port=11212"
+
+---
+- name: Configure Memcached port
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: false
+  become: true
+  
+  vars:
+    memcached_port: "{{ memcached_port | default(11211) }}"
+    
+  tasks:
+    - name: Validate Memcached port
+      fail:
+        msg: "Memcached port must be between 1-65535, got: {{ memcached_port }}"
+      when: memcached_port | int < 1 or memcached_port | int > 65535
+      
+    - name: Configure Memcached port in config file
+      lineinfile:
+        path: /etc/memcached.conf
+        regexp: '^-p\\s+\\d+'
+        line: "-p {{ memcached_port }}"
+        backup: true
+      register: memcached_port_config
+      
+    - name: Restart Memcached service
+      systemd:
+        name: memcached
+        state: restarted
+      when: memcached_port_config.changed
+      
+    - name: Wait for Memcached to start on new port
+      pause:
+        seconds: 2
+      when: memcached_port_config.changed
+      
+    - name: Test Memcached connectivity on configured port
+      shell: "echo 'stats' | nc localhost {{ memcached_port }}"
+      register: memcached_test
+      changed_when: false
+      failed_when: false
+      
+    - name: Display Memcached port configuration status
+      debug:
+        msg: |
+          ✅ Memcached port configured
+          Port: {{ memcached_port }}
+          Configuration: {{ 'Updated' if memcached_port_config.changed else 'Already configured' }}
+          Connectivity: {{ 'Connected' if memcached_test.rc == 0 else 'Connection failed' }}
+          ⚠️  Remember to update firewall rules if needed

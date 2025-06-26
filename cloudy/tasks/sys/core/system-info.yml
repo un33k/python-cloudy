@@ -1,0 +1,29 @@
+# Granular Task: Display System Information
+# Equivalent to: cloudy-old/sys/core.py::sys_uname()
+# Usage: ansible-playbook tasks/sys/core/system-info.yml
+
+---
+- name: Display system information
+  hosts: "{{ target_hosts | default('all') }}"
+  gather_facts: true
+  become: false
+  
+  tasks:
+    - name: Get system information
+      command: uname -a
+      register: uname_output
+      changed_when: false
+      
+    - name: Display detailed system information
+      debug:
+        msg: |
+          🖥️  System Information:
+          ├── Hostname: {{ ansible_hostname }}
+          ├── OS: {{ ansible_distribution }} {{ ansible_distribution_version }}
+          ├── Kernel: {{ ansible_kernel }}
+          ├── Architecture: {{ ansible_architecture }}
+          ├── CPU Cores: {{ ansible_processor_vcpus }}
+          ├── Memory: {{ (ansible_memtotal_mb / 1024) | round(1) }}GB
+          └── Uptime: {{ ansible_uptime_seconds | int // 86400 }}d {{ (ansible_uptime_seconds | int % 86400) // 3600 }}h
+          
+          Raw uname: {{ uname_output.stdout }}
