@@ -10,20 +10,15 @@ from cloudy.web import apache, geoip, nginx, supervisor, www
 
 @task
 @Context.wrap_context
-def setup_standalone(c: Context, cfg_file=None) -> None:
+def setup_standalone(c: Context, cfg_paths=None) -> None:
     """
     Setup standalone server with config files
-    Ex: fab setup-standalone --cfg-file="./.cloudy.generic,./.cloudy.admin"
+    Ex: fab setup-standalone --cfg-paths="./.cloudy.generic,./.cloudy.admin"
     """
-    if cfg_file:
-        # Split comma-separated files and pass as list
-        cfg_files = [f.strip() for f in cfg_file.split(",")]
-        cfg = CloudyConfig(cfg_files)
-    else:
-        cfg = CloudyConfig()
+    cfg = CloudyConfig(cfg_paths)
 
     # ====== Generic Server =========
-    c = recipe_generic_server.setup_server(c)
+    c = recipe_generic_server.setup_server(c, cfg_paths)
 
     # ====== Database Server =========
     dbaddress = cfg.get_variable("dbserver", "listen-address")

@@ -36,7 +36,11 @@ class CloudyConfig:
         # 3. Explicitly passed config file(s)
         if filenames:
             if isinstance(filenames, str):
-                filenames = [filenames]
+                # Handle comma-separated paths
+                if "," in filenames:
+                    filenames = [f.strip() for f in filenames.split(",")]
+                else:
+                    filenames = [filenames]
             for f in filenames:
                 p = os.path.expanduser(f)
                 if os.path.exists(p) and p not in paths:

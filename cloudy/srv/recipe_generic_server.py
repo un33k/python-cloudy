@@ -11,7 +11,7 @@ from cloudy.util.context import Context
 
 @task
 @Context.wrap_context
-def setup_server(c: Context, cfg_file: Optional[str] = None) -> Context:
+def setup_server(c: Context, cfg_paths: Optional[str] = None) -> Context:
     """
     Setup a generic server with comprehensive configuration.
 
@@ -27,20 +27,16 @@ def setup_server(c: Context, cfg_file: Optional[str] = None) -> Context:
     - Essential package installation
 
     Args:
-        cfg_file: Comma-separated list of config files to use
+        cfg_paths: Comma-separated list of config files to use
 
     Returns:
         Updated Context object (may have new connection settings)
 
     Example:
-        fab recipe.gen-install --cfg-file="./.cloudy.generic,./.cloudy.admin"
+        fab recipe.gen-install --cfg-paths="./.cloudy.generic,./.cloudy.admin"
     """
     # Initialize configuration
-    if cfg_file:
-        cfg_files = [f.strip() for f in cfg_file.split(",")]
-        cfg = CloudyConfig(cfg_files)
-    else:
-        cfg = CloudyConfig()
+    cfg = CloudyConfig(cfg_paths)
 
     # Read all configuration values upfront
     git_user_full_name = cfg.get_variable("common", "git-user-full-name")

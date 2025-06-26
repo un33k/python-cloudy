@@ -20,10 +20,9 @@ def db_psql_install_postgres_repo(c: Context) -> None:
 
     # Download and install the PostgreSQL signing key to a dedicated keyring file
     # Force overwrite if file exists
-    c.sudo(
-        "wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | "
-        "gpg --dearmor --yes -o /etc/apt/keyrings/postgresql.gpg"
-    )
+    c.sudo("wget --quiet -O /tmp/postgresql.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc")
+    c.sudo("gpg --dearmor --yes -o /etc/apt/keyrings/postgresql.gpg /tmp/postgresql.asc")
+    c.sudo("rm -f /tmp/postgresql.asc")
 
     # Set proper permissions for the keyring file
     c.sudo("chmod 644 /etc/apt/keyrings/postgresql.gpg")
@@ -31,8 +30,8 @@ def db_psql_install_postgres_repo(c: Context) -> None:
     # Add the PostgreSQL repository with the signed-by option pointing to the keyring
     c.sudo(
         'echo "deb [signed-by=/etc/apt/keyrings/postgresql.gpg] '
-        'https://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" > '
-        "/etc/apt/sources.list.d/pgdg.list"
+        'https://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | '
+        'tee /etc/apt/sources.list.d/pgdg.list > /dev/null'
     )
 
     # Update package lists
