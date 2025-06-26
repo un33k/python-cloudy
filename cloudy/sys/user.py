@@ -31,7 +31,7 @@ def sys_user_add(c: Context, username: str) -> None:
 @Context.wrap_context
 def sys_user_add_sudoer(c: Context, username: str) -> None:
     """Add user to sudoers."""
-    c.sudo(f'echo "{username}   ALL=(ALL:ALL) ALL" | sudo tee -a /etc/sudoers')
+    c.sudo(f"sh -c 'echo \"{username}   ALL=(ALL:ALL) ALL\" >> /etc/sudoers'")
     sys_etc_git_commit(c, f"Added user to sudoers - ({username})")
 
 
@@ -45,7 +45,7 @@ def sys_user_add_passwordless_sudoer(c: Context, username: str) -> None:
     or in highly controlled environments. Passwordless sudo means any
     compromise of this user account = instant root access.
     """
-    c.sudo(f'echo "{username}   ALL=(ALL:ALL) NOPASSWD:ALL" | sudo tee -a /etc/sudoers')
+    c.sudo(f"sh -c 'echo \"{username}   ALL=(ALL:ALL) NOPASSWD:ALL\" >> /etc/sudoers'")
     sys_etc_git_commit(c, f"Added user to passwordless sudoers - ({username})")
 
 

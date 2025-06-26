@@ -35,4 +35,4 @@ def sys_configure_timezone(c: Context, zone: str = "Canada/Eastern") -> None:
 def sys_configure_ntp(c: Context) -> None:
     """Configure NTP with a daily sync cron job."""
     cron_line = "59 23 * * * /usr/sbin/ntpdate ntp.ubuntu.com > /dev/null"
-    c.sudo(f'echo "{cron_line}" | sudo tee -a /var/spool/cron/crontabs/root')
+    c.sudo(f"sh -c 'echo \"{cron_line}\" >> /var/spool/cron/crontabs/root'")

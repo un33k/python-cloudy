@@ -12,7 +12,7 @@ from cloudy.util.context import Context
 def sys_docker_install(c: Context) -> None:
     """Install Docker CE on Ubuntu."""
     url = "https://download.docker.com/linux/ubuntu"
-    c.sudo(f"curl -fsSL {url}/gpg | apt-key add -")
+    c.sudo(f"sh -c 'curl -fsSL {url}/gpg | apt-key add -'")
     c.sudo(f'add-apt-repository "deb [arch=amd64] {url} $(lsb_release -cs) stable"')
     c.sudo("apt update")
     c.sudo("apt -y install docker-ce")

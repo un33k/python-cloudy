@@ -21,7 +21,7 @@ def sys_swap_configure(c: Context, size: str = "512") -> None:
         c.sudo(f"chmod 600 {swap_file}")
         c.sudo(f"mkswap {swap_file}")
         c.sudo(f"swapon {swap_file}")
-        c.sudo(f'echo "{swap_file} swap  swap  defaults  0 0" | sudo tee -a /etc/fstab')
+        c.sudo(f"sh -c 'echo \"{swap_file} swap  swap  defaults  0 0\" >> /etc/fstab'")
         sys_etc_git_commit(c, f"Added swap file ({swap_file})")
     else:
         print(f"Swap file ({swap_file}) exists", file=sys.stderr)

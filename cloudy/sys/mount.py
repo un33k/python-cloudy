@@ -38,7 +38,7 @@ def sys_mount_fstab_add(c: Context, device: str, mount_point: str, filesystem: s
 
     util_mount_validate_vars(c, device, mount_point, filesystem)
     entry = f"{device}  {mount_point}   {filesystem} noatime 0 0"
-    c.sudo(f'echo "{entry}" | sudo tee -a /etc/fstab')
+    c.sudo(f"sh -c 'echo \"{entry}\" >> /etc/fstab'")
 
 
 @task

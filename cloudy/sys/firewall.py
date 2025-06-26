@@ -8,7 +8,7 @@ from cloudy.util.context import Context
 @Context.wrap_context
 def fw_reload_ufw(c: Context) -> None:
     """Helper to reload and show UFW status."""
-    c.sudo('ufw disable; echo "y" | ufw enable; sudo ufw status verbose')
+    c.sudo("sh -c 'ufw disable; echo \"y\" | ufw enable; ufw status verbose'")
 
 
 @task

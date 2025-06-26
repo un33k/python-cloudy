@@ -62,9 +62,9 @@ def sys_redis_configure_db_file(
     """Configure redis-server dump file and directory."""
     redis_conf = "/etc/redis/redis.conf"
     c.sudo(f"sed -i '/^dir /d' {redis_conf}")
-    c.sudo(f'echo "dir {path}" | sudo tee -a {redis_conf}')
+    c.sudo(f"sh -c 'echo \"dir {path}\" >> {redis_conf}'")
     c.sudo(f"sed -i '/^dbfilename /d' {redis_conf}")
-    c.sudo(f'echo "dbfilename {dump}" | sudo tee -a {redis_conf}')
+    c.sudo(f"sh -c 'echo \"dbfilename {dump}\" >> {redis_conf}'")
     sys_etc_git_commit(c, f"Configured redis-server (dir={path}, dumpfile={dump})")
     sys_restart_service(c, "redis-server")
 
@@ -76,7 +76,7 @@ def sys_redis_configure_pass(c: Context, password: str = "") -> None:
     redis_conf = "/etc/redis/redis.conf"
     c.sudo(f"sed -i '/^requirepass /d' {redis_conf}")
     if password:
-        c.sudo(f'echo "requirepass {password}" | sudo tee -a {redis_conf}')
+        c.sudo(f"sh -c 'echo \"requirepass {password}\" >> {redis_conf}'")
     sys_etc_git_commit(
         c,
         (
