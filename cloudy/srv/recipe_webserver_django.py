@@ -1,3 +1,5 @@
+"""Recipe for Django web server deployment with database integration."""
+
 from fabric import task
 
 from cloudy.db import pgis, pgpool, psql
@@ -12,8 +14,18 @@ from cloudy.web import apache, geoip, supervisor, www
 @Context.wrap_context
 def setup_web(c: Context, cfg_paths=None, generic=True):
     """
-    Setup web server with config files
-    Ex: fab setup-web --cfg-paths="./.cloudy.generic,./.cloudy.admin"
+    Setup Django web server with comprehensive configuration.
+
+    Installs and configures web server (Apache/Gunicorn), Python environment,
+    PostgreSQL with PostGIS, PgPool connection pooling, GeoIP databases,
+    and sets up web directories for Django applications.
+
+    Args:
+        cfg_paths: Comma-separated config file paths
+        generic: Whether to run generic server setup first
+
+    Example:
+        fab recipe.web-install --cfg-paths="./.cloudy.generic,./.cloudy.web"
     """
     cfg = CloudyConfig(cfg_paths)
 
@@ -72,3 +84,25 @@ def setup_web(c: Context, cfg_paths=None, generic=True):
         geoip.web_geoip_install_maxmind_api(c)
         geoip.web_geoip_install_maxmind_country(c)
         geoip.web_geoip_install_maxmind_city(c)
+
+    # Success message
+    print(f"\n🎉 ✅ DJANGO WEB SERVER SETUP COMPLETED SUCCESSFULLY!")
+    print(f"📋 Configuration Summary:")
+    print(f"   └── Hostname: {hostname or 'Not configured'}")
+    print(f"   └── Python Version: {py_version or 'System default'}")
+    print(f"   └── Web Server: {webserver or 'Not specified'}")
+    if webserver_port:
+        print(f"   └── Web Port: {webserver_port} (firewall allowed)")
+    print(f"   └── PostgreSQL: {pg_version} with PostGIS {pgis_version}")
+    if cache_host:
+        print(f"   └── Cache Server: {cache_host}:{cache_listen_address}")
+    if db_host:
+        print(f"   └── Database: {db_host}:{db_port} via PgPool")
+    if geo_ip:
+        print(f"   └── GeoIP: MaxMind databases installed")
+    print(f"   └── Web Directory: /var/www")
+    print(f"\n🚀 Django web server is ready for application deployment!")
+    if generic:
+        admin_user = cfg.get_variable("common", "admin-user", "admin")
+        ssh_port = cfg.get_variable("common", "ssh-port", "22")
+        print(f"   └── Admin SSH: {admin_user}@{hostname or 'server'}:{ssh_port}")

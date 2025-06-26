@@ -1,3 +1,5 @@
+"""Recipe for PostgreSQL database server with PostGIS spatial extensions."""
+
 from fabric import task
 
 from cloudy.db import pgis, psql
@@ -11,8 +13,17 @@ from cloudy.util.context import Context
 @Context.wrap_context
 def setup_db(c: Context, cfg_paths=None, generic=True):
     """
-    Setup db server with config files
-    Ex: fab setup-db --cfg-paths="./.cloudy.generic,./.cloudy.admin"
+    Setup PostgreSQL database server with PostGIS spatial extensions.
+
+    Installs and configures PostgreSQL with PostGIS for spatial database
+    operations, including cluster creation, user management, and firewall setup.
+
+    Args:
+        cfg_paths: Comma-separated config file paths
+        generic: Whether to run generic server setup first
+
+    Example:
+        fab recipe.psql-install --cfg-paths="./.cloudy.generic,./.cloudy.db"
     """
     cfg = CloudyConfig(cfg_paths)
 
@@ -56,3 +67,24 @@ def setup_db(c: Context, cfg_paths=None, generic=True):
     pgis.db_pgis_install(c, pg_version, pgis_version)
     pgis.db_pgis_configure(c, pg_version, pgis_version)
     pgis.db_pgis_get_database_gis_info(c, "template_postgis")
+
+    # Success message
+    print(f"\n🎉 ✅ POSTGRESQL + POSTGIS DATABASE SERVER SETUP COMPLETED!")
+    print(f"📋 Configuration Summary:")
+    print(f"   └── PostgreSQL Version: {pg_version}")
+    print(f"   └── PostGIS Version: {pgis_version}")
+    print(f"   └── Database Port: {pg_port}")
+    print(f"   └── Listen Address: {pg_listen_address}")
+    print(f"   └── Cluster: {pg_cluster}")
+    print(f"   └── Data Directory: {pg_data_dir}")
+    print(f"   └── Encoding: {pg_encoding}")
+    print(f"   └── Firewall: Port {pg_port} allowed")
+    if postgres_user_pass:
+        print(f"   └── Postgres User: Password configured")
+    if postgres_sys_user_pass:
+        print(f"   └── System User: Password configured")
+    print(f"\n🚀 PostgreSQL with PostGIS is ready for spatial database operations!")
+    if generic:
+        admin_user = cfg.get_variable("common", "admin-user", "admin")
+        ssh_port = cfg.get_variable("common", "ssh-port", "22")
+        print(f"   └── Admin SSH: {admin_user}@server:{ssh_port}")

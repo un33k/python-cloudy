@@ -100,6 +100,13 @@ fab -H admin@10.10.10.198:22022 sys.services             # Smart output (hides i
 - ✅ **Always Shown**: `ufw status`, `df`, `ps`, `systemctl status`, `pg_lsclusters`, etc.
 - ✅ **Hidden by Default**: `apt install`, `wget`, `make`, `pip install`, etc.
 
+**Recipe Success Messages**:
+- ✅ **Comprehensive Summaries**: All recipes show detailed configuration summaries upon completion
+- ✅ **Visual Indicators**: 🎉 ✅ success icons and 🚀 ready-to-use messages
+- ✅ **Configuration Details**: Ports, addresses, users, versions, firewall rules
+- ✅ **Next Steps**: Connection information and usage guidance
+- ✅ **Consistent Format**: Standardized success output across all recipe types
+
 ### Fabric Command Patterns
 
 ```bash

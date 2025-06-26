@@ -1,3 +1,5 @@
+"""Recipe for Nginx load balancer deployment with SSL support."""
+
 from fabric import task
 
 from cloudy.srv import recipe_generic_server
@@ -11,8 +13,18 @@ from cloudy.web import nginx
 @Context.wrap_context
 def setup_lb(c: Context, cfg_paths=None, generic=True):
     """
-    Setup lb server with config files
-    Ex: fab setup-lb --cfg-paths="./.cloudy.generic,./.cloudy.admin"
+    Setup Nginx load balancer with SSL support.
+
+    Installs and configures Nginx as a reverse proxy load balancer with
+    HTTP/HTTPS support, SSL certificate management, and upstream server
+    configuration for high-availability web applications.
+
+    Args:
+        cfg_paths: Comma-separated config file paths
+        generic: Whether to run generic server setup first
+
+    Example:
+        fab recipe.lb-install --cfg-paths="./.cloudy.generic,./.cloudy.lb"
     """
     cfg = CloudyConfig(cfg_paths)
 
@@ -38,3 +50,21 @@ def setup_lb(c: Context, cfg_paths=None, generic=True):
         nginx.web_nginx_setup_domain(
             c, domain_name, protocol, binding_address, upstream_address, upstream_port
         )
+
+    # Success message
+    print(f"\n🎉 ✅ NGINX LOAD BALANCER SETUP COMPLETED SUCCESSFULLY!")
+    print(f"📋 Configuration Summary:")
+    print(f"   └── Domain: {domain_name}")
+    print(f"   └── Protocol: {protocol.upper()}")
+    print(f"   └── Binding Address: {binding_address}")
+    if upstream_address and upstream_port:
+        print(f"   └── Upstream: {upstream_address}:{upstream_port}")
+    if certificate_path:
+        print(f"   └── SSL Certificate: Configured")
+    print(f"   └── Firewall: HTTP (80) and HTTPS (443) allowed")
+    print(f"\n🚀 Nginx load balancer is ready to serve traffic!")
+    if generic:
+        admin_user = cfg.get_variable("common", "admin-user", "admin")
+        ssh_port = cfg.get_variable("common", "ssh-port", "22")
+        print(f"   └── Admin SSH: {admin_user}@server:{ssh_port}")
+    print(f"\n🌍 Access your site at: {protocol}://{domain_name}")

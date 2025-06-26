@@ -1,3 +1,5 @@
+"""Recipe for complete standalone server with all services integrated."""
+
 from fabric import task
 
 from cloudy.db import pgis, pgpool, psql
@@ -12,8 +14,17 @@ from cloudy.web import apache, geoip, nginx, supervisor, www
 @Context.wrap_context
 def setup_standalone(c: Context, cfg_paths=None) -> None:
     """
-    Setup standalone server with config files
-    Ex: fab setup-standalone --cfg-paths="./.cloudy.generic,./.cloudy.admin"
+    Setup complete standalone server with all services integrated.
+
+    Deploys a comprehensive all-in-one server combining generic server setup,
+    PostgreSQL database with PostGIS, Django web server, and Nginx load balancer.
+    Perfect for single-server deployments requiring full stack functionality.
+
+    Args:
+        cfg_paths: Comma-separated config file paths
+
+    Example:
+        fab recipe.sta-install --cfg-paths="./.cloudy.generic,./.cloudy.standalone"
     """
     cfg = CloudyConfig(cfg_paths)
 
@@ -112,3 +123,37 @@ def setup_standalone(c: Context, cfg_paths=None) -> None:
         nginx.web_nginx_setup_domain(
             c, domain_name, protocol, binding_address, upstream_address, upstream_port
         )
+
+    # Success message
+    print(f"\n🎉 ✅ STANDALONE SERVER SETUP COMPLETED SUCCESSFULLY!")
+    print(f"📋 Complete All-in-One Configuration Summary:")
+    print(f"\n📊 DATABASE SERVER:")
+    print(f"   └── PostgreSQL: {pg_version} with PostGIS {pgis_version}")
+    print(f"   └── Database Port: {pg_port}")
+    print(f"   └── Listen Address: {pg_listen_address}")
+    print(f"   └── Data Directory: {pg_data_dir}")
+    print(f"\n🌍 WEB SERVER:")
+    print(f"   └── Python Version: {py_version or 'System default'}")
+    print(f"   └── Web Server: {webserver or 'Not specified'}")
+    print(f"   └── Web Directory: /var/www")
+    if geo_ip:
+        print(f"   └── GeoIP: MaxMind databases installed")
+    print(f"\n🔄 LOAD BALANCER:")
+    print(f"   └── Nginx: Configured as reverse proxy")
+    print(f"   └── Domain: {domain_name}")
+    print(f"   └── Protocol: {protocol.upper()}")
+    if upstream_address and upstream_port:
+        print(f"   └── Upstream: {upstream_address}:{upstream_port}")
+    if certificate_path:
+        print(f"   └── SSL Certificate: Configured")
+    print(f"\n🔥 ADDITIONAL FEATURES:")
+    if cache_host:
+        print(f"   └── Cache Server: {cache_host}")
+    if db_host:
+        print(f"   └── PgPool: Connection pooling configured")
+    print(f"   └── Firewall: HTTP/HTTPS traffic allowed")
+    print(f"\n🚀 Standalone server is fully operational with database, web, and load balancing!")
+    admin_user = cfg.get_variable("common", "admin-user", "admin")
+    ssh_port = cfg.get_variable("common", "ssh-port", "22")
+    print(f"   └── Admin SSH: {admin_user}@server:{ssh_port}")
+    print(f"\n🌍 Access your application at: {protocol}://{domain_name}")

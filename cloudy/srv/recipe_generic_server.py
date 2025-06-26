@@ -1,3 +1,5 @@
+"""Recipe for generic server setup with comprehensive security configuration."""
+
 import os
 import uuid
 from typing import Optional
@@ -149,5 +151,26 @@ def setup_server(c: Context, cfg_paths: Optional[str] = None) -> Context:
                 f"✅ Successfully connected as {admin_user} with SSH key authentication "
                 f"(sudo not tested - no password available)"
             )
+
+    # Success message for generic server setup
+    print(f"\n🎉 ✅ GENERIC SERVER SETUP COMPLETED SUCCESSFULLY!")
+    print(f"📋 Configuration Summary:")
+    print(f"   ├── Hostname: {hostname or 'Not configured'}")
+    print(f"   ├── Timezone: {timezone_val}")
+    print(f"   ├── Locale: {locale_val}")
+    if swap_size:
+        print(f"   ├── Swap: {swap_size}")
+    print(f"   ├── Admin User: {admin_user} (groups: {admin_groups})")
+    print(f"   ├── Auto User: {auto_user} (groups: {auto_groups})")
+    print(f"   ├── SSH Port: {ssh_port}")
+    print(f"   ├── Root Login: {'Disabled' if disable_root else 'Enabled'}")
+    print(f"   ├── Password Auth: {'Enabled' if enable_password else 'Disabled'}")
+    print(f"   ├── SSH Keys: {'Configured' if pub_key else 'Not configured'}")
+    print(f"   └── Firewall: UFW enabled and configured")
+    print(f"\n🚀 Generic server foundation is ready for specialized deployments!")
+    if admin_user and disable_root:
+        print(f"   └── SSH Access: {admin_user}@server:{ssh_port} (key-based authentication)")
+    else:
+        print(f"   └── SSH Access: root@server:{ssh_port}")
 
     return c
