@@ -17,7 +17,10 @@ fi
 
 # Install linting tools if not present
 echo "📦 Ensuring linting tools are installed..."
-pip install -q black flake8 isort mypy 2>/dev/null || true
+pip install -q -e ".[dev]" 2>/dev/null || {
+    echo "⚠️  Failed to install dev dependencies, trying requirements.txt fallback..."
+    pip install -q black flake8 isort mypy 2>/dev/null || true
+}
 
 # Run Black formatter (100 character line length)
 echo ""

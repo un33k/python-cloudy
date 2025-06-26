@@ -141,11 +141,12 @@ def setup_server(c: Context, cfg_file=None):
 ## Development Requirements
 
 - **Python**: ≥3.8
-- **Key Dependencies**:
+- **Key Dependencies** (defined in `pyproject.toml` and `requirements.txt`):
   - Fabric ≥3.2.2 (SSH automation)
   - apache-libcloud ≥3.8.0 (cloud provider abstraction)
   - colorama ≥0.4.6 (colored terminal output)
   - s3cmd ≥2.4.0 (S3 management)
+  - Development tools: Black, isort, flake8, mypy
 
 ## Working with Configurations
 

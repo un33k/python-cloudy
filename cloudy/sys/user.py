@@ -112,3 +112,49 @@ def sys_user_set_pip_cache_dir(c: Context, username: str) -> None:
     c.sudo(f"chmod -R ug+wrx {cache_dir}")
     c.sudo(f"sed -i '/\\s*PIP_DOWNLOAD_CACHE\\s*.*/d' {bashrc}")
     c.sudo(f"sed -i '1iexport PIP_DOWNLOAD_CACHE={cache_dir}' {bashrc}")
+
+
+def sys_user_create_with_setup(
+    c: Context, user_name: str, password: str, groups: str, shared_key_dir: str = ""
+) -> None:
+    """
+    Create a user with full setup including groups, sudoer, and SSH keys.
+
+    Args:
+        c: Fabric context
+        user_name: Username to create
+        password: Password for the user
+        groups: Comma-separated list of groups to add user to
+        shared_key_dir: Optional path to shared SSH keys directory
+    """
+    if not user_name or not password:
+        return
+
+    sys_user_add(c, user_name)
+    sys_user_change_password(c, user_name, password)
+    sys_user_add_sudoer(c, user_name)
+    sys_user_set_group_umask(c, user_name)
+    sys_user_create_groups(c, groups)
+    sys_user_add_to_groups(c, user_name, groups)
+
+    # Set up SSH keys if configured
+    if shared_key_dir:
+        # Import here to avoid circular imports
+        from cloudy.sys import ssh
+
+        ssh.sys_ssh_push_server_shared_keys(c, user_name, shared_key_dir)
+
+
+def validate_user_config(username: str, password: str) -> None:
+    """
+    Validate user configuration values.
+
+    Args:
+        username: Username to validate
+        password: Password to validate
+
+    Raises:
+        ValueError: If validation fails
+    """
+    if username and not password:
+        raise ValueError(f"User '{username}' specified but password is missing")

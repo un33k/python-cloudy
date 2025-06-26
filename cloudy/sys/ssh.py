@@ -98,3 +98,21 @@ def sys_ssh_push_server_shared_keys(
     c.sudo(f"chmod 700 {remote_ssh_dir}")
     c.sudo(f"chmod 600 {remote_ssh_dir}/id_rsa")
     c.sudo(f"chmod 644 {remote_ssh_dir}/id_rsa.pub")
+
+
+def validate_ssh_config(ssh_port: str) -> None:
+    """
+    Validate SSH configuration values.
+
+    Args:
+        ssh_port: SSH port to validate
+
+    Raises:
+        ValueError: If validation fails
+    """
+    try:
+        port_num = int(ssh_port)
+        if not (1 <= port_num <= 65535):
+            raise ValueError(f"ssh-port must be between 1-65535, got: {ssh_port}")
+    except ValueError as exc:
+        raise ValueError(f"ssh-port must be a valid integer, got: {ssh_port}") from exc

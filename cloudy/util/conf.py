@@ -98,3 +98,20 @@ class CloudyConfig:
             self.log.warning(
                 f"Failed to set environment variable ({variable}) from section [{section}]: {e}"
             )
+
+    def get_boolean_config(self, section: str, key: str, default: bool = False) -> bool:
+        """
+        Get a boolean configuration value from a section.
+
+        Accepts various formats: YES/NO, TRUE/FALSE, 1/0, ON/OFF (case-insensitive)
+
+        Args:
+            section: Configuration section name
+            key: Configuration key name
+            default: Default value if key not found
+
+        Returns:
+            Boolean value
+        """
+        value = self.get_variable(section, key, "").upper()
+        return value in ("YES", "TRUE", "1", "ON")
