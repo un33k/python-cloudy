@@ -1,8 +1,11 @@
+"""Enhanced Fabric Context with smart output control and SSH reconnection."""
+
 import logging
 import os
+import re
 import sys
 from functools import wraps
-from typing import Callable
+from typing import Callable, List
 
 from colorama import Fore, Style
 from fabric import Connection
@@ -15,26 +18,195 @@ handler.setFormatter(logging.Formatter("%(message)s"))
 logger.handlers = [handler]
 logger.propagate = False
 
+# Commands that should ALWAYS show output (informational/status commands)
+ALWAYS_SHOW_OUTPUT: List[str] = [
+    "ufw status",
+    "systemctl status",
+    "service status",
+    "df",
+    "free",
+    "ps",
+    "netstat",
+    "iptables -L",
+    "lsblk",
+    "mount",
+    "who",
+    "w",
+    "uptime",
+    "date",
+    "psql --version",
+    "pg_lsclusters",
+    "apache2ctl status",
+    "nginx -t",
+    "docker ps",
+    "docker images",
+    "git status",
+    "git log",
+    "git diff",
+    "tail",
+    "head",
+    "cat",
+    "less",
+    "more",
+    "ls -la",
+    "find",
+    "grep",
+    "awk",
+    "sed -n",  # when used for display
+    "echo",
+    "printf",
+    "hostname",
+    "uname",
+    "id",
+    "whoami",
+    "pwd",
+    "which",
+    "whereis",
+]
+
+# Commands that are typically "noisy" and should be hidden by default (regex patterns)
+HIDE_BY_DEFAULT_PATTERNS: List[str] = [
+    r"apt.*update",
+    r"apt.*install",
+    r"apt.*upgrade",
+    r"apt-get.*update",
+    r"apt-get.*install",
+    r"apt-get.*upgrade",
+    r"yum.*install",
+    r"yum.*update",
+    r"dnf.*install",
+    r"wget\s+",
+    r"curl\s+-.*",  # downloading
+    r"unzip\s+",
+    r"tar\s+-[xz]",
+    r"make\s+",
+    r"cmake\s+",
+    r"pip.*install",
+    r"npm.*install",
+    r"yarn.*install",
+    r"composer.*install",
+    r"bundle.*install",
+    r"mvn.*install",
+    r"gradle.*build",
+    r"go.*build",
+    r"cargo.*build",
+    r"dpkg\s+-i",
+    r"rpm\s+-i",
+    r"g?zip\s+",
+    r"bunzip2?\s+",
+]
+
 
 class Context(Connection):
+    """
+    Enhanced Fabric Connection with smart output control and SSH reconnection.
+
+    Provides intelligent command output filtering, automatic password handling,
+    and robust SSH port reconnection for server automation tasks.
+    """
+    @property
+    def verbose(self) -> bool:
+        """Check if verbose output is enabled via config, environment variable, or command-line."""
+        # Check command-line arguments first
+        if "--verbose" in sys.argv or "-v" in sys.argv:
+            return True
+
+        # Check Fabric's built-in debug flag
+        if hasattr(self.config, "run") and getattr(self.config.run, "echo", False):
+            return True
+
+        return (
+            getattr(self.config, "cloudy_verbose", False)
+            or getattr(self.config, "cloudy_debug", False)
+            or os.environ.get("CLOUDY_VERBOSE", "").lower() in ("1", "true", "yes")
+        )
+
+    @property
+    def debug(self) -> bool:
+        """Check if debug output is enabled via config or command-line."""
+        # Check command-line arguments first
+        if "--debug" in sys.argv or "-d" in sys.argv:
+            return True
+
+        # Check Fabric's built-in debug config
+        if hasattr(self.config, "run") and getattr(self.config.run, "echo", False):
+            return True
+
+        return getattr(self.config, "cloudy_debug", False)
+
+    def _should_show_output(self, command: str) -> bool:
+        """Determine if command output should be shown based on command type."""
+        # Debug mode: show everything
+        if self.debug:
+            return True
+
+        # Verbose mode: show everything
+        if self.verbose:
+            return True
+
+        cmd_lower = command.lower().strip()
+
+        # Hide noisy commands by default FIRST (regex matching)
+        for pattern in HIDE_BY_DEFAULT_PATTERNS:
+            if re.search(pattern, cmd_lower):
+                return False
+
+        # Always show output for informational commands (substring matching)
+        for pattern in ALWAYS_SHOW_OUTPUT:
+            if pattern in cmd_lower:
+                return True
+
+        # For other commands, show output (conservative approach)
+        return True
+
     def run(self, command, *args, **kwargs):
         print(f"\n{Fore.CYAN}### {command}\n-----------{Style.RESET_ALL}", flush=True)
-        kwargs.setdefault("hide", False)
+
+        show_output = self._should_show_output(command)
+        kwargs.setdefault("hide", not show_output)
         kwargs.setdefault("pty", True)
-        return super().run(command, *args, **kwargs)
+
+        result = super().run(command, *args, **kwargs)
+
+        # Only show success/failure indicators for commands where we hid the output
+        if not show_output:
+            if result.failed:
+                print(f"{Fore.RED}❌ FAILED{Style.RESET_ALL}")
+                if result.stderr:
+                    print(f"Error: {result.stderr.strip()}")
+                elif result.stdout:
+                    print(f"Output: {result.stdout.strip()}")
+            else:
+                print(f"{Fore.GREEN}✅ SUCCESS{Style.RESET_ALL}")
+
+        return result
 
     def sudo(self, command, *args, **kwargs):
         print(f"\n{Fore.YELLOW}### {command}\n-----------{Style.RESET_ALL}", flush=True)
-        kwargs.setdefault("hide", False)
-        kwargs.setdefault("pty", True)
 
         # Check for environment variable and set it if config is None
         env_password = os.environ.get("INVOKE_SUDO_PASSWORD")
-
         if hasattr(self.config, "sudo") and not self.config.sudo.password and env_password:
             self.config.sudo.password = env_password
 
-        return super().sudo(command, *args, **kwargs)
+        show_output = self._should_show_output(command)
+        kwargs.setdefault("hide", not show_output)
+        kwargs.setdefault("pty", True)
+
+        result = super().sudo(command, *args, **kwargs)
+
+        # Only show success/failure indicators for commands where we hid the output
+        if not show_output:
+            if result.failed:
+                print(f"{Fore.RED}❌ FAILED{Style.RESET_ALL}")
+                if result.stderr:
+                    print(f"Error: {result.stderr.strip()}")
+                elif result.stdout:
+                    print(f"Output: {result.stdout.strip()}")
+            else:
+                print(f"{Fore.GREEN}✅ SUCCESS{Style.RESET_ALL}")
+
+        return result
 
     def reconnect(self, new_port: str = "", new_user: str = "") -> "Context":
         """
@@ -109,6 +281,7 @@ class Context(Connection):
 
     @staticmethod
     def wrap_context(func: Callable):
+        """Decorator to wrap Fabric tasks with enhanced Context functionality."""
         @wraps(func)
         def wrapper(c: Context, *args, **kwargs):
             # Also apply the same robustness for inline_ssh_env and connect_kwargs

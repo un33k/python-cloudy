@@ -2,6 +2,7 @@ import logging
 import sys as system
 from fabric import task
 from invoke.collection import Collection
+from invoke import Context as InvokeContext
 from paramiko.ssh_exception import AuthenticationException, SSHException
 
 from cloudy.sys import (
@@ -38,6 +39,15 @@ from cloudy.srv import (
 
 logging.getLogger().setLevel(logging.ERROR)
 
+# Add global configuration for verbose and debug modes
+def configure_context(c: InvokeContext):
+    """Configure context with verbose/debug flags from command line."""
+    # These will be set by command-line flags like --verbose or --debug
+    if hasattr(c.config, 'run') and hasattr(c.config.run, 'verbose'):
+        c.config.cloudy_verbose = c.config.run.verbose
+    if hasattr(c.config, 'run') and hasattr(c.config.run, 'debug'):
+        c.config.cloudy_debug = c.config.run.debug
+
 
 @task
 def help(c):
@@ -51,6 +61,11 @@ def help(c):
     ├── recipe.lb-install     - Nginx load balancer setup
     ├── recipe.vpn-install    - VPN server setup
     └── recipe.sta-install    - Standalone server setup
+    
+    🎛️  GLOBAL FLAGS (for any command)
+    ├── --verbose             - Show full command output (custom flag)
+    ├── --debug, -d           - Enable Fabric debug mode + all output  
+    └── --echo, -e            - Echo commands before running
 
     🔧 SYSTEM COMMANDS
     ├── sys.init              - Initialize and update system
@@ -389,3 +404,4 @@ try:
         Connection._auth_patched = True
 except ImportError:
     pass
+
