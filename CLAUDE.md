@@ -100,7 +100,7 @@ fab -H admin@10.10.10.198:22022 sys.services                  # Smart output (hi
 - ✅ **--debug/-d**: Shows debug information and all output (Fabric built-in)
 - ✅ **--echo/-e**: Echo commands before running (Fabric built-in)
 - ✅ **Always Shown**: `ufw status`, `df`, `ps`, `systemctl status`, `pg_lsclusters`, etc.
-- ✅ **Hidden by Default**: `apt install`, `wget`, `make`, `pip install`, etc.
+- ✅ **Hidden by Default**: `apt install`, `wget`, `make`, `pip install`, `pg_createcluster`, `createdb`, etc.
 
 **Recipe Success Messages**:
 - ✅ **Comprehensive Summaries**: All recipes show detailed configuration summaries upon completion

@@ -123,6 +123,19 @@ HIDE_BY_DEFAULT_PATTERNS: List[str] = [
     # SSH and network
     r"ssh-keygen",
     r"scp\s+",
+    # Database operations
+    r"pg_createcluster",
+    r"pg_dropcluster",
+    r"pg_ctlcluster",
+    r"createdb\s+",
+    r"dropdb\s+",
+    r"createuser\s+",
+    r"dropuser\s+",
+    r"pg_dump\s+",
+    r"pg_restore\s+",
+    r"psql\s+-c",  # psql commands (but not interactive psql)
+    r"mysqldump\s+",
+    r"mysql\s+-e",  # mysql commands
 ]
 
 
@@ -286,20 +299,32 @@ class Context(Connection):
             inline_ssh_env=inline_ssh_env_to_use,  # Use the Boolean value
         )
 
-        try:
+        # Try to connect with retries for SSH port changes
+        import time
 
-            new_ctx.open()  # Explicitly open to test the connection
-            new_ctx.run("echo 'Successfully reconnected on new port.'", hide=True)
-            print(f"Successfully re-established connection on {new_ctx.host}:{new_ctx.port}")
-        except Exception as e:
-            print(
-                f"CRITICAL ERROR: Failed to reconnect to {self.host} as user {user_to_use} "
-                f"on new port {port_to_use}."
-            )
-            print("Manual intervention may be required!")
-            print(f"Error details: {e}")
-            if new_ctx and new_ctx.is_connected:
-                new_ctx.close()
+        max_retries = 3
+        retry_delay = 2
+
+        for attempt in range(max_retries):
+            try:
+                new_ctx.open()  # Explicitly open to test the connection
+                new_ctx.run("echo 'Successfully reconnected on new port.'", hide=True)
+                print(f"Successfully re-established connection on {new_ctx.host}:{new_ctx.port}")
+                break
+            except Exception as e:
+                if attempt < max_retries - 1:
+                    print(f"Connection attempt {attempt + 1} failed, retrying in {retry_delay}s...")
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    print(
+                        f"CRITICAL ERROR: Failed to reconnect to {self.host} as user {user_to_use} "
+                        f"on new port {port_to_use} after {max_retries} attempts."
+                    )
+                    print("Manual intervention may be required!")
+                    print(f"Error details: {e}")
+                    if new_ctx and new_ctx.is_connected:
+                        new_ctx.close()
 
         return new_ctx
 

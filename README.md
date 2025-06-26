@@ -79,7 +79,7 @@ CLOUDY_VERBOSE=1 fab -H admin@server:22022 sys.update
 #### Default Mode (Smart Output)
 By default, Python Cloudy intelligently categorizes commands:
 - **Shows**: Status commands (`ufw status`, `systemctl status`, `df`, `ps`, etc.)
-- **Hides**: Noisy installation commands (`apt install`, `wget`, `make`, `pip install`, etc.)
+- **Hides**: Noisy installation commands (`apt install`, `wget`, `make`, `pip install`, `pg_createcluster`, etc.)
 - **Indicators**: Success (✅) or failure (❌) messages for hidden commands
 
 ```bash

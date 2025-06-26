@@ -2,7 +2,7 @@ import os
 
 from fabric import task
 
-from cloudy.sys.core import sys_reload_service
+from cloudy.sys.core import sys_reload_service, sys_restart_service
 from cloudy.sys.etc import sys_etc_git_commit
 from cloudy.util.context import Context
 
@@ -14,7 +14,10 @@ def sys_ssh_set_port(c: Context, port: str = "22") -> None:
     sshd_config = "/etc/ssh/sshd_config"
     c.sudo(f"sed -i 's/^#*Port .*/Port {port}/' {sshd_config}")
     sys_etc_git_commit(c, f"Configured ssh (Port={port})")
-    sys_reload_service(c, "ssh")
+    # SSH port changes require restart, not just reload
+    sys_restart_service(c, "ssh")
+    # Give SSH a moment to fully restart
+    c.run("sleep 2")
 
 
 @task
