@@ -342,7 +342,12 @@
     "jks",
     "keystore",
     "truststore",
-    "cloudy"
+    "cloudy",
+    "myuser",
+    "myapp",
+    "wpuser",
+    "mysite",
+    "neekware"
   ],
   "cSpell.enableFiletypes": [
     "python",

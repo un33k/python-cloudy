@@ -34,50 +34,54 @@ source .venv/bin/activate
 
 ```bash
 # High-level server deployment (one command setups)
-fab setup.server --cfg-file=./.cloudy.production
-fab setup.database --cfg-file=./.cloudy.production
-fab setup.web --cfg-file=./.cloudy.production
-fab setup.cache
-fab setup.load-balancer
+fab recipe.gen-install --cfg-file=./.cloudy.production
+fab recipe.psql-install --cfg-file=./.cloudy.production
+fab recipe.web-install --cfg-file=./.cloudy.production
+fab recipe.redis-install --cfg-file=./.cloudy.production
+fab recipe.lb-install --cfg-file=./.cloudy.production
 
 # Database operations
 fab db.pg.create-user --username=webapp --password=secure123
-fab db.pg.create-db --dbname=myapp --dbowner=webapp
-fab db.pg.dump --dump-dir=/backups --db-name=myapp
-fab db.my.create-user --root-pass=rootpwd --user=webapp --user-pass=secure123
+fab db.pg.create-db --database=myapp --owner=webapp
+fab db.pg.dump --database=myapp
+fab db.my.create-user --username=webapp --password=secure123
 
 # System administration  
-fab system.hostname --hostname=myserver.com
-fab system.add-user --username=admin
-fab system.ssh-port --port=2222
-fab system.timezone --timezone=America/New_York
+fab sys.hostname --hostname=myserver.com
+fab sys.add-user --username=admin
+fab sys.ssh-port --port=2222
+fab sys.timezone --timezone=America/New_York
 
-# Security
-fab security.install-firewall
-fab security.secure-server --ssh-port=2222
-fab security.disable-root
+# Security & Firewall
+fab fw.install
+fab fw.secure-server --ssh-port=2222
+fab fw.allow-http
+fab fw.allow-https
+fab security.install-common
 
 # Services
-fab cache.install
-fab cache.configure
-fab docker.install
-fab docker.add-user --username=myuser
+fab services.cache.install
+fab services.cache.configure
+fab services.docker.install
+fab services.docker.add-user --username=myuser
 
 # Get help
 fab help                    # Show all command categories with examples
 ```
 
 #### Command Categories
-- **setup.***: One-command server deployment recipes
-- **system.***: System configuration (hostname, users, SSH, timezone)
-- **db.pg.***: PostgreSQL operations (create, backup, users)
-- **db.my.***: MySQL operations (create, backup, users)
-- **db.pgb.***: PgBouncer connection pooling
-- **db.pgp.***: PgPool load balancing  
-- **db.gis.***: PostGIS spatial database extensions
-- **security.***: Security and firewall configuration
-- **cache.***: Redis cache management
-- **docker.***: Docker installation and configuration
+- **recipe.***: One-command server deployment recipes (7 commands)
+- **sys.***: System configuration (hostname, users, SSH, timezone) (31 commands)
+- **db.pg.***: PostgreSQL operations (create, backup, users) (17 commands)
+- **db.my.***: MySQL operations (create, backup, users) (7 commands)
+- **db.pgb.***: PgBouncer connection pooling (3 commands)
+- **db.pgp.***: PgPool load balancing (2 commands)
+- **db.gis.***: PostGIS spatial database extensions (4 commands)
+- **fw.***: Firewall configuration (9 commands)
+- **security.***: Security hardening (1 command)
+- **services.***: Service management (Docker, Redis, Memcached, VPN) (17 commands)
+- **web.***: Web server management (Apache, Nginx, Supervisor) (13 commands)
+- **aws.***: Cloud management (EC2) (16 commands)
 
 ## Architecture Overview
 
@@ -104,7 +108,7 @@ git-user-email = john@example.com
 timezone = America/New_York
 admin-user = admin
 hostname = my-server
-python-version = 3.8
+python-version = 3.11
 
 [WEBSERVER]
 webserver = gunicorn
