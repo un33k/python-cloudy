@@ -11,7 +11,7 @@ description = 'A Python utility that simplifies cloud configuration'
 url = 'https://github.com/un33k/python-cloudy'
 author = 'Val Neekman'
 author_email = 'info@neekware.com'
-license = 'BSD'
+license = 'MIT'
 install_requires = [
     'fabric>=3.2.2',
     'colorama>=0.4.6',
@@ -21,9 +21,14 @@ install_requires = [
 classifiers = [
     'Development Status :: 3 - Alpha',
     'Intended Audience :: Developers',
-    'License :: OSI Approved :: BSD License',
+    'License :: OSI Approved :: MIT License',
     'Operating System :: POSIX',
-    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
     'Topic :: Software Development :: Libraries :: Python Modules',
 ]
 

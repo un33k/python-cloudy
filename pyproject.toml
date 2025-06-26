@@ -1,0 +1,177 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "python-cloudy"
+version = "0.0.5"
+description = "A Python utility that simplifies cloud configuration"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Val Neekman", email = "info@neekware.com"}
+]
+maintainers = [
+    {name = "Val Neekman", email = "info@neekware.com"}
+]
+keywords = ["cloud", "configuration", "infrastructure", "automation", "fabric"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+    "Topic :: Database",
+]
+requires-python = ">=3.8"
+dependencies = [
+    "fabric>=3.2.2",
+    "colorama>=0.4.6",
+    "apache-libcloud>=3.8.0",
+    "s3cmd>=2.4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.0.0",
+    "ipython>=8.7.0",
+]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/un33k/python-cloudy"
+Repository = "https://github.com/un33k/python-cloudy"
+Issues = "https://github.com/un33k/python-cloudy/issues"
+Changelog = "https://github.com/un33k/python-cloudy/blob/master/CHANGELOG.md"
+
+[project.scripts]
+cloudy = "cloudy:main"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cloudy*"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+cloudy = ["cfg/**/*"]
+
+# Black configuration
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  # directories
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | venv
+  | \.env
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+# isort configuration
+[tool.isort]
+profile = "black"
+line_length = 100
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+force_sort_within_sections = true
+skip_glob = ["*/migrations/*"]
+
+
+# MyPy configuration
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "fabric.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "libcloud.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "colorama.*"
+ignore_missing_imports = true
+
+# Pytest configuration
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers --strict-config"
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+filterwarnings = [
+    "error",
+    "ignore::UserWarning",
+    "ignore::DeprecationWarning",
+]
+
+# Coverage configuration
+[tool.coverage.run]
+source = ["cloudy"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "setup.py",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]

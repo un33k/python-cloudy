@@ -6,6 +6,7 @@ from cloudy.sys import (
     postfix, python, redis, security, ssh, swap, timezone, user, vim
 )
 from cloudy.db import psql, pgis, mysql, pgpool, pgbouncer
+from cloudy import recipes
 from cloudy.srv import (
     recipe_cache_redis,
     recipe_generic_server,
@@ -21,6 +22,7 @@ logging.getLogger().setLevel(logging.ERROR)
 ns = Collection.from_module(__import__(__name__))
 
 ns.add_collection(Collection.from_module(core), name='core')
+ns.add_collection(Collection.from_module(core), name='system')
 ns.add_collection(Collection.from_module(docker), name='docker')
 ns.add_collection(Collection.from_module(etc), name='etc')
 ns.add_collection(Collection.from_module(python), name='python')
@@ -52,4 +54,7 @@ ns.add_collection(Collection.from_module(recipe_database_psql_gis), name='recipe
 ns.add_collection(Collection.from_module(recipe_loadbalancer_nginx), name='recipe_loadbalancer_nginx')
 ns.add_collection(Collection.from_module(recipe_standalone_server), name='recipe_standalone_server')
 ns.add_collection(Collection.from_module(recipe_vpn_server), name='recipe_vpn_server')
+
+# Add new intuitive recipe system
+ns.add_collection(Collection.from_module(recipes), name='recipe')
 

@@ -1,9 +1,10 @@
+from functools import wraps
 import logging
 import sys
+from typing import Callable
+
 from colorama import Fore, Style
-from functools import wraps
 from fabric import Connection
-from typing import Callable, Optional, Dict, Any
 
 logger = logging.getLogger("fab-commands")
 logger.setLevel(logging.INFO)
@@ -12,6 +13,7 @@ handler = logging.StreamHandler(sys.stdout)
 handler.setFormatter(logging.Formatter("%(message)s"))
 logger.handlers = [handler]
 logger.propagate = False
+
 
 class Context(Connection):
     def run(self, command, *args, **kwargs):
@@ -26,7 +28,7 @@ class Context(Connection):
         kwargs.setdefault("pty", True)
         return super().sudo(command, *args, **kwargs)
 
-    def reconnect(self, new_port: str = '', new_user: str = '') -> 'Context':
+    def reconnect(self, new_port: str = "", new_user: str = "") -> "Context":
         """
         Creates and returns a new Context (Connection) object to the same host
         and user, but on a different port, preserving other connection details.
@@ -43,8 +45,11 @@ class Context(Connection):
         port_to_use = new_port or self.port
         user_to_use = new_user or self.user
         host_to_use = self.host
-        
-        print(f"\nAttempting to reconnect to {self.host} as user {user_to_use} on new port {port_to_use}...")
+
+        print(
+            f"\nAttempting to reconnect to {self.host} as user {user_to_use} "
+            f"on new port {port_to_use}..."
+        )
 
         connect_kwargs_to_use = {}
         if isinstance(self.connect_kwargs, dict):
@@ -54,14 +59,14 @@ class Context(Connection):
 
         # --- CRITICAL FIX FOR AmbiguousMergeError ---
         # inline_ssh_env should be a Boolean, not a dictionary
-        inline_ssh_env_to_use = getattr(self, 'inline_ssh_env', False)
+        inline_ssh_env_to_use = getattr(self, "inline_ssh_env", False)
         if not isinstance(inline_ssh_env_to_use, bool):
             inline_ssh_env_to_use = False
         # --- END CRITICAL FIX ---
 
-        connect_kwargs_to_use.pop('port', None)
-        connect_kwargs_to_use.pop('connect_timeout', None)
-        connect_kwargs_to_use.pop('forward_agent', None)
+        connect_kwargs_to_use.pop("port", None)
+        connect_kwargs_to_use.pop("connect_timeout", None)
+        connect_kwargs_to_use.pop("forward_agent", None)
 
         if self.is_connected:
             self.close()
@@ -74,17 +79,20 @@ class Context(Connection):
             port=port_to_use,
             gateway=gateway_to_use,
             connect_kwargs=connect_kwargs_to_use,
-            inline_ssh_env=inline_ssh_env_to_use, # Use the Boolean value
+            inline_ssh_env=inline_ssh_env_to_use,  # Use the Boolean value
         )
 
         try:
 
-            new_ctx.open() # Explicitly open to test the connection
+            new_ctx.open()  # Explicitly open to test the connection
             new_ctx.run("echo 'Successfully reconnected on new port.'", hide=True)
             print(f"Successfully re-established connection on {new_ctx.host}:{new_ctx.port}")
         except Exception as e:
-            print(f"CRITICAL ERROR: Failed to reconnect to {self.host} as user {user_to_use} on new port {port_to_use}.")
-            print(f"Manual intervention may be required!")
+            print(
+                f"CRITICAL ERROR: Failed to reconnect to {self.host} as user {user_to_use} "
+                f"on new port {port_to_use}."
+            )
+            print("Manual intervention may be required!")
             print(f"Error details: {e}")
             if new_ctx and new_ctx.is_connected:
                 new_ctx.close()
@@ -102,7 +110,7 @@ class Context(Connection):
                 wrapper_connect_kwargs = c.connect_kwargs.copy()
 
             # inline_ssh_env should be a Boolean, not a dictionary
-            wrapper_inline_ssh_env = getattr(c, 'inline_ssh_env', False)
+            wrapper_inline_ssh_env = getattr(c, "inline_ssh_env", False)
             if not isinstance(wrapper_inline_ssh_env, bool):
                 wrapper_inline_ssh_env = False
 
@@ -111,9 +119,10 @@ class Context(Connection):
                 host=c.host,
                 user=c.user,
                 port=c.port,
-                gateway=getattr(c, 'gateway', None),  # Safely get gateway attribute
+                gateway=getattr(c, "gateway", None),  # Safely get gateway attribute
                 connect_kwargs=wrapper_connect_kwargs,
-                inline_ssh_env=wrapper_inline_ssh_env, # Boolean value
+                inline_ssh_env=wrapper_inline_ssh_env,  # Boolean value
             )
             return func(ctx, *args, **kwargs)
+
         return wrapper
