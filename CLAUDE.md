@@ -27,6 +27,7 @@ source .venv/bin/activate
 - **List all Fabric tasks**: `fab -l`
 - **Run tests**: `./test.sh` (minimal test suite from `tests/` directory)
 - **Run linting**: `./lint.sh` (Black, isort, flake8, mypy)
+- **Spell checking**: Configured via `.cspell.json` and `.vscode/settings.json`
 - **Publish package**: `python setup.py publish`
 
 ### Fabric Command Patterns
