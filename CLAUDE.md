@@ -27,6 +27,8 @@ source .venv/bin/activate
 - **List all Fabric tasks**: `fab -l`
 - **Run tests**: `./test.sh` (minimal test suite from `tests/` directory)
 - **Run linting**: `./lint.sh` (Black, isort, flake8, mypy)
+- **Verbose output**: `CLOUDY_VERBOSE=1 fab [command]` (shows all command output)
+- **Debug mode**: `fab --debug [command]` (Fabric debug + all output)
 - **Spell checking**: Configured via `.cspell.json` and `.vscode/settings.json`
 - **Publish package**: `python setup.py publish`
 
@@ -79,10 +81,10 @@ fab -H admin@10.10.10.198:22022 db.pg.install
 fab -H admin@10.10.10.198:22022 fw.allow-http
 
 # 3. Use verbose/debug flags to control output
-fab -H admin@10.10.10.198:22022 --verbose db.pg.status   # Show all output
-fab -H admin@10.10.10.198:22022 --debug fw.status        # Show debug info + all output
-fab -H admin@10.10.10.198:22022 --echo sys.services      # Echo commands + smart output
-fab -H admin@10.10.10.198:22022 sys.services             # Smart output (hides install noise)
+CLOUDY_VERBOSE=1 fab -H admin@10.10.10.198:22022 db.pg.status  # Show all output
+fab -H admin@10.10.10.198:22022 --debug fw.status             # Show debug info + all output
+fab -H admin@10.10.10.198:22022 --echo sys.services           # Echo commands + smart output
+fab -H admin@10.10.10.198:22022 sys.services                  # Smart output (hides install noise)
 ```
 
 **Security Features**:
@@ -94,7 +96,7 @@ fab -H admin@10.10.10.198:22022 sys.services             # Smart output (hides i
 
 **Smart Output System**:
 - ✅ **Default**: Hides noisy installation commands, shows status/informational commands
-- ✅ **--verbose**: Shows all command output (custom flag)
+- ✅ **CLOUDY_VERBOSE=1**: Shows all command output (environment variable)
 - ✅ **--debug/-d**: Shows debug information and all output (Fabric built-in)
 - ✅ **--echo/-e**: Echo commands before running (Fabric built-in)
 - ✅ **Always Shown**: `ufw status`, `df`, `ps`, `systemctl status`, `pg_lsclusters`, etc.

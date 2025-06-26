@@ -106,28 +106,23 @@ class Context(Connection):
     """
     @property
     def verbose(self) -> bool:
-        """Check if verbose output is enabled via config, environment variable, or command-line."""
-        # Check command-line arguments first
-        if "--verbose" in sys.argv or "-v" in sys.argv:
+        """Check if verbose output is enabled via environment variable or config."""
+        # Check environment variable for verbose mode
+        if os.environ.get("CLOUDY_VERBOSE", "").lower() in ("1", "true", "yes"):
             return True
 
-        # Check Fabric's built-in debug flag
+        # Check Fabric's built-in debug flag (--debug enables verbose too)
         if hasattr(self.config, "run") and getattr(self.config.run, "echo", False):
             return True
 
         return (
             getattr(self.config, "cloudy_verbose", False)
             or getattr(self.config, "cloudy_debug", False)
-            or os.environ.get("CLOUDY_VERBOSE", "").lower() in ("1", "true", "yes")
         )
 
     @property
     def debug(self) -> bool:
-        """Check if debug output is enabled via config or command-line."""
-        # Check command-line arguments first
-        if "--debug" in sys.argv or "-d" in sys.argv:
-            return True
-
+        """Check if debug output is enabled via Fabric's built-in debug flag."""
         # Check Fabric's built-in debug config
         if hasattr(self.config, "run") and getattr(self.config.run, "echo", False):
             return True

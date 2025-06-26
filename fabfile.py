@@ -63,9 +63,9 @@ def help(c):
     └── recipe.sta-install    - Standalone server setup
     
     🎛️  GLOBAL FLAGS (for any command)
-    ├── --verbose             - Show full command output (custom flag)
     ├── --debug, -d           - Enable Fabric debug mode + all output  
-    └── --echo, -e            - Echo commands before running
+    ├── --echo, -e            - Echo commands before running
+    └── CLOUDY_VERBOSE=1      - Environment variable for verbose output
 
     🔧 SYSTEM COMMANDS
     ├── sys.init              - Initialize and update system

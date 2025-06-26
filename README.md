@@ -61,6 +61,134 @@ This applies to all non-root operations including:
 
 ---
 
+## Output Control & Debugging
+
+Python Cloudy features a smart output system that provides clean, professional command execution while maintaining full debugging capabilities when needed.
+
+**⚡ Quick Start**: Use `CLOUDY_VERBOSE=1` before any command to see full output:
+```bash
+# Example: PostgreSQL installation with verbose output
+CLOUDY_VERBOSE=1 fab -H root@10.10.10.198 recipe.psql-install --cfg-paths="./.cloudy.psql"
+
+# Example: System update with verbose output  
+CLOUDY_VERBOSE=1 fab -H admin@server:22022 sys.update
+```
+
+### Output Control Modes
+
+#### Default Mode (Smart Output)
+By default, Python Cloudy intelligently categorizes commands:
+- **Shows**: Status commands (`ufw status`, `systemctl status`, `df`, `ps`, etc.)
+- **Hides**: Noisy installation commands (`apt install`, `wget`, `make`, `pip install`, etc.)
+- **Indicators**: Success (✅) or failure (❌) messages for hidden commands
+
+```bash
+# Clean output - hides installation noise, shows status information
+fab -H admin@server:22022 db.pg.install
+fab -H admin@server:22022 fw.status  # Always shows output
+```
+
+#### Verbose Mode
+Shows all command output for debugging and troubleshooting. **Note: Fabric does not have a `--verbose` flag**, so use the environment variable:
+
+```bash
+# Show all command output using environment variable
+export CLOUDY_VERBOSE=1
+fab -H admin@server:22022 db.pg.install
+fab -H admin@server:22022 sys.update
+
+# Or inline for single command
+CLOUDY_VERBOSE=1 fab -H admin@server:22022 db.pg.install
+
+# Clear verbose mode
+unset CLOUDY_VERBOSE
+```
+
+#### Debug Mode  
+Enables Fabric's built-in debug mode plus all command output:
+
+```bash
+# Enable debug mode with full output
+fab -H admin@server:22022 --debug db.pg.install
+fab -H admin@server:22022 -d fw.secure-server
+```
+
+#### Echo Mode
+Echo commands before execution (Fabric built-in):
+
+```bash
+# Echo commands before running
+fab -H admin@server:22022 --echo sys.hostname --hostname=myserver
+fab -H admin@server:22022 -e web.nginx.install
+```
+
+### Recipe Success Messages
+
+All deployment recipes provide comprehensive success summaries:
+
+```bash
+fab -H root@server recipe.gen-install --cfg-file="./.cloudy.generic"
+```
+
+**Example Output:**
+```
+🎉 ✅ GENERIC SERVER SETUP COMPLETED SUCCESSFULLY!
+📋 Configuration Summary:
+   ├── Hostname: myserver.example.com
+   ├── Timezone: America/New_York
+   ├── Admin User: admin (groups: admin,www-data)
+   ├── SSH Port: 22022
+   ├── Root Login: Disabled
+   ├── SSH Keys: Configured
+   └── Firewall: UFW enabled and configured
+
+🚀 Generic server foundation is ready for specialized deployments!
+   └── SSH Access: admin@server:22022 (key-based authentication)
+```
+
+### Environment Variables
+
+For programmatic control, you can use environment variables:
+
+```bash
+# Enable verbose output via environment variable (RECOMMENDED)
+export CLOUDY_VERBOSE=1
+fab -H server sys.update
+
+# Or use inline for single commands
+CLOUDY_VERBOSE=1 fab -H server sys.update
+
+# Clear verbose mode
+unset CLOUDY_VERBOSE
+```
+
+**Note**: `CLOUDY_VERBOSE=1` is the recommended way to enable verbose output since Fabric does not have a built-in `--verbose` flag.
+
+### Best Practices
+
+- **Development**: Use `CLOUDY_VERBOSE=1` or `--debug` when troubleshooting issues
+- **Production**: Use default mode for clean output and success confirmations  
+- **Automation**: Set `CLOUDY_VERBOSE=1` in CI/CD environments for full logs
+- **Learning**: Use `--echo` to see exact commands being executed
+
+### Quick Reference
+
+```bash
+# Default mode (clean output)
+fab -H server sys.update
+
+# Verbose mode (show all output)
+CLOUDY_VERBOSE=1 fab -H server sys.update
+
+# Debug mode (Fabric debug + all output)
+fab -H server --debug sys.update
+
+# Echo mode (show commands before running)
+fab -H server --echo sys.update
+```
+
+---
+
 ## Usage Examples
 
 ### Secure Server Deployment Workflow
@@ -93,6 +221,10 @@ fab -H admin@10.10.10.198:22022 web.nginx.install
 fab -H admin@10.10.10.198:22022 db.pg.install
 fab -H admin@10.10.10.198:22022 fw.allow-http
 fab -H admin@10.10.10.198:22022 fw.allow-https
+
+# Use environment variable for verbose output or --debug flag
+CLOUDY_VERBOSE=1 fab -H admin@10.10.10.198:22022 db.pg.status
+fab -H admin@10.10.10.198:22022 --debug fw.status
 ```
 
 ### Other High-Level Recipes
@@ -105,6 +237,9 @@ fab -H root@web.com recipe.web-install --cfg-file="./.cloudy.web"
 
 # PostgreSQL + PostGIS database setup
 fab -H root@db.com recipe.psql-install --cfg-file="./.cloudy.db"
+
+# Use environment variable to see detailed installation progress
+CLOUDY_VERBOSE=1 fab -H root@server.com recipe.redis-install --cfg-file="./.cloudy.redis"
 ```
 
 ### Database Management
@@ -137,6 +272,13 @@ fab -H root@server.com sys.add-sudoer --username=deploy
 # SSH configuration
 fab -H root@server.com sys.ssh-port --port=2222
 fab -H root@server.com sys.ssh-disable-root
+
+# Use --echo to see exact commands being executed
+fab -H root@server.com --echo sys.hostname --hostname=myserver.example.com
+
+# System status checks (always show output)
+fab -H admin@server:22022 sys.services  # Shows service status
+fab -H admin@server:22022 sys.memory-usage  # Shows memory info
 ```
 
 ### Firewall & Security
@@ -208,11 +350,20 @@ Python Cloudy organizes commands into intuitive hierarchical namespaces:
 - **`services.*`** - Service management (17 commands)
 - **`aws.*`** - Cloud management (16 commands)
 
+### Global Flags (Available for any command)
+
+- **`--debug, -d`** - Enable Fabric debug mode + all output  
+- **`--echo, -e`** - Echo commands before running (Fabric built-in)
+- **`CLOUDY_VERBOSE=1`** - Environment variable for verbose output
+
 ### List All Commands
 ```bash
 fab -l                    # Show all available commands
 fab -l | grep "recipe\."  # Show only recipe commands
 fab -l | grep "db\.pg\."  # Show only PostgreSQL commands
+
+# Get help for Python Cloudy features
+fab help                  # Show comprehensive help with examples
 ```
 
 ---
