@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Python Cloudy Linting Script
 # Runs multiple linting tools to ensure code quality

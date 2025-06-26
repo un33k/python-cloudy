@@ -25,8 +25,8 @@ source .venv/bin/activate
 
 ### Core Development Commands
 - **List all Fabric tasks**: `fab -l`
-- **Run tests**: `python test.py`
-- **Run linting**: `./pep8.sh` (PEP8 compliance checking)
+- **Run tests**: `./test.sh` (minimal test suite from `tests/` directory)
+- **Run linting**: `./lint.sh` (Black, isort, flake8, mypy)
 - **Publish package**: `python setup.py publish`
 
 ### Fabric Command Patterns

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Python Cloudy Bootstrap Script
 # Sets up Python 3.11.9 via pyenv and creates virtual environment
