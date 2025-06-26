@@ -30,7 +30,12 @@ def web_nginx_bootstrap(c: Context):
     }
     for local, remote in configs.items():
         localcfg = os.path.expanduser(os.path.join(cfgdir, local))
-        c.put(localcfg, remote, use_sudo=True)
+        # Put to temp location, then move with sudo
+        temp_path = f"/tmp/{os.path.basename(remote)}"
+        c.put(localcfg, temp_path)
+        c.sudo(f"mv {temp_path} {remote}")
+        c.sudo(f"chown root:root {remote}")
+        c.sudo(f"chmod 644 {remote}")
 
     c.sudo("mkdir -p /etc/nginx/sites-available")
     c.sudo("mkdir -p /etc/nginx/sites-enabled")

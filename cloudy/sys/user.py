@@ -37,6 +37,20 @@ def sys_user_add_sudoer(c: Context, username: str) -> None:
 
 @task
 @Context.wrap_context
+def sys_user_add_passwordless_sudoer(c: Context, username: str) -> None:
+    """
+    Add user to sudoers with passwordless sudo access.
+
+    WARNING: This is a security risk! Use only for automation accounts
+    or in highly controlled environments. Passwordless sudo means any
+    compromise of this user account = instant root access.
+    """
+    c.sudo(f'echo "{username}   ALL=(ALL:ALL) NOPASSWD:ALL" | sudo tee -a /etc/sudoers')
+    sys_etc_git_commit(c, f"Added user to passwordless sudoers - ({username})")
+
+
+@task
+@Context.wrap_context
 def sys_user_remove_sudoer(c: Context, username: str) -> None:
     """Remove user from sudoers."""
     c.sudo(f"sed -i '/\\s*{username}\\s*.*/d' /etc/sudoers")

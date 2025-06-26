@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 from functools import wraps
 from typing import Callable
@@ -26,6 +27,13 @@ class Context(Connection):
         print(f"\n{Fore.YELLOW}### {command}\n-----------{Style.RESET_ALL}", flush=True)
         kwargs.setdefault("hide", False)
         kwargs.setdefault("pty", True)
+
+        # Check for environment variable and set it if config is None
+        env_password = os.environ.get("INVOKE_SUDO_PASSWORD")
+
+        if hasattr(self.config, "sudo") and not self.config.sudo.password and env_password:
+            self.config.sudo.password = env_password
+
         return super().sudo(command, *args, **kwargs)
 
     def reconnect(self, new_port: str = "", new_user: str = "") -> "Context":

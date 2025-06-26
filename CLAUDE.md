@@ -30,6 +30,39 @@ source .venv/bin/activate
 - **Spell checking**: Configured via `.cspell.json` and `.vscode/settings.json`
 - **Publish package**: `python setup.py publish`
 
+### Secure Server Management
+
+**⚠️ IMPORTANT**: After running `recipe.gen-install`, root login is disabled for security.
+
+**Sudo Password Authentication**:
+```bash
+# Set sudo password via environment variable (secure approach)
+export INVOKE_SUDO_PASSWORD=admin_user_password
+
+# Then run commands normally
+fab -H admin@server:port command
+```
+
+**Complete Secure Workflow Example**:
+```bash
+# 1. Setup secure server (disables root, creates admin user with SSH keys)
+source .venv/bin/activate
+fab -H root@10.10.10.198 recipe.gen-install --cfg-file=./.cloudy.generic
+
+# 2. After setup, connect as admin user with sudo access
+export INVOKE_SUDO_PASSWORD=pass4admin
+fab -H admin@10.10.10.198:22022 web.nginx.install
+fab -H admin@10.10.10.198:22022 db.pg.install
+fab -H admin@10.10.10.198:22022 fw.allow-http
+```
+
+**Security Features**:
+- ✅ Root login disabled (`PermitRootLogin no`)
+- ✅ Admin user with SSH key authentication
+- ✅ Custom SSH port (default: 22022)
+- ✅ UFW firewall configured
+- ✅ Password + sudo access for privileged operations
+
 ### Fabric Command Patterns
 
 ```bash

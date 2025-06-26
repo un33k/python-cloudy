@@ -118,19 +118,40 @@ def setup_server(c: Context, cfg_file: Optional[str] = None) -> Context:
     firewall.fw_secure_server(c, ssh_port)
     c = c.reconnect(new_port=ssh_port)
 
-    # Disable root login if configured and auto user exists
-    if auto_user and disable_root:
-        ssh.sys_ssh_disable_root_login(c)
-        c = c.reconnect(new_port=ssh_port, new_user=auto_user)
-
-    # Enable password authentication if requested
+    # Enable password authentication if requested (before disabling root)
     if enable_password:
         ssh.sys_ssh_enable_password_authentication(c)
 
-    # Install public key for admin user if provided
+    # Install public key for admin user BEFORE disabling root login
     if pub_key and admin_user:
         pub_key_path = os.path.expanduser(pub_key)
         if os.path.exists(pub_key_path):
             ssh.sys_ssh_push_public_key(c, admin_user, pub_key_path)
+
+    # Disable root login if configured and admin user exists with SSH key
+    if admin_user and disable_root and pub_key:
+        ssh.sys_ssh_disable_root_login(c)
+        c = c.reconnect(new_port=ssh_port, new_user=admin_user)
+
+        # Verify the new admin user connection and sudo access
+        c.run("uname -a", echo=True)
+        c.run("id", echo=True)
+
+        # Test sudo access by providing the password
+        admin_pass = cfg.get_variable("common", "admin-pass")
+        if admin_pass:
+            result = c.run(f"echo '{admin_pass}' | sudo -S whoami", echo=True, warn=True)
+            if result.return_code == 0:
+                print(
+                    f"✅ Successfully connected as {admin_user} with SSH key authentication "
+                    f"and sudo access"
+                )
+            else:
+                print(f"⚠️  Connected as {admin_user} with SSH keys, but sudo test failed")
+        else:
+            print(
+                f"✅ Successfully connected as {admin_user} with SSH key authentication "
+                f"(sudo not tested - no password available)"
+            )
 
     return c

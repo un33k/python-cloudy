@@ -134,6 +134,7 @@ sys.add_task(user.sys_user_add, name='add-user')
 sys.add_task(user.sys_user_delete, name='delete-user')
 sys.add_task(user.sys_user_change_password, name='change-password')
 sys.add_task(user.sys_user_add_sudoer, name='add-sudoer')
+sys.add_task(user.sys_user_add_passwordless_sudoer, name='add-passwordless-sudoer')
 sys.add_task(user.sys_user_remove_sudoer, name='remove-sudoer')
 
 # SSH configuration
