@@ -29,9 +29,9 @@ all:
         ansible_host_key_checking: false
         ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
       hosts:
-        test-generic:
+        test-hardening:
           ansible_host: 10.10.10.198
-          hostname: test-generic.example.com
+          hostname: test-hardening.example.com
           ansible_ssh_private_key_file: ~/.ssh/id_rsa  # SSH key for admin user
           
     # Phase 2: Generic Server Setup (Admin Access)  

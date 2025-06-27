@@ -4,7 +4,7 @@
 
 ---
 - name: Server Security Hardening (Root Access Phase)
-  hosts: generic_servers
+  hosts: hardening_servers
   gather_facts: true
   become: true
   
@@ -136,6 +136,14 @@
       when: setup_ssh_security | bool and ssh_port != 22
       tags: [firewall, ssh, security]
       ignore_errors: true
+      
+    # Enable UFW firewall (final security step)
+    - name: Enable UFW firewall
+      ufw:
+        state: enabled
+        logging: 'on'
+      when: setup_firewall | bool
+      tags: [firewall, security]
       
   post_tasks:
     - name: Display hardening completion summary

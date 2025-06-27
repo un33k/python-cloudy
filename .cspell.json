@@ -68,6 +68,7 @@
     "psql",
     "redis",
     "sed",
+    "selectattr",
     "ssh",
     "sshfs",
     "ssl",

@@ -36,6 +36,7 @@ cd cloudy/
 **Phase 1: Security Hardening** (`hardening.yml`)
 - Runs as `root` on port `22` (initial connection)
 - Creates admin user and installs SSH keys
+- Installs and enables UFW firewall
 - Changes SSH port to `22022`
 - Disables root login and password authentication
 - **Result**: Secure server ready for Phase 2

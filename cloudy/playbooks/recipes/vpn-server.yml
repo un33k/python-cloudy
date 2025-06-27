@@ -33,7 +33,7 @@
   tasks:
     # Docker Installation
     - name: Install Docker
-      include_tasks: ../../tasks/sys/docker/install.yml
+      include_tasks: ../../tasks/sys/docker/install-docker.yml
       when: setup_docker | bool
       tags: [docker, install]
       

@@ -7,17 +7,38 @@
   set_fact:
     groups_array: "{{ group_list.split(',') | map('trim') | list }}"
     
-- name: Add user to multiple groups
+- name: Check which groups exist
+  getent:
+    database: group
+    key: "{{ item }}"
+  register: group_check
+  failed_when: false
+  loop: "{{ groups_array }}"
+  
+- name: Filter existing groups
+  set_fact:
+    existing_groups: "{{ group_check.results | selectattr('failed', 'undefined') | map(attribute='item') | list }}"
+    missing_groups: "{{ group_check.results | selectattr('failed', 'defined') | map(attribute='item') | list }}"
+    
+- name: Display missing groups warning
+  debug:
+    msg: "⚠️  Warning: These groups don't exist and will be skipped: {{ missing_groups | join(', ') }}"
+  when: missing_groups | length > 0
+    
+- name: Add user to existing groups only
   user:
     name: "{{ username }}"
-    groups: "{{ groups_array }}"
+    groups: "{{ existing_groups }}"
     append: true
   register: groups_addition_result
+  when: existing_groups | length > 0
   
 - name: Display groups addition status
   debug:
     msg: |
-      ✅ User added to multiple groups
+      ✅ User group membership updated
       User: {{ username }}
-      Groups: {{ groups_array | join(', ') }}
-      Status: {{ 'Updated' if groups_addition_result.changed else 'Already member of all groups' }}
+      Requested groups: {{ groups_array | join(', ') }}
+      Added to existing groups: {{ existing_groups | join(', ') if existing_groups | length > 0 else 'None' }}
+      Skipped missing groups: {{ missing_groups | join(', ') if missing_groups | length > 0 else 'None' }}
+      Status: {{ 'Updated' if groups_addition_result.changed | default(false) else 'No changes needed' }}
