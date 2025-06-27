@@ -85,21 +85,13 @@ class AliConfig:
         """Check if virtual environment is properly activated"""
         venv_path = self.project_root / ".venv"
         
-        # Check if .venv exists
+        # Check if .venv exists and if we're in a virtual environment
         if not venv_path.exists():
             error("Virtual environment not found!\n"
-                  f"{Colors.YELLOW}Run bootstrap to create it:{Colors.NC}\n"
-                  "  ./bootstrap.sh\n"
-                  f"{Colors.YELLOW}Then activate and try again:{Colors.NC}\n"
-                  "  source .venv/bin/activate")
-        
-        # Check if we're in a virtual environment
-        if not os.environ.get('VIRTUAL_ENV'):
+                  f"{Colors.YELLOW}Run:{Colors.NC} ./bootstrap.sh && source .venv/bin/activate")
+        elif not os.environ.get('VIRTUAL_ENV'):
             error("Virtual environment not activated!\n"
-                  f"{Colors.YELLOW}Activate the environment first:{Colors.NC}\n"
-                  "  source .venv/bin/activate\n"
-                  f"{Colors.YELLOW}Then run ali commands:{Colors.NC}\n"
-                  "  ./ali dev syntax")
+                  f"{Colors.YELLOW}Run:{Colors.NC} deactivate >/dev/null 2>&1 || source .venv/bin/activate")
         
         # Check if ansible is available in the venv
         try:
@@ -107,8 +99,7 @@ class AliConfig:
             ansible_spec = importlib.util.find_spec("ansible")
             if ansible_spec is None:
                 error("Ansible not found in virtual environment!\n"
-                      f"{Colors.YELLOW}Run bootstrap to install dependencies:{Colors.NC}\n"
-                      "  ./bootstrap.sh")
+                      f"{Colors.YELLOW}Run:{Colors.NC} ./bootstrap.sh && source .venv/bin/activate")
         except ImportError:
             error("Python import system error - virtual environment may be corrupted")
 

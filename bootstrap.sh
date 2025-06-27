@@ -266,7 +266,7 @@ main() {
     echo "  ./ali django        # Django web server"
     echo "  ./ali psql          # PostgreSQL database"
     echo
-    echo -e "${YELLOW}Remember to activate the environment and run ./ali from project root!${NC}"
+    echo -e "${YELLOW}Remember to activate the environment (source .venv/bin/activate) and run ./ali from project root!${NC}"
 }
 
 main "$@"
