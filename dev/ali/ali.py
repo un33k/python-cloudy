@@ -54,6 +54,9 @@ class AliConfig:
         
         # Validate project structure
         self._validate_structure()
+        
+        # Check virtual environment
+        self._check_virtual_environment()
     
     def _find_project_root(self) -> Path:
         """Find the project root directory by looking for cloudy/ folder"""
@@ -77,6 +80,37 @@ class AliConfig:
         for path in required_paths:
             if not path.exists():
                 error(f"Required directory not found: {path}")
+    
+    def _check_virtual_environment(self) -> None:
+        """Check if virtual environment is properly activated"""
+        venv_path = self.project_root / ".venv"
+        
+        # Check if .venv exists
+        if not venv_path.exists():
+            error("Virtual environment not found!\n"
+                  f"{Colors.YELLOW}Run bootstrap to create it:{Colors.NC}\n"
+                  "  ./bootstrap.sh\n"
+                  f"{Colors.YELLOW}Then activate and try again:{Colors.NC}\n"
+                  "  source .venv/bin/activate")
+        
+        # Check if we're in a virtual environment
+        if not os.environ.get('VIRTUAL_ENV'):
+            error("Virtual environment not activated!\n"
+                  f"{Colors.YELLOW}Activate the environment first:{Colors.NC}\n"
+                  "  source .venv/bin/activate\n"
+                  f"{Colors.YELLOW}Then run ali commands:{Colors.NC}\n"
+                  "  ./ali dev syntax")
+        
+        # Check if ansible is available in the venv
+        try:
+            import importlib.util
+            ansible_spec = importlib.util.find_spec("ansible")
+            if ansible_spec is None:
+                error("Ansible not found in virtual environment!\n"
+                      f"{Colors.YELLOW}Run bootstrap to install dependencies:{Colors.NC}\n"
+                      "  ./bootstrap.sh")
+        except ImportError:
+            error("Python import system error - virtual environment may be corrupted")
 
 class RecipeFinder:
     """Find and manage recipe files"""
