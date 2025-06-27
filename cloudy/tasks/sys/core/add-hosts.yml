@@ -30,14 +30,7 @@
         state: present
       register: hosts_addition
       
-    - name: Commit change to /etc git (if git repo exists)
-      shell: |
-        if [ -d /etc/.git ]; then
-          cd /etc
-          git add -A
-          git commit -m "Added host:{{ host_name }}, ip:{{ host_ip }} to: /etc/hosts" || true
-        fi
-      when: hosts_removal.changed or hosts_addition.changed
+
       
     - name: Verify hosts entry
       shell: grep "{{ host_name }}" /etc/hosts

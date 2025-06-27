@@ -6,29 +6,39 @@
   command: whoami
   register: whoami_result
   changed_when: false
+  become: false
+  become_user: "{{ admin_user | default('admin') }}"
 
 - name: Test sudo access with password
-  shell: "echo '{{ admin_password }}' | sudo -S whoami"
+  shell: |
+    echo '{{ admin_password }}' | timeout 10 sudo -S -p '' whoami 2>/dev/null
   register: sudo_test
   when: admin_password is defined
   changed_when: false
   no_log: true
+  failed_when: false
+  become: false
+  become_user: "{{ admin_user | default('admin') }}"
+  async: 15
+  poll: 1
 
 - name: Test system command access
   command: uname -a
   register: uname_result
   changed_when: false
+  become: false
+  become_user: "{{ admin_user | default('admin') }}"
 
 - name: Display validation results
   debug:
     msg: |
       ✅ Admin User Validation Results:
       Current User: {{ whoami_result.stdout }}
-      Sudo Access: {{ 'SUCCESS (can become root)' if sudo_test.stdout == 'root' else 'FAILED' if admin_password is defined else 'NOT TESTED' }}
+      Sudo Access: {{ 'SUCCESS (can become root)' if sudo_test.stdout | default('') == 'root' else 'FAILED' if admin_password is defined else 'NOT TESTED' }}
       System Info: {{ uname_result.stdout }}
       
       🔐 Authentication Status: SECURE
       ├── Connected as: {{ ansible_user }}@{{ ansible_host }}:{{ ansible_port }}
       ├── SSH Keys: Working
-      ├── Sudo Access: {{ 'Working with password' if admin_password is defined and sudo_test.stdout == 'root' else 'Not tested' }}
+      ├── Sudo Access: {{ 'Working with password' if admin_password is defined and sudo_test.stdout | default('') == 'root' else 'Password test failed or not tested' }}
       └── System Access: Full

@@ -30,14 +30,7 @@
       shell: DEBIAN_FRONTEND=noninteractive aptitude -y safe-upgrade
       register: safe_upgrade_result
       
-    - name: Commit change to /etc git (if git repo exists)
-      shell: |
-        if [ -d /etc/.git ]; then
-          cd /etc
-          git add -A
-          git commit -m "Upgraded the system safely" || true
-        fi
-      when: apt_upgrade_result.changed or safe_upgrade_result.changed
+
       
     - name: Display upgrade completion
       debug:

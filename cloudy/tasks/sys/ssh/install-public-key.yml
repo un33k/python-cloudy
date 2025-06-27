@@ -37,16 +37,34 @@
     group: "{{ target_user }}"
     mode: '0700'
 
+- name: Read public key content
+  set_fact:
+    pub_key_content: "{{ lookup('file', expanded_pub_key_path) }}"
+  delegate_to: localhost
+  become: false
+
 - name: Install public key in authorized_keys
   authorized_key:
     user: "{{ target_user }}"
-    key: "{{ lookup('file', expanded_pub_key_path) }}"
+    key: "{{ pub_key_content }}"
     state: present
   register: key_install_result
+  when: not ansible_check_mode
+
+- name: Install public key in authorized_keys (check mode)
+  lineinfile:
+    path: "{{ user_home }}/.ssh/authorized_keys"
+    line: "{{ pub_key_content }}"
+    create: yes
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: '0600'
+  register: key_install_result_check
+  when: ansible_check_mode
 
 - name: Display key installation status
   debug:
     msg: |
       ✅ SSH public key installed for user: {{ target_user }}
       Key source: {{ expanded_pub_key_path }}
-      Status: {{ 'Added new key' if key_install_result.changed else 'Key already present' }}
+      Status: {{ 'Added new key' if (key_install_result.changed | default(false)) or (key_install_result_check.changed | default(false)) else 'Key already present' }}

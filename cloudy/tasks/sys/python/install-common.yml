@@ -94,14 +94,7 @@
       register: pip_version_check
       changed_when: false
       
-    - name: Commit change to /etc git (if git repo exists)
-      shell: |
-        if [ -d /etc/.git ]; then
-          cd /etc
-          git add -A
-          git commit -m "Installed Python {{ py_version }} and common packages" || true
-        fi
-      when: python_install_result.changed
+
       
     - name: Display installation summary
       debug:

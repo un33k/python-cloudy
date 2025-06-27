@@ -9,8 +9,7 @@ import sys
 import yaml
 import glob
 import subprocess
-from pathlib import Path
-from typing import List, Dict, Any, Tuple
+from typing import Tuple
 
 class Colors:
     RED = '\033[0;31m'

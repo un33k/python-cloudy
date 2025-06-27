@@ -25,14 +25,7 @@
       shell: DEBIAN_FRONTEND=noninteractive aptitude -y upgrade
       register: upgrade_result
       
-    - name: Commit change to /etc git (if git repo exists)
-      shell: |
-        if [ -d /etc/.git ]; then
-          cd /etc
-          git add -A
-          git commit -m "Upgraded the system" || true
-        fi
-      when: upgrade_result.changed
+
       
     - name: Display upgrade completion
       debug:

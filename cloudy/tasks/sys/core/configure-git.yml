@@ -9,33 +9,19 @@
     state: present
     
 - name: Configure git user name
-  become_user: "{{ target_user }}"
-  git_config:
-    name: user.name
-    value: "{{ git_name }}"
-    scope: global
+  shell: sudo -u "{{ target_user }}" /usr/bin/git config --global user.name "{{ git_name }}"
   register: git_name_config
+  changed_when: true
   
 - name: Configure git user email
-  become_user: "{{ target_user }}"
-  git_config:
-    name: user.email
-    value: "{{ git_email }}"
-    scope: global
+  shell: sudo -u "{{ target_user }}" /usr/bin/git config --global user.email "{{ git_email }}"
   register: git_email_config
+  changed_when: true
   
-- name: Commit change to /etc git (if git repo exists)
-  shell: |
-    if [ -d /etc/.git ]; then
-      cd /etc
-      git add -A
-      git commit -m "Configured git for user: {{ target_user }}" || true
-    fi
-  when: git_name_config.changed or git_email_config.changed
+
   
 - name: Verify git configuration
-  become_user: "{{ target_user }}"
-  command: git config --global --list
+  shell: sudo -u "{{ target_user }}" /usr/bin/git config --global --list
   register: git_config_list
   changed_when: false
   
