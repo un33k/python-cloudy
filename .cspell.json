@@ -27,6 +27,7 @@
     "grep",
     "gunicorn",
     "hostname",
+    "hostvars",
     "htop",
     "http",
     "https",

@@ -16,9 +16,11 @@ cd cloudy/
 
 ### Core Development Commands
 
-#### Two-Phase Server Setup (Recommended)
-- **Phase 1 - Security Hardening**: `ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/hardening.yml --limit hardening_servers`
-- **Phase 2 - Server Configuration**: `ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/generic-server.yml --limit generic_servers`
+#### Smart Server Setup (Recommended)
+- **Option 1 - Two-Phase**: 
+  - `ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/hardening.yml --limit hardening_servers`
+  - `ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/generic-server.yml --limit generic_servers`
+- **Option 2 - Smart Single-Phase**: `ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/generic-server.yml --limit generic_servers`
 - **Specialized Services**: `ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/[service].yml`
 
 #### Legacy Single-Phase (For existing servers)
@@ -29,22 +31,31 @@ cd cloudy/
 - **Clean output**: Configured in `ansible.cfg` with `display_skipped_hosts = no`
 - **Spell checking**: Configured via `.cspell.json` and `.vscode/settings.json`
 
-### Two-Phase Server Setup (NEW)
+### Smart Server Setup (NEW)
 
-**🔒 RECOMMENDED APPROACH**: Use the new two-phase setup to avoid connection issues during security hardening.
+**🔒 INTELLIGENT APPROACH**: Smart hardening with 4-step connection verification.
 
-**Phase 1: Security Hardening** (`hardening.yml`)
-- Runs as `root` on port `22` (initial connection)
-- Creates admin user and installs SSH keys
-- Installs and enables UFW firewall
-- Changes SSH port to `22022`
-- Disables root login and password authentication
-- **Result**: Secure server ready for Phase 2
+**Smart Hardening Logic**:
+1. **Try root:default_port** → Fresh server, run full hardening
+2. **Try root:custom_port** → Partial hardening, continue from SSH security  
+3. **Try admin:default_port** → Should timeout (good security)
+4. **Try admin:custom_port** → Hardening complete, verify and skip
 
-**Phase 2: Server Configuration** (`generic-server.yml`)  
-- Runs as `admin` user on port `22022` (secure connection)
-- Completes server setup (hostname, git, firewall, etc.)
-- **Result**: Fully configured server
+**Option 1: Two-Phase Setup** (Explicit)
+- **Phase 1**: `hardening.yml` - Security hardening with smart detection
+- **Phase 2**: `generic-server.yml` - Server configuration
+
+**Option 2: Smart Single-Phase** (Automatic)
+- **One Command**: `generic-server.yml` - Attempts hardening first, then continues
+- **Intelligent**: Detects server state and adapts accordingly
+- **Flexible**: Works on fresh servers OR already-hardened servers
+
+**Security Features**:
+- ✅ **Variable-driven ports**: No hardcoded port numbers
+- ✅ **4-step verification**: Bulletproof connection state detection  
+- ✅ **Complete verification**: Checks all security components
+- ✅ **Idempotent**: Safe to run multiple times
+- ✅ **Adaptive**: Works in any server state
 
 **📖 See**: [TWO-PHASE-SETUP.md](cloudy/TWO-PHASE-SETUP.md) for complete guide
 

@@ -1,0 +1,141 @@
+# Smart Connection State Detection for Hardening
+# Tests 4 connection scenarios to determine server hardening state
+# Usage: include_tasks: tasks/sys/core/detect-connection-state.yml
+
+---
+- name: Initialize connection state variables
+  set_fact:
+    root_default_port_works: false
+    root_custom_port_works: false
+    admin_default_port_works: false
+    admin_custom_port_works: false
+    hardening_state: "unknown"
+    skip_hardening: false
+
+- name: "Step 1: Test root connection on default SSH port"
+  block:
+    - name: Try connecting as root on default SSH port
+      raw: whoami
+      delegate_to: "{{ ansible_host }}"
+      vars:
+        ansible_user: root
+        ansible_port: "{{ ssh_default_port | default(22) }}"
+        ansible_ssh_pass: "{{ hostvars[inventory_hostname]['ansible_ssh_pass'] | default('') }}"
+        ansible_ssh_private_key_file: "{{ hostvars[inventory_hostname]['ansible_ssh_private_key_file'] | default('') }}"
+      register: root_22_test
+      failed_when: false
+      changed_when: false
+      timeout: 10
+      
+    - name: Set root default port connection state
+      set_fact:
+        root_default_port_works: true
+        hardening_state: "fresh_server"
+      when: root_22_test.rc is defined and root_22_test.rc == 0
+  rescue:
+    - name: Root default port connection failed (expected if hardened)
+      set_fact:
+        root_default_port_works: false
+
+- name: "Step 2: Test root connection on custom SSH port (if step 1 failed)"
+  block:
+    - name: Try connecting as root on custom SSH port
+      raw: whoami
+      delegate_to: "{{ ansible_host }}"
+      vars:
+        ansible_user: root
+        ansible_port: "{{ ssh_port | default(22022) }}"
+        ansible_ssh_pass: "{{ hostvars[inventory_hostname]['ansible_ssh_pass'] | default('') }}"
+        ansible_ssh_private_key_file: "{{ hostvars[inventory_hostname]['ansible_ssh_private_key_file'] | default('') }}"
+      register: root_22022_test
+      failed_when: false
+      changed_when: false
+      timeout: 10
+      
+    - name: Set root custom port connection state
+      set_fact:
+        root_custom_port_works: true
+        hardening_state: "partial_hardening"
+      when: root_22022_test.rc is defined and root_22022_test.rc == 0
+  rescue:
+    - name: Root custom port connection failed
+      set_fact:
+        root_custom_port_works: false
+  when: not root_default_port_works
+
+- name: "Step 3: Test admin connection on default SSH port (should timeout if properly hardened)"
+  block:
+    - name: Try connecting as admin on default SSH port (should fail)
+      raw: whoami
+      delegate_to: "{{ ansible_host }}"
+      vars:
+        ansible_user: "{{ admin_user }}"
+        ansible_port: "{{ ssh_default_port | default(22) }}"
+        ansible_ssh_private_key_file: "{{ hostvars[inventory_hostname]['ansible_ssh_private_key_file'] | default('') }}"
+      register: admin_22_test
+      failed_when: false
+      changed_when: false
+      timeout: 5
+      
+    - name: ERROR - Admin should not work on default SSH port
+      fail:
+        msg: "ERROR: Admin user can connect on default SSH port {{ ssh_default_port | default(22) }}! This indicates improper hardening."
+      when: admin_22_test.rc is defined and admin_22_test.rc == 0
+      
+    - name: Set admin default port connection state (unexpected success)
+      set_fact:
+        admin_default_port_works: true
+        hardening_state: "error_state"
+      when: admin_22_test.rc is defined and admin_22_test.rc == 0
+  rescue:
+    - name: Admin connection failed on default port (good - default port is secured)
+      set_fact:
+        admin_default_port_works: false
+  when: not root_default_port_works and not root_custom_port_works
+
+- name: "Step 4: Test admin connection on custom SSH port"
+  block:
+    - name: Try connecting as admin on custom SSH port
+      raw: whoami
+      delegate_to: "{{ ansible_host }}"
+      vars:
+        ansible_user: "{{ admin_user }}"
+        ansible_port: "{{ ssh_port | default(22022) }}"
+        ansible_ssh_private_key_file: "{{ hostvars[inventory_hostname]['ansible_ssh_private_key_file'] | default('') }}"
+      register: admin_22022_test
+      failed_when: false
+      changed_when: false
+      timeout: 10
+      
+    - name: Set admin custom port connection state
+      set_fact:
+        admin_custom_port_works: true
+        hardening_state: "hardening_complete"
+        skip_hardening: true
+      when: admin_22022_test.rc is defined and admin_22022_test.rc == 0
+  rescue:
+    - name: Admin custom port connection failed
+      set_fact:
+        admin_custom_port_works: false
+        hardening_state: "connection_error"
+  when: not root_default_port_works and not root_custom_port_works and not admin_default_port_works
+
+- name: Display connection state detection results
+  debug:
+    msg: |
+      🔍 Connection State Detection Results:
+      ├── root:{{ ssh_default_port | default(22) }}     → {{ 'SUCCESS' if root_default_port_works else 'FAILED' }}
+      ├── root:{{ ssh_port | default(22022) }}  → {{ 'SUCCESS' if root_custom_port_works else 'FAILED' }}
+      ├── admin:{{ ssh_default_port | default(22) }}    → {{ 'SUCCESS (ERROR!)' if admin_default_port_works else 'FAILED (Good)' }}
+      └── admin:{{ ssh_port | default(22022) }} → {{ 'SUCCESS' if admin_custom_port_works else 'FAILED' }}
+      
+      📊 Hardening State: {{ hardening_state }}
+      🎯 Action: {{ 'Skip hardening (already complete)' if skip_hardening else 'Proceed with hardening' }}
+
+- name: Fail if in error state
+  fail:
+    msg: |
+      ❌ ERROR: Invalid server state detected!
+      Cannot proceed with hardening due to unexpected connection results.
+      Please check server configuration manually.
+  when: hardening_state == "error_state" or hardening_state == "connection_error"

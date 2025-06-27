@@ -3,10 +3,10 @@
 # Usage: ansible-playbook tasks/sys/user/add-sudoer.yml -e "username=admin"
 
 ---
-- name: Add user to sudoers with password requirement
+- name: Add user to sudoers
   lineinfile:
     path: /etc/sudoers
-    line: "{{ username }}   ALL=(ALL:ALL) ALL"
+    line: "{{ username }}   ALL=(ALL:ALL) {{ 'NOPASSWD:ALL' if nopasswd_sudo | default(false) else 'ALL' }}"
     validate: 'visudo -cf %s'
     backup: true
   register: sudoers_result
@@ -16,4 +16,4 @@
     msg: |
       ✅ User added to sudoers: {{ username }}
       Status: {{ 'Added' if sudoers_result.changed else 'Already present' }}
-      Access: ALL commands with password required
+      Access: ALL commands {{ 'without password (NOPASSWD)' if nopasswd_sudo | default(false) else 'with password required' }}

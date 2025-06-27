@@ -15,6 +15,27 @@
     setup_security: true
     
   pre_tasks:
+    - name: Check if hardening is complete
+      include_tasks: ../../tasks/sys/core/verify-hardening-complete.yml
+      ignore_errors: true
+      
+    - name: Display hardening status
+      debug:
+        msg: |
+          🔍 Hardening Status Check:
+          {{ '✅ Hardening verified - proceeding with generic setup' if hardening_verified | default(false) else '⚠️  Hardening not complete - please run hardening.yml first' }}
+          
+    - name: Fail if hardening not complete
+      fail:
+        msg: |
+          ❌ Server hardening is not complete!
+          
+          Please run hardening first:
+          ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/hardening.yml --limit hardening_servers
+          
+          Or use the two-phase inventory with proper connection settings.
+      when: not (hardening_verified | default(false))
+      
     - name: Display server information
       debug:
         msg: |
