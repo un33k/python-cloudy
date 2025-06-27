@@ -26,11 +26,11 @@ all:
           admin_user: admin
           admin_password: secure123
           ansible_become_pass: secure123
-          ansible_ssh_private_key_file: ~/.ssh/id_rsa  # SSH key for admin user
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa  # SSH key for admin user (commented out for password-only setup)
           admin_groups: "admin,www-data"
           ssh_port: 22022
           ssh_disable_root: true
-          ssh_enable_password_auth: false
+          ssh_enable_password_auth: true
           swap_size: 512
           setup_swap: false
           

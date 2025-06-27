@@ -89,7 +89,11 @@ generic_servers:
 **Complete Secure Workflow Example**:
 ```bash
 # 1. Setup secure server (disables root, creates admin user with SSH keys)
-ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml
+# Pass root password via command line (recommended for security)
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml -e "ansible_ssh_pass=pass4now"
+
+# Alternative: Prompt for password (most secure)
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml --ask-pass
 
 # 2. Deploy additional services (uses admin user authentication)
 ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/web-server.yml
