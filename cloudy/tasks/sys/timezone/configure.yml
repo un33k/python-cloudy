@@ -3,34 +3,25 @@
 # Usage: ansible-playbook tasks/sys/timezone/configure.yml -e "timezone=America/New_York"
 
 ---
-- name: Configure system timezone
-  hosts: "{{ target_hosts | default('all') }}"
-  gather_facts: false
-  become: true
+- name: Check if timezone exists
+  stat:
+    path: "/usr/share/zoneinfo/{{ timezone }}"
+  register: timezone_check
   
-  vars:
-    timezone: "{{ timezone | default('Canada/Eastern') }}"
-    
-  tasks:
-    - name: Check if timezone exists
-      stat:
-        path: "/usr/share/zoneinfo/{{ timezone }}"
-      register: timezone_check
-      
-    - name: Fail if timezone not found
-      fail:
-        msg: "Timezone not found: /usr/share/zoneinfo/{{ timezone }}"
-      when: not timezone_check.stat.exists
-      
-    - name: Set system timezone
-      timezone:
-        name: "{{ timezone }}"
-      register: timezone_result
-      
-    - name: Display timezone configuration status
-      debug:
-        msg: |
-          ✅ System timezone configured
-          Timezone: {{ timezone }}
-          Status: {{ 'Changed' if timezone_result.changed else 'Already set' }}
-          Path: /usr/share/zoneinfo/{{ timezone }}
+- name: Fail if timezone not found
+  fail:
+    msg: "Timezone not found: /usr/share/zoneinfo/{{ timezone }}"
+  when: not timezone_check.stat.exists
+  
+- name: Set system timezone
+  timezone:
+    name: "{{ timezone }}"
+  register: timezone_result
+  
+- name: Display timezone configuration status
+  debug:
+    msg: |
+      ✅ System timezone configured
+      Timezone: {{ timezone }}
+      Status: {{ 'Changed' if timezone_result.changed else 'Already set' }}
+      Path: /usr/share/zoneinfo/{{ timezone }}

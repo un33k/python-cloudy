@@ -3,71 +3,62 @@
 # Usage: ansible-playbook tasks/sys/swap/configure.yml -e "swap_size=2048"
 
 ---
-- name: Configure swap file
-  hosts: "{{ target_hosts | default('all') }}"
-  gather_facts: false
-  become: true
-  
-  vars:
-    swap_size: "{{ swap_size | default('512') }}"
+- name: Set swap file path
+  set_fact:
+    swap_file: "/swap/{{ swap_size }}MiB.swap"
     
-  tasks:
-    - name: Set swap file path
-      set_fact:
-        swap_file: "/swap/{{ swap_size }}MiB.swap"
-        
-    - name: Create swap directory
+- name: Create swap directory
+  file:
+    path: /swap
+    state: directory
+    mode: '0755'
+  register: swap_dir_creation
+  
+- name: Check if swap file already exists
+  stat:
+    path: "{{ swap_file }}"
+  register: swap_file_check
+  
+- name: Create swap file if it doesn't exist
+  block:
+    - name: Allocate swap file
+      command: "fallocate -l {{ swap_size }}m {{ swap_file }}"
+      register: swap_allocation
+      
+    - name: Set swap file permissions
       file:
-        path: /swap
-        state: directory
-        mode: '0755'
-      register: swap_dir_creation
-      
-    - name: Check if swap file already exists
-      stat:
         path: "{{ swap_file }}"
-      register: swap_file_check
+        mode: '0600'
+        
+    - name: Format swap file
+      command: "mkswap {{ swap_file }}"
+      register: swap_format
       
-    - name: Create swap file if it doesn't exist
-      block:
-        - name: Allocate swap file
-          command: "fallocate -l {{ swap_size }}m {{ swap_file }}"
-          register: swap_allocation
-          
-        - name: Set swap file permissions
-          file:
-            path: "{{ swap_file }}"
-            mode: '0600'
-            
-        - name: Format swap file
-          command: "mkswap {{ swap_file }}"
-          register: swap_format
-          
-        - name: Enable swap file
-          command: "swapon {{ swap_file }}"
-          register: swap_enable
-          
-        - name: Add swap to fstab for persistence
-          lineinfile:
-            path: /etc/fstab
-            line: "{{ swap_file }} swap swap defaults 0 0"
-            backup: true
-          register: fstab_update
-          
-      when: not swap_file_check.stat.exists
+    - name: Enable swap file
+      command: "swapon {{ swap_file }}"
+      register: swap_enable
       
-    - name: Get current swap status
-      command: swapon --show
-      register: swap_status
-      changed_when: false
+    - name: Add swap to fstab for persistence
+      lineinfile:
+        path: /etc/fstab
+        line: "{{ swap_file }} swap swap defaults 0 0"
+        backup: true
+      register: fstab_update
       
-    - name: Display swap configuration status
-      debug:
-        msg: |
-          ✅ Swap file configuration completed
-          Swap file: {{ swap_file }}
-          Size: {{ swap_size }}MB
-          Status: {{ 'Created new swap file' if not swap_file_check.stat.exists else 'Swap file already exists' }}
-          
-          Current Swap Status:
-          {{ swap_status.stdout if swap_status.stdout else 'No swap currently active' }}
+  when: not swap_file_check.stat.exists
+  
+- name: Get current swap status
+  command: swapon --show
+  register: swap_status
+  changed_when: false
+  
+- name: Display swap configuration status
+  debug:
+    msg: |
+      ✅ Swap file configuration completed
+      Swap file: {{ swap_file }}
+      Size: {{ swap_size }}MB
+      Status: {{ 'Created new swap file' if not swap_file_check.stat.exists else 'Swap file already exists' }}
+      
+      Current Swap Status:
+      {{ swap_status.stdout if swap_status.stdout else 'No swap currently active' }}

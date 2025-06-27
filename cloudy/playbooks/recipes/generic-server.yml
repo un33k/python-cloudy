@@ -168,22 +168,16 @@
       
     - name: Secure server with firewall
       include_tasks: ../../tasks/sys/firewall/secure-server.yml
-      vars:
-        ssh_port: "{{ ssh_port }}"
       when: setup_firewall | bool
       tags: [firewall, security]
       
     # System Configuration
     - name: Configure timezone
       include_tasks: ../../tasks/sys/timezone/configure.yml
-      vars:
-        timezone: "{{ timezone }}"
       tags: [system, timezone]
       
     - name: Configure swap
       include_tasks: ../../tasks/sys/swap/configure.yml
-      vars:
-        swap_size: "{{ swap_size }}"
       when: setup_swap | bool
       tags: [system, swap]
       
