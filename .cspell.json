@@ -43,6 +43,7 @@
     "libwebp",
     "lineinfile",
     "localhost",
+    "lockdown",
     "logcheck",
     "maxmind",
     "memcached",

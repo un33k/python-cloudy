@@ -16,14 +16,40 @@ cd cloudy/
 
 ### Core Development Commands
 
+#### Two-Phase Server Setup (Recommended)
+- **Phase 1 - Security Hardening**: `ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/hardening.yml --limit hardening_servers`
+- **Phase 2 - Server Configuration**: `ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/generic-server.yml --limit generic_servers`
+- **Specialized Services**: `ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/[service].yml`
+
+#### Legacy Single-Phase (For existing servers)
 - **Run recipe playbooks**: `ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/[recipe-name].yml`
 - **Test authentication flow**: `ansible-playbook -i inventory/test-recipes.yml test-simple-auth.yml`
+
+#### Development Tools
 - **Clean output**: Configured in `ansible.cfg` with `display_skipped_hosts = no`
 - **Spell checking**: Configured via `.cspell.json` and `.vscode/settings.json`
 
-### Secure Server Management
+### Two-Phase Server Setup (NEW)
 
-**⚠️ IMPORTANT**: After running the generic server recipe, root login is disabled for security.
+**🔒 RECOMMENDED APPROACH**: Use the new two-phase setup to avoid connection issues during security hardening.
+
+**Phase 1: Security Hardening** (`hardening.yml`)
+- Runs as `root` on port `22` (initial connection)
+- Creates admin user and installs SSH keys
+- Changes SSH port to `22022`
+- Disables root login and password authentication
+- **Result**: Secure server ready for Phase 2
+
+**Phase 2: Server Configuration** (`generic-server.yml`)  
+- Runs as `admin` user on port `22022` (secure connection)
+- Completes server setup (hostname, git, firewall, etc.)
+- **Result**: Fully configured server
+
+**📖 See**: [TWO-PHASE-SETUP.md](cloudy/TWO-PHASE-SETUP.md) for complete guide
+
+### Legacy Single-Phase Setup
+
+**⚠️ IMPORTANT**: The old single-phase approach can pull the rug out from under itself during SSH security changes.
 
 **⚠️ CRITICAL - Sudo Password Requirements**:
 

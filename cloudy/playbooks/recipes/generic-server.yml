@@ -1,42 +1,39 @@
-# Recipe: Generic Server Setup
-# Equivalent to: cloudy-old/srv/recipe_generic_server.py::setup_server()
+# Recipe: Generic Server Setup (Phase 2)
+# Purpose: Complete server configuration after security hardening
+# Prerequisites: Must run hardening.yml first
 # Usage: ansible-playbook playbooks/recipes/generic-server.yml -i inventory/hosts.yml
 
 ---
-- name: Generic Server Setup Recipe
+- name: Generic Server Setup (Admin User Phase)
   hosts: generic_servers
   gather_facts: true
   become: true
   
   vars:
     # Override these in inventory or command line
-    setup_admin_user: true
-    setup_ssh_security: true
-    setup_firewall: true
     setup_swap: true
+    setup_security: true
     
   pre_tasks:
     - name: Display server information
       debug:
         msg: |
-          🚀 Starting Generic Server Setup
+          🚀 Starting Generic Server Setup (Phase 2)
           Target: {{ inventory_hostname }} ({{ ansible_host }})
           User: {{ ansible_user }}
-          Port: {{ ansible_port | default(22) }}
+          Port: {{ ansible_port | default(22022) }}
+          
+          📋 Prerequisites Check:
+          ├── Admin user: {{ admin_user }}
+          ├── SSH port: {{ ssh_port }}
+          ├── Root login: Should be disabled
+          └── SSH keys: Should be configured
           
   tasks:
     # System Initialization
     - name: Initialize system
       include_tasks: ../../tasks/sys/core/init.yml
       tags: [system, init]
-      
-    - name: Update system packages
-      include_tasks: ../../tasks/sys/core/update.yml
-      tags: [system, update]
-      
-    - name: Install common utilities
-      include_tasks: ../../tasks/sys/core/install-common.yml
-      tags: [system, packages]
       
     # Hostname Configuration
     - name: Configure hostname
@@ -58,117 +55,17 @@
         git_email: "{{ git_user_email }}"
       tags: [system, git]
       
-    # User Management
-    - name: Create admin user
-      include_tasks: ../../tasks/sys/user/add-user.yml
-      vars:
-        username: "{{ admin_user }}"
-      when: setup_admin_user | bool
-      tags: [users, admin]
-      
-    - name: Set admin user password
-      include_tasks: ../../tasks/sys/user/change-password.yml
-      vars:
-        username: "{{ admin_user }}"
-        password: "{{ admin_password }}"
-      when: setup_admin_user | bool
-      tags: [users, admin, password]
-      
-    - name: Add admin user to sudoers
-      include_tasks: ../../tasks/sys/user/add-sudoer.yml
-      vars:
-        username: "{{ admin_user }}"
-      when: setup_admin_user | bool
-      tags: [users, admin, sudo]
-      
-    - name: Add admin user to groups
-      include_tasks: ../../tasks/sys/user/add-to-groups.yml
-      vars:
-        username: "{{ admin_user }}"
-        group_list: "{{ admin_groups }}"
-      when: setup_admin_user | bool
-      tags: [users, admin, groups]
-      
     - name: Configure git for admin user
       include_tasks: ../../tasks/sys/core/configure-git.yml
       vars:
         target_user: "{{ admin_user }}"
         git_name: "{{ git_user_full_name }}"
         git_email: "{{ git_user_email }}"
-      when: setup_admin_user | bool
       tags: [users, admin, git]
       
-    # SSH Key Installation (BEFORE port change and root disable)
-    - name: Install SSH public key for admin user
-      include_tasks: ../../tasks/sys/ssh/install-public-key.yml
-      vars:
-        target_user: "{{ admin_user }}"
-        pub_key_path: "{{ ansible_ssh_private_key_file }}.pub"
-      when: setup_admin_user | bool and setup_ssh_security | bool and ansible_ssh_private_key_file is defined
-      tags: [ssh, keys, admin]
-      
-    # SSH Security - Allow new SSH port in firewall BEFORE changing port
-    - name: Install UFW firewall (before SSH port change)
-      include_tasks: ../../tasks/sys/firewall/install.yml
-      when: setup_ssh_security | bool
-      tags: [firewall, ssh, security]
-      
-    - name: Allow new SSH port in UFW firewall
-      ufw:
-        rule: allow
-        port: "{{ ssh_port }}"
-        proto: tcp
-      when: setup_ssh_security | bool and ssh_port != 22
-      tags: [firewall, ssh, security]
-      
-    - name: Configure SSH port
-      include_tasks: ../../tasks/sys/ssh/set-port.yml
-      when: setup_ssh_security | bool
-      tags: [ssh, security]
-      
-    # Test admin user SSH access BEFORE disabling root (only for key-based auth)
-    - name: Test admin user SSH access with new port
-      include_tasks: ../../tasks/sys/ssh/test-user-access.yml
-      vars:
-        test_user: "{{ admin_user }}"
-        test_port: "{{ ssh_port }}"
-        user_password: "{{ admin_password }}"
-      when: setup_admin_user | bool and setup_ssh_security | bool and ssh_disable_root | bool and ansible_ssh_private_key_file is defined
-      tags: [ssh, security, test]
-      
-    # Update Ansible connection settings for remaining tasks
-    - name: Update Ansible connection to use admin user and new port
-      set_fact:
-        ansible_user: "{{ admin_user }}"
-        ansible_port: "{{ ssh_port }}"
-        ansible_ssh_pass: "{{ admin_password }}"
-      when: setup_admin_user | bool and setup_ssh_security | bool and ssh_disable_root | bool
-      tags: [ssh, connection]
-      
-    - name: Reset SSH connection to use new settings
-      meta: reset_connection
-      when: setup_admin_user | bool and setup_ssh_security | bool and ssh_disable_root | bool
-      tags: [ssh, connection]
-      
-    - name: Disable root login
-      include_tasks: ../../tasks/sys/ssh/disable-root-login.yml
-      when: setup_ssh_security | bool and ssh_disable_root | bool
-      tags: [ssh, security]
-      
-    - name: Disable password authentication
-      include_tasks: ../../tasks/sys/ssh/disable-password-auth.yml
-      when: setup_ssh_security | bool and not ssh_enable_password_auth | bool
-      tags: [ssh, security]
-      
-    # Firewall Setup
-    - name: Install UFW firewall
-      include_tasks: ../../tasks/sys/firewall/install.yml
-      when: setup_firewall | bool
-      tags: [firewall, security]
-      
+    # Firewall Setup (additional rules beyond SSH)
     - name: Secure server with firewall
       include_tasks: ../../tasks/sys/firewall/secure-server.yml
-      when: setup_firewall | bool
       tags: [firewall, security]
       
     # System Configuration
@@ -181,18 +78,17 @@
       when: setup_swap | bool
       tags: [system, swap]
       
-    # Security Hardening
+    # Security Hardening (additional packages)
     - name: Install security packages
       include_tasks: ../../tasks/sys/security/install-common.yml
       when: setup_security | default(true) | bool
       tags: [security, packages]
       
-    # Final Validation (only if we switched to admin user)
+    # Final Validation
     - name: Validate admin user access and configuration
       include_tasks: ../../tasks/sys/core/validate-admin-access.yml
       vars:
         admin_password: "{{ admin_password }}"
-      when: setup_admin_user | bool and setup_ssh_security | bool and ssh_disable_root | bool
       tags: [validation, admin]
       
   post_tasks:
@@ -200,23 +96,26 @@
       debug:
         msg: |
           🎉 ✅ GENERIC SERVER SETUP COMPLETED SUCCESSFULLY!
+          
           📋 Configuration Summary:
              ├── Hostname: {{ hostname }}
              ├── Timezone: {{ timezone }}
              ├── Admin User: {{ admin_user }} (groups: {{ admin_groups }})
              ├── SSH Port: {{ ssh_port }}
-             ├── Root Login: {{ 'Disabled' if ssh_disable_root else 'Enabled' }}
-             ├── SSH Keys: {{ 'Configured' if ansible_ssh_private_key_file is defined else 'Password Auth' }}
-             └── Firewall: {{ 'UFW enabled and configured' if setup_firewall else 'Not configured' }}
+             ├── Root Login: Disabled (secured in Phase 1)
+             ├── SSH Keys: Configured (secured in Phase 1)
+             └── Firewall: UFW enabled and configured
           
           🚀 Generic server foundation is ready for specialized deployments!
           
           🔐 SSH Access Information:
-             {% if ssh_disable_root | default(false) %}
              └── Connect as: {{ admin_user }}@{{ ansible_host }}:{{ ssh_port }}
              └── Authentication: SSH key + sudo password for privileged operations
              └── Root login: DISABLED (security hardened)
-             {% else %}
-             └── Connect as: root@{{ ansible_host }}:{{ ssh_port }}
-             └── Admin user available: {{ admin_user }}@{{ ansible_host }}:{{ ssh_port }}
-             {% endif %}
+          
+          📚 Next Steps:
+             • Deploy specialized services (web-server.yml, database-server.yml, etc.)
+             • Configure application-specific settings
+             • Set up monitoring and backups
+          
+          🛡️  Security Status: HARDENED ✅
