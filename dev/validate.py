@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Ansible Cloudy Validation Script
-Comprehensive validation for Ansible infrastructure automation
+Comprehensive validation for simplified Ansible infrastructure automation
 """
 
 import os
@@ -99,7 +99,7 @@ class CloudyValidator:
     
     def test_task_files(self) -> bool:
         """Test all task files"""
-        task_files = glob.glob("tasks/**/*.yml", recursive=True)
+        task_files = glob.glob("cloudy/tasks/**/*.yml", recursive=True)
         if not task_files:
             return False
         
@@ -114,28 +114,27 @@ class CloudyValidator:
         print(f"  {Colors.BLUE}Task files: {valid_count}/{len(task_files)} valid{Colors.NC}")
         return valid_count == len(task_files)
     
-    def test_playbook_files(self) -> bool:
-        """Test all playbook files"""
-        playbook_files = glob.glob("playbooks/**/*.yml", recursive=True)
-        playbook_files.extend(glob.glob("test-*.yml"))
+    def test_recipe_files(self) -> bool:
+        """Test all recipe files in new structure"""
+        recipe_files = glob.glob("cloudy/playbooks/recipes/**/*.yml", recursive=True)
         
-        if not playbook_files:
+        if not recipe_files:
             return False
         
         valid_count = 0
-        for playbook_file in playbook_files:
-            is_valid, message = self.validate_playbook_file(playbook_file)
+        for recipe_file in recipe_files:
+            is_valid, message = self.validate_playbook_file(recipe_file)
             if is_valid:
                 valid_count += 1
             else:
-                print(f"  {Colors.RED}❌ {playbook_file}: {message}{Colors.NC}")
+                print(f"  {Colors.RED}❌ {recipe_file}: {message}{Colors.NC}")
         
-        print(f"  {Colors.BLUE}Playbooks: {valid_count}/{len(playbook_files)} valid{Colors.NC}")
-        return valid_count == len(playbook_files)
+        print(f"  {Colors.BLUE}Recipe files: {valid_count}/{len(recipe_files)} valid{Colors.NC}")
+        return valid_count == len(recipe_files)
     
     def test_inventory_files(self) -> bool:
         """Test inventory files"""
-        inventory_files = glob.glob("inventory/*.yml")
+        inventory_files = glob.glob("cloudy/inventory/*.yml")
         if not inventory_files:
             return False
         
@@ -155,7 +154,7 @@ class CloudyValidator:
     
     def test_template_files(self) -> bool:
         """Test template files"""
-        template_files = glob.glob("templates/*.j2")
+        template_files = glob.glob("cloudy/templates/*.j2")
         if not template_files:
             return True  # No templates is OK
         
@@ -177,7 +176,7 @@ class CloudyValidator:
     
     def test_recipe_dependencies(self) -> bool:
         """Test that recipe dependencies exist"""
-        recipe_files = glob.glob("playbooks/recipes/*.yml")
+        recipe_files = glob.glob("cloudy/playbooks/recipes/**/*.yml", recursive=True)
         if not recipe_files:
             return False
         
@@ -209,13 +208,15 @@ class CloudyValidator:
         return all_valid
     
     def test_ansible_syntax(self) -> bool:
-        """Test Ansible syntax for playbooks"""
+        """Test Ansible syntax for recipes"""
         try:
-            # Test main playbooks
-            playbooks = glob.glob("playbooks/recipes/*.yml")
-            playbooks.extend(["test-simple-auth.yml"])
+            # Test main recipes
+            recipe_files = glob.glob("cloudy/playbooks/recipes/**/*.yml", recursive=True)
+            dev_files = glob.glob("dev/*.yml")
             
-            for playbook in playbooks:
+            all_files = recipe_files + dev_files
+            
+            for playbook in all_files:
                 if os.path.exists(playbook):
                     result = subprocess.run(
                         ["ansible-playbook", "--syntax-check", playbook],
@@ -231,21 +232,68 @@ class CloudyValidator:
             print(f"  {Colors.RED}❌ Ansible syntax check failed: {str(e)}{Colors.NC}")
             return False
     
+    def test_simplified_structure(self) -> bool:
+        """Test that the simplified structure is correct"""
+        try:
+            # Check required directories
+            required_dirs = [
+                "cloudy/playbooks/recipes/core",
+                "cloudy/playbooks/recipes/cache", 
+                "cloudy/playbooks/recipes/db",
+                "cloudy/playbooks/recipes/www",
+                "cloudy/playbooks/recipes/lb",
+                "cloudy/playbooks/recipes/vpn",
+                "cloudy/inventory",
+                "cloudy/tasks",
+                "cloudy/templates"
+            ]
+            
+            for dir_path in required_dirs:
+                if not os.path.exists(dir_path):
+                    print(f"  {Colors.RED}❌ Missing required directory: {dir_path}{Colors.NC}")
+                    return False
+            
+            # Check core recipes exist
+            core_recipes = [
+                "cloudy/playbooks/recipes/core/security.yml",
+                "cloudy/playbooks/recipes/core/base.yml"
+            ]
+            
+            for recipe in core_recipes:
+                if not os.path.exists(recipe):
+                    print(f"  {Colors.RED}❌ Missing core recipe: {recipe}{Colors.NC}")
+                    return False
+            
+            # Check inventory files
+            inventory_files = ["cloudy/inventory/test.yml", "cloudy/inventory/production.yml"]
+            for inv_file in inventory_files:
+                if not os.path.exists(inv_file):
+                    print(f"  {Colors.RED}❌ Missing inventory file: {inv_file}{Colors.NC}")
+                    return False
+            
+            print(f"  {Colors.BLUE}Simplified structure: All required components present{Colors.NC}")
+            return True
+            
+        except Exception as e:
+            print(f"  {Colors.RED}❌ Structure check failed: {str(e)}{Colors.NC}")
+            return False
+    
     def run_all_tests(self):
         """Run all validation tests"""
-        print(f"{Colors.BLUE}🧪 Running Ansible Cloudy Validation Suite...{Colors.NC}")
-        print("=" * 50)
+        print(f"{Colors.BLUE}🧪 Running Ansible Cloudy Validation Suite (Simplified)...{Colors.NC}")
+        print("=" * 60)
         
         # Run all tests
+        self.run_test("Simplified Structure", self.test_simplified_structure)
         self.run_test("Task File Structure", self.test_task_files)
-        self.run_test("Playbook Structure", self.test_playbook_files)
+        self.run_test("Recipe Files", self.test_recipe_files)
         self.run_test("Inventory Files", self.test_inventory_files)
         self.run_test("Template Files", self.test_template_files)
         self.run_test("Recipe Dependencies", self.test_recipe_dependencies)
         self.run_test("Ansible Syntax", self.test_ansible_syntax)
         
         # Summary
-        print("\n" + "=" * 50)
+        print("\n" + "=" * 60)
         print(f"{Colors.BLUE}🧪 Validation Summary:{Colors.NC}")
         print(f"   Tests Run: {self.tests_run}")
         print(f"   {Colors.GREEN}Passed: {self.tests_passed}{Colors.NC}")
@@ -266,8 +314,8 @@ class CloudyValidator:
 
 def main():
     """Main entry point"""
-    if not os.path.exists("ansible.cfg"):
-        print(f"{Colors.RED}❌ Must be run from the cloudy/ directory{Colors.NC}")
+    if not os.path.exists("cloudy/ansible.cfg"):
+        print(f"{Colors.RED}❌ Must be run from the project root directory (ansible-cloudy/){Colors.NC}")
         sys.exit(1)
     
     validator = CloudyValidator()

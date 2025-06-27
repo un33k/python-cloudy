@@ -1,9 +1,9 @@
-# Recipe: Database Server Setup (PostgreSQL + MySQL)
-# Usage: ansible-playbook playbooks/recipes/database-server.yml -i inventory/hosts.yml
+# Recipe: PostgreSQL Database Server Setup
+# Usage: ansible-playbook playbooks/recipes/db/psql.yml -i inventory/hosts.yml
 
 ---
-- name: Database Server Setup Recipe
-  hosts: database_servers
+- name: PostgreSQL Database Server Setup
+  hosts: all
   gather_facts: true
   become: true
   
@@ -12,8 +12,8 @@
     setup_postgresql: true
     setup_mysql: false
     setup_redis: false
-    pg_version: "{{ pg_version | default('17') }}"
-    mysql_version: "{{ mysql_version | default('8.0') }}"
+    pg_version: "{{ postgresql_version | default('17') }}"
+    mysql_version: "8.0"
     
   pre_tasks:
     - name: Display database server setup information

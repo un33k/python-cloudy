@@ -1,10 +1,9 @@
 # Recipe: Redis Cache Server Setup
-# Based on: cloudy-old/srv/recipe_cache_redis.py::setup_redis()
-# Usage: ansible-playbook playbooks/recipes/cache-server.yml -i inventory/hosts.yml
+# Usage: ansible-playbook playbooks/recipes/cache/redis.yml -i inventory/hosts.yml
 
 ---
 - name: Redis Cache Server Setup Recipe
-  hosts: cache_servers
+  hosts: all
   gather_facts: true
   become: true
   
@@ -12,7 +11,7 @@
     # Redis Configuration
     redis_port: "{{ port | default('6379') }}"
     redis_interface: "{{ interface | default('0.0.0.0') }}"
-    redis_memory: "{{ memory | default(0) }}"  # 0 = auto-calculate
+    redis_memory: "{{ redis_memory_mb | default(0) }}"  # 0 = auto-calculate
     redis_memory_divider: "{{ memory_divider | default(8) }}"
     redis_password: "{{ password | default('') }}"
     

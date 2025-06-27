@@ -1,0 +1,100 @@
+# Recipe: Server Security Setup
+# Purpose: Initial security setup - creates admin user, installs SSH keys, firewall, disables root
+# Usage: ansible-playbook playbooks/recipes/core/security.yml -i inventory/hosts.yml
+
+---
+- name: Server Security Setup
+  hosts: all
+  gather_facts: true
+  become: true
+          
+  tasks:
+    # System Updates
+    - name: Update system packages
+      include_tasks: ../../tasks/sys/core/update.yml
+      tags: [system, update]
+      
+    - name: Install common utilities
+      include_tasks: ../../tasks/sys/core/install-common.yml
+      tags: [system, packages]
+      
+    # User Management - Create admin user
+    - name: Create admin user
+      include_tasks: ../../tasks/sys/user/add-user.yml
+      vars:
+        username: "{{ admin_user }}"
+      tags: [users, admin]
+      
+    - name: Set admin user password
+      include_tasks: ../../tasks/sys/user/change-password.yml
+      vars:
+        username: "{{ admin_user }}"
+        password: "{{ admin_password }}"
+      tags: [users, admin, password]
+      
+    - name: Add admin user to sudoers with NOPASSWD
+      include_tasks: ../../tasks/sys/user/add-sudoer.yml
+      vars:
+        username: "{{ admin_user }}"
+        nopasswd_sudo: true
+      tags: [users, admin, sudo]
+      
+    - name: Add admin user to groups
+      include_tasks: ../../tasks/sys/user/add-to-groups.yml
+      vars:
+        username: "{{ admin_user }}"
+        group_list: "{{ admin_groups }}"
+      tags: [users, admin, groups]
+      
+    # SSH Key Installation (BEFORE port change and root disable)
+    - name: Install SSH public key for admin user
+      include_tasks: ../../tasks/sys/ssh/install-public-key.yml
+      vars:
+        target_user: "{{ admin_user }}"
+        pub_key_path: "{{ ansible_ssh_private_key_file }}.pub"
+      when: ansible_ssh_private_key_file is defined
+      tags: [ssh, keys, admin]
+      
+    # Firewall Setup - Allow new SSH port BEFORE changing port
+    - name: Install UFW firewall
+      include_tasks: ../../tasks/sys/firewall/install.yml
+      tags: [firewall, security]
+      
+    - name: Allow new SSH port in UFW firewall
+      ufw:
+        rule: allow
+        port: "{{ ssh_port | default(22022) }}"
+        proto: tcp
+      tags: [firewall, ssh, security]
+      
+    # SSH Security Configuration
+    - name: Configure SSH port
+      include_tasks: ../../tasks/sys/ssh/set-port.yml
+      tags: [ssh, security]
+      
+    # Disable root login
+    - name: Disable root login
+      include_tasks: ../../tasks/sys/ssh/disable-root-login.yml
+      tags: [ssh, security]
+      
+    - name: Disable password authentication
+      include_tasks: ../../tasks/sys/ssh/disable-password-auth.yml
+      tags: [ssh, security]
+      
+    # Remove old SSH port from firewall
+    - name: Remove old SSH port from UFW firewall
+      ufw:
+        rule: deny
+        port: "22"
+        proto: tcp
+        delete: true
+      when: (ssh_port | default(22022)) != 22
+      tags: [firewall, ssh, security]
+      ignore_errors: true
+      
+    # Enable UFW firewall (final security step)
+    - name: Enable UFW firewall
+      ufw:
+        state: enabled
+        logging: 'on'
+      tags: [firewall, security]

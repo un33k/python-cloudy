@@ -11,53 +11,41 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 pip install ansible
 
 # Navigate to project directory
-cd cloudy/
+cd ansible-cloudy/
 ```
 
 ### Core Development Commands
 
-#### Smart Server Setup (Recommended)
-- **Option 1 - Two-Phase**: 
-  - `ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/hardening.yml --limit hardening_servers`
-  - `ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/generic-server.yml --limit generic_servers`
-- **Option 2 - Smart Single-Phase**: `ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/generic-server.yml --limit generic_servers`
-- **Specialized Services**: `ansible-playbook -i inventory/test-two-phase.yml playbooks/recipes/[service].yml`
+#### Simplified Server Setup (Recommended)
+- **Step 1 - Security**: `ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/core/security.yml` (creates admin user, SSH keys, firewall, disables root)
+- **Step 2 - Core**: `ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/core/base.yml` (hostname, git, timezone, swap, etc.)
+- **Step 3 - Services**: `ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/[category]/[service].yml` (www/django, db/psql, cache/redis, etc.)
 
-#### Legacy Single-Phase (For existing servers)
-- **Run recipe playbooks**: `ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/[recipe-name].yml`
-- **Test authentication flow**: `ansible-playbook -i inventory/test-recipes.yml test-simple-auth.yml`
+#### Production Setup
+- **Production servers**: `ansible-playbook -i cloudy/inventory/production.yml cloudy/playbooks/recipes/[category]/[service].yml`
 
 #### Development Tools
+- **Comprehensive validation**: `./dev/validate.py` - Full validation suite for all components
+- **Quick syntax check**: `./dev/syntax-check.sh` - Fast syntax validation only
+- **Authentication test**: `ansible-playbook -i cloudy/inventory/test.yml dev/test-auth.yml --check`
 - **Clean output**: Configured in `ansible.cfg` with `display_skipped_hosts = no`
-- **Spell checking**: Configured via `.cspell.json` and `.vscode/settings.json`
+- **Spell checking**: Configured via `dev/.cspell.json` with 369 technical terms
+- **Linting**: Configured via `dev/.ansible-lint.yml` and `dev/.yamlint.yml`
 
-### Smart Server Setup (NEW)
+### Simplified Server Setup
 
-**🔒 INTELLIGENT APPROACH**: Smart hardening with 4-step connection verification.
+**🎯 SIMPLE APPROACH**: Three clear steps for any server.
 
-**Smart Hardening Logic**:
-1. **Try root:default_port** → Fresh server, run full hardening
-2. **Try root:custom_port** → Partial hardening, continue from SSH security  
-3. **Try admin:default_port** → Should timeout (good security)
-4. **Try admin:custom_port** → Hardening complete, verify and skip
-
-**Option 1: Two-Phase Setup** (Explicit)
-- **Phase 1**: `hardening.yml` - Security hardening with smart detection
-- **Phase 2**: `generic-server.yml` - Server configuration
-
-**Option 2: Smart Single-Phase** (Automatic)
-- **One Command**: `generic-server.yml` - Attempts hardening first, then continues
-- **Intelligent**: Detects server state and adapts accordingly
-- **Flexible**: Works on fresh servers OR already-hardened servers
+**Workflow**:
+1. **core/security.yml** → Sets up admin user, SSH keys, firewall, disables root
+2. **core/base.yml** → Basic server config (hostname, git, timezone, etc.)  
+3. **[category]/[service].yml** → Deploy specific services (www/django, db/psql, cache/redis, etc.)
 
 **Security Features**:
-- ✅ **Variable-driven ports**: No hardcoded port numbers
-- ✅ **4-step verification**: Bulletproof connection state detection  
-- ✅ **Complete verification**: Checks all security components
-- ✅ **Idempotent**: Safe to run multiple times
-- ✅ **Adaptive**: Works in any server state
-
-**📖 See**: [TWO-PHASE-SETUP.md](cloudy/TWO-PHASE-SETUP.md) for complete guide
+- ✅ **Admin user**: Created with SSH key access
+- ✅ **Root disabled**: No more root login after security step
+- ✅ **Firewall**: UFW configured with custom SSH port
+- ✅ **Simple**: No complex detection logic
 
 ### Legacy Single-Phase Setup
 
@@ -157,31 +145,41 @@ ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/cache-server.ym
 ### Ansible Recipe Examples
 
 ```bash
-# High-level server deployment (one command setups)
-ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml
-ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/database-server.yml
-ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/web-server.yml
-ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/cache-server.yml
-ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/load-balancer.yml
-ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/vpn-server.yml
+# Simplified server setup (3 steps)
+# Step 1: Security (run as root on port 22)
+ansible-playbook -i inventory/test.yml playbooks/recipes/core/security.yml
+
+# Step 2: Core setup (run as admin on port 22022)  
+ansible-playbook -i inventory/test.yml playbooks/recipes/core/base.yml
+
+# Step 3: Service deployment (run as admin)
+ansible-playbook -i inventory/test.yml playbooks/recipes/db/psql.yml
+ansible-playbook -i inventory/test.yml playbooks/recipes/www/django.yml
+ansible-playbook -i inventory/test.yml playbooks/recipes/cache/redis.yml
+ansible-playbook -i inventory/test.yml playbooks/recipes/lb/nginx.yml
+ansible-playbook -i inventory/test.yml playbooks/recipes/vpn/openvpn.yml
 
 # Individual task execution
-ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml --tags ssh
-ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml --tags firewall
-ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/web-server.yml --tags nginx
+ansible-playbook -i inventory/test.yml playbooks/recipes/core/base.yml --tags ssh
+ansible-playbook -i inventory/test.yml playbooks/recipes/core/base.yml --tags firewall
+ansible-playbook -i inventory/test.yml playbooks/recipes/www/django.yml --tags nginx
 
-# Testing and validation
-ansible-playbook -i inventory/test-recipes.yml test-simple-auth.yml
-ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml --check
+# Development and validation
+./dev/validate.py                    # Comprehensive validation
+./dev/syntax-check.sh               # Quick syntax check
+ansible-playbook -i inventory/test.yml dev/test-auth.yml --check  # Auth flow test
+ansible-playbook -i inventory/test.yml playbooks/recipes/core/base.yml --check
 ```
 
 #### Recipe Categories
-- **generic-server.yml**: Foundation server setup (SSH, firewall, users)
-- **database-server.yml**: PostgreSQL with PostGIS and PgBouncer
-- **web-server.yml**: Nginx, Apache, Supervisor stack
-- **cache-server.yml**: Redis cache server
-- **load-balancer.yml**: Nginx load balancer with SSL
-- **vpn-server.yml**: OpenVPN with Docker
+- **core/security.yml**: Initial server security (admin user, SSH keys, firewall, disable root)
+- **core/base.yml**: Basic server configuration (hostname, git, timezone, swap)
+- **db/psql.yml**: PostgreSQL database server
+- **db/postgis.yml**: PostgreSQL with PostGIS extensions
+- **www/django.yml**: Django web server with Nginx/Apache/Supervisor
+- **cache/redis.yml**: Redis cache server
+- **lb/nginx.yml**: Nginx load balancer with SSL
+- **vpn/openvpn.yml**: OpenVPN server with Docker
 
 ## Architecture Overview
 
@@ -257,7 +255,7 @@ Example recipe structure:
 pip install ansible
 
 # Navigate to Ansible implementation
-cd cloudy/
+cd ansible-cloudy/
 ```
 
 ### Core Ansible Commands

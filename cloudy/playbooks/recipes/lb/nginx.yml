@@ -1,10 +1,9 @@
 # Recipe: Nginx Load Balancer Setup
-# Based on: cloudy-old/srv/recipe_loadbalancer_nginx.py
-# Usage: ansible-playbook playbooks/recipes/load-balancer.yml -i inventory/hosts.yml
+# Usage: ansible-playbook playbooks/recipes/lb/nginx.yml -i inventory/hosts.yml
 
 ---
 - name: Nginx Load Balancer Setup Recipe
-  hosts: load_balancers
+  hosts: all
   gather_facts: true
   become: true
   

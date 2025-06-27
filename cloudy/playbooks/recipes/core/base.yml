@@ -1,0 +1,92 @@
+# Recipe: Core Server Setup
+# Purpose: Basic server configuration - runs after security.yml on all servers
+# Prerequisites: Must run core/security.yml first
+# Usage: ansible-playbook playbooks/recipes/core/base.yml -i inventory/hosts.yml
+
+---
+- name: Core Server Setup
+  hosts: all
+  gather_facts: true
+  become: true
+          
+  tasks:
+    # System Initialization
+    - name: Initialize system
+      include_tasks: ../../tasks/sys/core/init.yml
+      tags: [system, init]
+      
+    # Hostname Configuration
+    - name: Configure hostname
+      include_tasks: ../../tasks/sys/core/hostname.yml
+      vars:
+        target_hostname: "{{ hostname }}"
+      tags: [system, hostname]
+      
+    # Git Configuration
+    - name: Install git
+      include_tasks: ../../tasks/sys/core/install-git.yml
+      tags: [system, git]
+      
+    - name: Configure git for root
+      include_tasks: ../../tasks/sys/core/configure-git.yml
+      vars:
+        target_user: root
+        git_name: "{{ git_user_full_name }}"
+        git_email: "{{ git_user_email }}"
+      tags: [system, git]
+      
+    - name: Configure git for admin user
+      include_tasks: ../../tasks/sys/core/configure-git.yml
+      vars:
+        target_user: "{{ admin_user }}"
+        git_name: "{{ git_user_full_name }}"
+        git_email: "{{ git_user_email }}"
+      tags: [users, admin, git]
+      
+    # Firewall Setup (additional rules beyond SSH)
+    - name: Secure server with firewall
+      include_tasks: ../../tasks/sys/firewall/secure-server.yml
+      tags: [firewall, security]
+      
+    # System Configuration
+    - name: Configure timezone
+      include_tasks: ../../tasks/sys/timezone/configure.yml
+      tags: [system, timezone]
+      
+    - name: Configure swap
+      include_tasks: ../../tasks/sys/swap/configure.yml
+      when: setup_swap | bool
+      tags: [system, swap]
+      
+    # Security Hardening (additional packages)
+    - name: Install security packages
+      include_tasks: ../../tasks/sys/security/install-common.yml
+      when: setup_security | default(true) | bool
+      tags: [security, packages]
+      
+    # Final Validation
+    - name: Validate admin user access and configuration
+      include_tasks: ../../tasks/sys/core/validate-admin-access.yml
+      vars:
+        admin_password: "{{ admin_password }}"
+      tags: [validation, admin]
+      
+  post_tasks:
+    - name: Display completion summary
+      debug:
+        msg: |
+          🎉 ✅ CORE SERVER SETUP COMPLETED!
+          
+          📋 Configuration Summary:
+             ├── Hostname: {{ hostname }}
+             ├── Timezone: {{ timezone }}
+             ├── Admin User: {{ admin_user }}
+             ├── SSH Port: {{ ssh_port }}
+             ├── Firewall: UFW enabled
+             └── Git: Configured
+          
+          🚀 Core server foundation ready for service deployments!
+          
+          📚 Next Steps:
+             • Deploy services: web-server.yml, database-server.yml, etc.
+             • All services now use admin user with sudo access

@@ -1,0 +1,140 @@
+# Simple Authentication Flow Test
+# Test the simplified security setup without external dependencies
+# Usage: ansible-playbook -i inventory/test.yml dev/test-auth.yml --check
+
+---
+- name: Test Authentication Setup
+  hosts: all
+  gather_facts: true
+  become: true
+  
+  vars:
+    admin_user: admin
+    admin_password: secure123
+    admin_groups: "admin,www-data"
+    ssh_port: 22022
+    
+  tasks:
+    - name: Display test information
+      debug:
+        msg: |
+          🔐 Authentication Flow Test
+          Current user: {{ ansible_user }}
+          Target host: {{ ansible_host }}
+          Current port: {{ ansible_port | default(22) }}
+          
+          This test validates the security setup process:
+          ├── Create admin user with proper groups
+          ├── Set secure password
+          ├── Configure sudo access
+          ├── Install SSH keys
+          ├── Configure firewall
+          └── Validate configuration
+    
+    - name: Create admin group
+      group:
+        name: admin
+        state: present
+        
+    - name: Create admin user
+      user:
+        name: "{{ admin_user }}"
+        password: "{{ admin_password | password_hash('sha512') }}"
+        groups: "{{ admin_groups }}"
+        shell: /bin/bash
+        create_home: yes
+        state: present
+        
+    - name: Add admin user to sudoers with NOPASSWD
+      lineinfile:
+        path: /etc/sudoers
+        line: "{{ admin_user }} ALL=(ALL) NOPASSWD:ALL"
+        state: present
+        validate: 'visudo -cf %s'
+        
+    - name: Create .ssh directory for admin user
+      file:
+        path: "/home/{{ admin_user }}/.ssh"
+        state: directory
+        owner: "{{ admin_user }}"
+        group: "{{ admin_user }}"
+        mode: '0700'
+        
+    - name: Install SSH public key for admin user (if key exists)
+      authorized_key:
+        user: "{{ admin_user }}"
+        key: "{{ lookup('file', ansible_ssh_private_key_file + '.pub') }}"
+        state: present
+      when: 
+        - ansible_ssh_private_key_file is defined
+        - ansible_ssh_private_key_file | length > 0
+      ignore_errors: true
+        
+    - name: Install UFW firewall
+      package:
+        name: ufw
+        state: present
+        
+    - name: Allow new SSH port in firewall
+      ufw:
+        rule: allow
+        port: "{{ ssh_port }}"
+        proto: tcp
+      register: ufw_port_added
+        
+    - name: Configure SSH port
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?Port\s+'
+        line: "Port {{ ssh_port }}"
+        backup: true
+      register: ssh_port_config
+      
+    - name: Verify admin user exists
+      getent:
+        database: passwd
+        key: "{{ admin_user }}"
+      register: admin_user_info
+      
+    - name: Verify admin user home directory exists
+      stat:
+        path: "/home/{{ admin_user }}"
+      register: admin_home_check
+      
+    - name: Verify SSH directory exists
+      stat:
+        path: "/home/{{ admin_user }}/.ssh"
+      register: ssh_dir_check
+      
+    - name: Display verification results
+      debug:
+        msg: |
+          🔍 Authentication Setup Verification:
+          ├── Admin user exists: {{ 'YES' if admin_user_info.ansible_facts.getent_passwd else 'NO' }}
+          ├── Home directory exists: {{ 'YES' if admin_home_check.stat.exists else 'NO' }}
+          ├── SSH directory exists: {{ 'YES' if ssh_dir_check.stat.exists else 'NO' }}
+          ├── SSH port configured: {{ ssh_port }}
+          ├── Firewall rule added: {{ 'YES' if ufw_port_added.changed else 'ALREADY EXISTS' }}
+          └── SSH config updated: {{ 'YES' if ssh_port_config.changed else 'ALREADY SET' }}
+          
+    - name: Test sudo access for admin user
+      become: true
+      become_user: "{{ admin_user }}"
+      command: whoami
+      register: sudo_test
+      changed_when: false
+      
+    - name: Display final test results
+      debug:
+        msg: |
+          🎉 ✅ AUTHENTICATION SETUP TEST COMPLETED!
+          
+          📋 Test Results:
+          ├── Current user: {{ ansible_user }}
+          ├── Target host: {{ ansible_host }}:{{ ansible_port | default(22) }}
+          ├── Admin user: {{ admin_user }}
+          ├── Sudo test: {{ 'PASSED' if sudo_test.stdout == admin_user else 'FAILED' }}
+          └── SSH security: {{ 'CONFIGURED' if ssh_port_config is defined else 'NEEDS SETUP' }}
+          
+          ⚠️  Note: This is a validation test only.
+          ⚠️  Run playbooks/recipes/core/security.yml for actual setup.

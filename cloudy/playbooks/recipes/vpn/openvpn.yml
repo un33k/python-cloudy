@@ -1,10 +1,9 @@
-# Recipe: VPN Server Setup with OpenVPN
-# Based on: cloudy-old/srv/recipe_vpn_server.py
-# Usage: ansible-playbook playbooks/recipes/vpn-server.yml -i inventory/hosts.yml
+# Recipe: OpenVPN Server Setup
+# Usage: ansible-playbook playbooks/recipes/vpn/openvpn.yml -i inventory/hosts.yml
 
 ---
-- name: VPN Server Setup Recipe
-  hosts: vpn_servers
+- name: OpenVPN Server Setup Recipe
+  hosts: all
   gather_facts: true
   become: true
   

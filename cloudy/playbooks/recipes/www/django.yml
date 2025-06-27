@@ -1,10 +1,9 @@
-# Recipe: Django Web Server Setup
-# Based on: cloudy-old/srv/recipe_webserver_django.py::setup_web()
-# Usage: ansible-playbook playbooks/recipes/web-server.yml -i inventory/hosts.yml
+# Recipe: Django Web Server Setup  
+# Usage: ansible-playbook playbooks/recipes/www/django.yml -i inventory/hosts.yml
 
 ---
 - name: Django Web Server Setup Recipe
-  hosts: web_servers
+  hosts: all
   gather_facts: true
   become: true
   
