@@ -14,9 +14,6 @@ skip_list:
 # Enable offline mode (don't check for newer versions)
 offline: true
 
-# Use default rules with some customizations
-use_default_rules: true
-
 # Exclude certain directories and files
 exclude_paths:
   - .git/
@@ -26,19 +23,7 @@ exclude_paths:
   - '*.md'
   - '*.txt'
 
-# Enable colored output
-colored: true
-
-# Set verbosity level
-verbosity: 1
-
-# Custom rules configuration
-rules:
-  # Allow variables to be used in task names
-  name[template]: false
-  
-  # Allow shell commands when needed
-  command-instead-of-shell: false
-  
-  # Allow become without explicit user
-  become-user-without-become: false
+# Additional rules to skip (added to skip_list above)
+warn_list:
+  - name[template]
+  - command-instead-of-shell

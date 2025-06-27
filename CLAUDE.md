@@ -31,11 +31,12 @@ cd ansible-cloudy/
 - **Traditional**: `ansible-playbook -i cloudy/inventory/production.yml cloudy/playbooks/recipes/[category]/[service].yml`
 
 #### Development Tools
+- **Bootstrap**: `./bootstrap.sh` - Sets up .venv with all development tools
 - **Ali CLI**: `./ali security` - Simplified Ansible commands (90% shorter)
 - **Ali Dev Commands**: `./ali dev syntax`, `./ali dev validate`, `./ali dev lint`, `./ali dev test`
 - **Authentication test**: `./ali dev test` - Test server authentication flow
 - **Clean output**: Configured in `ansible.cfg` with `display_skipped_hosts = no`
-- **Spell checking**: Configured via `dev/.cspell.json` with 369 technical terms
+- **Spell checking**: Configured via `dev/.cspell.json` with 480+ technical terms
 - **Linting**: Configured via `dev/.ansible-lint.yml` and `dev/.yamlint.yml`
 
 ### Simplified Server Setup

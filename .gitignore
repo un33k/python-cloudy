@@ -67,3 +67,6 @@ cfg.txt
 .cloudy.*
 
 cloudy-old/
+
+.DS_Store
+.python-version

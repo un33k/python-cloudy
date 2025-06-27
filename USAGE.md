@@ -3,6 +3,7 @@
 Complete step-by-step guide for using Cloudy infrastructure automation with Ansible.
 
 ## Table of Contents
+- [Ali CLI Command Reference](#ali-cli-command-reference)
 - [Prerequisites](#prerequisites)
 - [First-Time Setup](#first-time-setup)
 - [Server Deployment Workflows](#server-deployment-workflows)
@@ -10,11 +11,117 @@ Complete step-by-step guide for using Cloudy infrastructure automation with Ansi
 - [Common Scenarios](#common-scenarios)
 - [Troubleshooting](#troubleshooting)
 
+## Ali CLI Command Reference
+
+Complete reference for all Ali (Ansible Line Interpreter) commands.
+
+### 🎯 Recipe Commands
+
+#### Core Infrastructure
+```bash
+./ali security          # Initial server security setup (admin user, SSH keys, firewall)
+./ali base              # Basic server configuration (hostname, git, timezone, swap)
+```
+
+#### Database Services  
+```bash
+./ali psql              # PostgreSQL database server
+./ali postgis           # PostgreSQL with PostGIS extensions
+```
+
+#### Web Services
+```bash
+./ali django           # Django web application server
+./ali nginx            # Nginx load balancer
+```
+
+#### Cache & VPN
+```bash
+./ali redis            # Redis cache server  
+./ali openvpn          # OpenVPN server
+```
+
+### 🛠️ Development Commands
+
+```bash
+./ali dev validate      # Comprehensive validation suite
+./ali dev syntax        # Quick syntax checking  
+./ali dev lint          # Ansible-lint validation
+./ali dev test          # Authentication flow testing
+./ali dev spell         # Spell check documentation
+```
+
+### ⚙️ Global Options
+
+Available with any recipe command:
+
+```bash
+--prod, --production    # Use production inventory (default: test)
+--check, --dry-run      # Run in check mode without changes
+--verbose, -v           # Enable verbose output
+--list, -l             # List available commands
+--help, -h             # Show help information
+```
+
+### 🎨 Usage Examples
+
+#### Basic Recipe Execution
+```bash
+./ali security         # Run on test environment
+./ali django --prod    # Run on production  
+./ali redis --check    # Dry run validation
+```
+
+#### Development Workflow
+```bash
+./ali dev syntax       # Quick validation
+./ali dev validate     # Full validation  
+./ali dev spell        # Check spelling
+./ali dev test         # Test auth flow
+```
+
+#### Advanced Usage  
+```bash
+./ali nginx -- --tags ssl              # Pass ansible-playbook args
+./ali django --prod --verbose          # Production with debug output
+./ali security --check -- --limit web  # Dry run on specific hosts
+```
+
+#### Discovery Commands
+```bash
+./ali --list           # Show all recipes
+./ali dev              # Show all dev commands  
+./ali --help           # Show complete usage
+```
+
+### 📊 Command Summary
+
+| **Category** | **Commands** | **Count** |
+|-------------|-------------|-----------|
+| **Core** | security, base | 2 |
+| **Database** | psql, postgis | 2 |
+| **Web** | django, nginx | 2 |
+| **Services** | redis, openvpn | 2 |
+| **Development** | validate, syntax, lint, test, spell | 5 |
+| **Total** | | **13 commands** |
+
 ## Prerequisites
 
-### Required Software
+### Option 1: Quick Setup (Recommended)
 ```bash
-# Install Ansible
+# Bootstrap creates .venv and installs everything needed
+./bootstrap.sh
+
+# Activate environment
+source .venv/bin/activate
+
+# Verify installation
+./ali dev syntax
+```
+
+### Option 2: Manual Setup
+```bash
+# Install Ansible globally (not recommended for development)
 pip install ansible
 
 # Verify installation

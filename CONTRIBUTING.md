@@ -7,34 +7,68 @@ Welcome to Ansible Cloudy! This guide will help you contribute effectively to th
 ### Prerequisites
 
 ```bash
-# Install required tools
-pip install ansible ansible-lint yamllint
-
 # Clone and navigate to project
 git clone <repository-url>
-cd ansible-cloudy/cloudy/
+cd ansible-cloudy/
+
+# Option 1: Bootstrap (Recommended) - Sets up .venv with all tools
+./bootstrap.sh
+source .venv/bin/activate
+
+# Option 2: Manual install (Global, not recommended)
+pip install ansible ansible-lint yamllint
 ```
 
 ### Development Workflow
 
-1. **Run Tests**: Always run the test suite before making changes
+1. **Run Validation**: Always validate before making changes
    ```bash
-   ./test-runner.sh
+   ./ali dev syntax     # Quick syntax check
+   ./ali dev validate   # Comprehensive validation
    ```
 
 2. **Make Changes**: Follow the project structure and conventions
 
-3. **Validate Changes**: Run tests and linting
+3. **Test Changes**: Validate your changes
    ```bash
-   ./test-runner.sh
-   yamllint -d relaxed .
-   ansible-lint playbooks/recipes/
+   ./ali dev syntax     # Quick validation
+   ./ali dev spell      # Spell check
+   ./ali dev test       # Authentication testing
    ```
 
-4. **Test Recipes**: Test your changes in check mode
+4. **Commit Changes**: Simple git workflow
    ```bash
-   ansible-playbook --check -i inventory/test-recipes.yml playbooks/recipes/your-recipe.yml
+   git add .
+   git commit -m "feat: your change description"
+   git push
    ```
+
+### Pre-commit Validation
+
+Before committing, run the development tools:
+
+```bash
+# Quick validation (recommended)
+./ali dev syntax
+
+# Full validation (comprehensive)
+./ali dev validate
+./ali dev spell
+./ali dev lint      # If ansible-lint installed
+```
+
+### Testing Changes
+
+Test your recipes safely with check mode:
+
+```bash
+# Test specific recipes (dry run)
+./ali security --check    # Test security recipe
+./ali django --check      # Test django recipe
+
+# Test authentication flow
+./ali dev test
+```
 
 ## 📁 Project Structure
 

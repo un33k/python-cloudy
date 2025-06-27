@@ -478,7 +478,16 @@
     "objs",
     "oldapp",
     "regrole",
-    "xsltproc"
+    "xsltproc",
+    "pyyaml",
+    "distro",
+    "libbz",
+    "libreadline",
+    "libsqlite",
+    "libncursesw",
+    "libxmlsec",
+    "groupinstall",
+    "devel"
   ],
   "flagWords": [],
   "enableFiletypes": [
