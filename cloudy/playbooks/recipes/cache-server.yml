@@ -31,11 +31,21 @@
           Memory: {{ 'Auto-calculate' if redis_memory == 0 else redis_memory + 'MB' }}
           
   tasks:
-    # Generic Server Setup
-    - name: Run generic server setup
-      include: generic-server.yml
+    # Generic Server Setup - Include core tasks
+    - name: Initialize system
+      include_tasks: ../../tasks/sys/core/init.yml
       when: run_generic_setup | bool
-      tags: [generic, foundation]
+      tags: [generic, foundation, init]
+      
+    - name: Update system packages
+      include_tasks: ../../tasks/sys/core/update.yml
+      when: run_generic_setup | bool
+      tags: [generic, foundation, update]
+      
+    - name: Install common utilities
+      include_tasks: ../../tasks/sys/core/install-common.yml
+      when: run_generic_setup | bool
+      tags: [generic, foundation, packages]
       
     # Redis Installation and Configuration
     - name: Install Redis server

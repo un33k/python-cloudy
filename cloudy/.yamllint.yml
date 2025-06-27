@@ -1,0 +1,46 @@
+# YAML Lint Configuration for Ansible Cloudy
+# Provides reasonable defaults for Ansible YAML files
+
+extends: relaxed
+
+rules:
+  # Line length - allow longer lines for readability
+  line-length:
+    max: 120
+    level: warning
+  
+  # Indentation - enforce 2 spaces
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+  
+  # Comments - require space after #
+  comments:
+    min-spaces-from-content: 1
+  
+  # Trailing spaces
+  trailing-spaces: enable
+  
+  # Empty lines
+  empty-lines:
+    max: 2
+    max-start: 0
+    max-end: 1
+  
+  # Document markers
+  document-start:
+    present: true
+  
+  # Truthy values - allow yes/no, true/false
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no']
+    check-keys: false
+
+# Ignore certain files
+ignore: |
+  .git/
+  .github/
+  *.md
+  *.txt
+  *.j2

@@ -26,10 +26,22 @@
           Redis: {{ 'Yes' if setup_redis else 'No' }}
           
   tasks:
-    # Foundation Setup (reuse generic server tasks)
-    - name: Run generic server setup
-      include: generic-server.yml
-      tags: [foundation]
+    # Foundation Setup - Include core generic server tasks
+    - name: Initialize system
+      include_tasks: ../../tasks/sys/core/init.yml
+      tags: [foundation, init]
+      
+    - name: Update system packages
+      include_tasks: ../../tasks/sys/core/update.yml
+      tags: [foundation, update]
+      
+    - name: Install common utilities
+      include_tasks: ../../tasks/sys/core/install-common.yml
+      tags: [foundation, packages]
+      
+    - name: Install UFW firewall
+      include_tasks: ../../tasks/sys/firewall/install.yml
+      tags: [foundation, firewall]
       
     # PostgreSQL Setup
     - name: Install PostgreSQL repository

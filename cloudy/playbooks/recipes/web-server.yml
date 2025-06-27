@@ -32,11 +32,26 @@
           Port: {{ webserver_port }}
           
   tasks:
-    # Generic Server Setup
-    - name: Run generic server setup
-      include: generic-server.yml
+    # Generic Server Setup - Include core foundation tasks
+    - name: Initialize system
+      include_tasks: ../../tasks/sys/core/init.yml
       when: run_generic_setup | bool
-      tags: [generic, foundation]
+      tags: [generic, foundation, init]
+      
+    - name: Update system packages
+      include_tasks: ../../tasks/sys/core/update.yml
+      when: run_generic_setup | bool
+      tags: [generic, foundation, update]
+      
+    - name: Install common utilities
+      include_tasks: ../../tasks/sys/core/install-common.yml
+      when: run_generic_setup | bool
+      tags: [generic, foundation, packages]
+      
+    - name: Install UFW firewall
+      include_tasks: ../../tasks/sys/firewall/install.yml
+      when: run_generic_setup | bool
+      tags: [generic, foundation, firewall]
       
     # Hostname Configuration
     - name: Configure hostname

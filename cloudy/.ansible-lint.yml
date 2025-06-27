@@ -1,0 +1,44 @@
+# Ansible Lint Configuration for Ansible Cloudy
+# Provides reasonable rules for infrastructure automation
+
+# Exclude certain rules that are too strict for our use case
+skip_list:
+  - yaml[line-length]  # Allow longer lines for readability
+  - name[casing]       # Allow flexible task naming
+  - var-naming[no-role-prefix]  # Allow variables without role prefix
+  - fqcn[action-core]  # Allow short module names for core modules
+  - risky-file-permissions  # Allow default file permissions in some cases
+  - command-instead-of-module  # Allow command module when appropriate
+  - package-latest     # Allow latest package versions for development
+
+# Enable offline mode (don't check for newer versions)
+offline: true
+
+# Use default rules with some customizations
+use_default_rules: true
+
+# Exclude certain directories and files
+exclude_paths:
+  - .git/
+  - .github/
+  - .cache/
+  - tests/output/
+  - '*.md'
+  - '*.txt'
+
+# Enable colored output
+colored: true
+
+# Set verbosity level
+verbosity: 1
+
+# Custom rules configuration
+rules:
+  # Allow variables to be used in task names
+  name[template]: false
+  
+  # Allow shell commands when needed
+  command-instead-of-shell: false
+  
+  # Allow become without explicit user
+  become-user-without-become: false
