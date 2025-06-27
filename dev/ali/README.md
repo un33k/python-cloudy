@@ -30,6 +30,13 @@ A simplified CLI tool for running Ansible Cloudy recipes without remembering lon
 ./ali django -- --tags nginx        # Only run nginx tasks
 ./ali redis -- --limit cache_servers # Only run on cache servers
 ./ali security -- -v                 # Verbose output
+
+# Development commands
+./ali dev syntax        # Quick syntax checking
+./ali dev validate      # Comprehensive validation (with fallback)
+./ali dev lint          # Ansible linting
+./ali dev test          # Authentication flow testing
+./ali dev spell         # Spell checking
 ```
 
 ## 📋 Available Commands
@@ -50,11 +57,20 @@ A simplified CLI tool for running Ansible Cloudy recipes without remembering lon
 ./ali openvpn          # OpenVPN server
 ```
 
+### Development & Testing
+```bash
+./ali dev syntax       # Quick syntax checking
+./ali dev validate     # Comprehensive validation
+./ali dev lint         # Ansible linting  
+./ali dev test         # Authentication flow testing
+./ali dev spell        # Spell checking
+```
+
 ### Discovery & Help
 ```bash
 ./ali --list           # Show all available recipes
+./ali dev              # Show all dev commands
 ./ali --help           # Show usage information
-./ali redis --help     # Recipe-specific help
 ```
 
 ## 🎯 Command Structure

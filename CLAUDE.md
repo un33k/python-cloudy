@@ -32,9 +32,8 @@ cd ansible-cloudy/
 
 #### Development Tools
 - **Ali CLI**: `./ali security` - Simplified Ansible commands (90% shorter)
-- **Comprehensive validation**: `./dev/validate.py` - Full validation suite for all components
-- **Quick syntax check**: `./dev/syntax-check.sh` - Fast syntax validation only
-- **Authentication test**: `ansible-playbook -i cloudy/inventory/test.yml dev/test-auth.yml --check`
+- **Ali Dev Commands**: `./ali dev syntax`, `./ali dev validate`, `./ali dev lint`, `./ali dev test`
+- **Authentication test**: `./ali dev test` - Test server authentication flow
 - **Clean output**: Configured in `ansible.cfg` with `display_skipped_hosts = no`
 - **Spell checking**: Configured via `dev/.cspell.json` with 369 technical terms
 - **Linting**: Configured via `dev/.ansible-lint.yml` and `dev/.yamlint.yml`
@@ -194,10 +193,16 @@ ansible-playbook -i inventory/test.yml playbooks/recipes/core/base.yml --tags fi
 ansible-playbook -i inventory/test.yml playbooks/recipes/www/django.yml --tags nginx
 
 # Development and validation
-./dev/validate.py                    # Comprehensive validation
-./dev/syntax-check.sh               # Quick syntax check
-ansible-playbook -i inventory/test.yml dev/test-auth.yml --check  # Auth flow test
-ansible-playbook -i inventory/test.yml playbooks/recipes/core/base.yml --check
+./ali dev validate                  # Comprehensive validation (with fallback)
+./ali dev syntax                    # Quick syntax check
+./ali dev test                      # Authentication flow test
+./ali dev lint                      # Ansible linting
+./ali dev spell                     # Spell checking
+
+# Traditional dev commands (if preferred)
+./dev/validate.py                   # Direct validation script
+./dev/syntax-check.sh              # Direct syntax check script
+ansible-playbook -i cloudy/inventory/test.yml dev/test-auth.yml --check
 ```
 
 #### Recipe Categories

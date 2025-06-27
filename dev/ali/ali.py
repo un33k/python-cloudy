@@ -50,6 +50,7 @@ class AliConfig:
         self.cloudy_dir = self.project_root / "cloudy"
         self.recipes_dir = self.cloudy_dir / "playbooks" / "recipes"
         self.inventory_dir = self.cloudy_dir / "inventory"
+        self.dev_dir = self.project_root / "dev"
         
         # Validate project structure
         self._validate_structure()
@@ -190,6 +191,130 @@ class AnsibleRunner:
         except FileNotFoundError:
             error("ansible-playbook not found. Please install Ansible or activate your virtual environment.")
 
+class DevTools:
+    """Development tools and commands"""
+    
+    def __init__(self, config: AliConfig):
+        self.config = config
+    
+    def validate(self) -> int:
+        """Run comprehensive validation"""
+        validate_script = self.config.dev_dir / "validate.py"
+        if not validate_script.exists():
+            error(f"Validation script not found: {validate_script}")
+        
+        info(f"Running comprehensive validation...")
+        os.chdir(self.config.project_root)
+        
+        result = subprocess.run([str(validate_script)], capture_output=True, text=True)
+        
+        if result.returncode != 0:
+            # Check if it's a missing dependency issue
+            if "ModuleNotFoundError" in result.stderr or "No module named" in result.stderr:
+                warn("Validation script requires additional Python packages")
+                warn("Install with: pip install pyyaml")
+                warn("Falling back to syntax check only...")
+                return self.syntax()
+            else:
+                # Print the actual error output
+                if result.stderr:
+                    print(result.stderr)
+                if result.stdout:
+                    print(result.stdout)
+        else:
+            # Print successful output
+            if result.stdout:
+                print(result.stdout)
+        
+        return result.returncode
+    
+    def syntax(self) -> int:
+        """Run syntax checking"""
+        syntax_script = self.config.dev_dir / "syntax-check.sh"
+        if not syntax_script.exists():
+            error(f"Syntax check script not found: {syntax_script}")
+        
+        info(f"Running syntax checks...")
+        os.chdir(self.config.project_root)
+        return subprocess.run([str(syntax_script)]).returncode
+    
+    def lint(self) -> int:
+        """Run ansible-lint"""
+        lint_config = self.config.dev_dir / ".ansible-lint.yml"
+        if not lint_config.exists():
+            warn("Ansible-lint config not found, using defaults")
+            config_args = []
+        else:
+            config_args = ["-c", str(lint_config)]
+        
+        info(f"Running ansible-lint...")
+        os.chdir(self.config.project_root)
+        
+        try:
+            cmd = ["ansible-lint"] + config_args + [str(self.config.recipes_dir)]
+            return subprocess.run(cmd).returncode
+        except FileNotFoundError:
+            error("ansible-lint not found. Install with: pip install ansible-lint")
+    
+    def test(self) -> int:
+        """Run authentication tests"""
+        test_playbook = self.config.dev_dir / "test-auth.yml"
+        if not test_playbook.exists():
+            error(f"Test playbook not found: {test_playbook}")
+        
+        inventory_path = self.config.inventory_dir / "test.yml"
+        if not inventory_path.exists():
+            error(f"Test inventory not found: {inventory_path}")
+        
+        info(f"Running authentication tests...")
+        os.chdir(self.config.cloudy_dir)
+        
+        cmd = [
+            "ansible-playbook",
+            "-i", str(inventory_path),
+            str(test_playbook),
+            "--check"
+        ]
+        
+        return subprocess.run(cmd).returncode
+    
+    def spell(self) -> int:
+        """Run spell checking"""
+        spell_config = self.config.dev_dir / ".cspell.json"
+        if not spell_config.exists():
+            error(f"Spell check config not found: {spell_config}")
+        
+        info(f"Running spell check...")
+        os.chdir(self.config.project_root)
+        
+        try:
+            cmd = ["npx", "cspell", "**/*.md", "**/*.yml", "--config", str(spell_config)]
+            return subprocess.run(cmd).returncode
+        except FileNotFoundError:
+            error("cspell not found. Install with: npm install -g cspell")
+
+def list_dev_commands() -> None:
+    """List available development commands"""
+    print(f"\n{Colors.CYAN}🛠️  Development Commands:{Colors.NC}")
+    print("=" * 50)
+    
+    commands = [
+        ("validate", "Comprehensive validation of all components"),
+        ("syntax", "Quick syntax checking for all recipes"),
+        ("lint", "Ansible-lint validation"),
+        ("test", "Authentication flow testing"),
+        ("spell", "Spell check all documentation and configs"),
+    ]
+    
+    for cmd, desc in commands:
+        print(f"  • {Colors.GREEN}ali dev {cmd:<8}{Colors.NC} - {desc}")
+    
+    print(f"\n{Colors.YELLOW}Usage examples:{Colors.NC}")
+    print("  ali dev validate       # Full validation suite")
+    print("  ali dev syntax         # Quick syntax check")
+    print("  ali dev lint           # Ansible linting")
+    print("  ali dev test           # Test authentication")
+
 def list_recipes(config: AliConfig) -> None:
     """List all available recipes"""
     finder = RecipeFinder(config)
@@ -225,16 +350,22 @@ Examples:
   ali redis --check              Dry run redis recipe
   ali nginx -- --tags ssl        Pass --tags ssl to ansible-playbook
   ali --list                      Show all available recipes
+  
+  ali dev validate                Run comprehensive validation
+  ali dev syntax                 Quick syntax checking
+  ali dev lint                   Ansible linting
+  ali dev test                   Authentication testing
         """
     )
     
-    parser.add_argument("recipe", nargs="?", help="Recipe name to run")
+    parser.add_argument("command", nargs="?", help="Recipe name or 'dev' for development commands")
+    parser.add_argument("subcommand", nargs="?", help="Development subcommand (when using 'dev')")
     parser.add_argument("--prod", "--production", action="store_true",
                        help="Use production inventory instead of test")
     parser.add_argument("--check", "--dry-run", action="store_true",
                        help="Run in dry-run mode (--check)")
     parser.add_argument("--list", "-l", action="store_true",
-                       help="List all available recipes")
+                       help="List all available recipes or dev commands")
     parser.add_argument("--verbose", "-v", action="store_true",
                        help="Enable verbose output")
     
@@ -264,20 +395,47 @@ def main() -> None:
     
     # Handle list command
     if args.list:
-        list_recipes(config)
+        if args.command == "dev":
+            list_dev_commands()
+        else:
+            list_recipes(config)
         return
     
-    # Require recipe name if not listing
-    if not args.recipe:
+    # Handle dev commands
+    if args.command == "dev":
+        if not args.subcommand:
+            list_dev_commands()
+            return
+        
+        dev_tools = DevTools(config)
+        
+        # Route to appropriate dev command
+        if args.subcommand == "validate":
+            exit_code = dev_tools.validate()
+        elif args.subcommand == "syntax":
+            exit_code = dev_tools.syntax()
+        elif args.subcommand == "lint":
+            exit_code = dev_tools.lint()
+        elif args.subcommand == "test":
+            exit_code = dev_tools.test()
+        elif args.subcommand == "spell":
+            exit_code = dev_tools.spell()
+        else:
+            error(f"Unknown dev command '{args.subcommand}'. Use 'ali dev --list' to see available commands.")
+        
+        sys.exit(exit_code)
+    
+    # Require recipe name if not listing or dev command
+    if not args.command:
         parser.print_help()
         return
     
     # Find the recipe
     finder = RecipeFinder(config)
-    recipe_path = finder.find_recipe(args.recipe)
+    recipe_path = finder.find_recipe(args.command)
     
     if not recipe_path:
-        error(f"Recipe '{args.recipe}' not found. Use 'ali --list' to see available recipes.")
+        error(f"Recipe '{args.command}' not found. Use 'ali --list' to see available recipes.")
     
     # Get inventory
     inventory_manager = InventoryManager(config)
