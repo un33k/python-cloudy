@@ -1,15 +1,11 @@
 # Granular Task: Install Common System Utilities
 # Equivalent to: cloudy-old/sys/core.py::sys_install_common()
-# Usage: ansible-playbook tasks/sys/core/install-common.yml
+# Usage: include_tasks: tasks/sys/core/install-common.yml
 
 ---
 - name: Install common system utilities
-  hosts: "{{ target_hosts | default('all') }}"
-  gather_facts: false
-  become: true
-  
-  vars:
-    common_packages:
+  apt:
+    name:
       - build-essential
       - gcc
       - subversion
@@ -25,32 +21,27 @@
       - software-properties-common
       - net-tools
       - ntpsec
+    state: present
+    update_cache: true
+  register: common_install_result
+  
+- name: Verify key utilities are installed
+  command: "{{ item }} --version"
+  register: utility_versions
+  changed_when: false
+  failed_when: false
+  loop:
+    - wget
+    - curl
+    - git
+    - vim
     
-  tasks:
-    - name: Install common system utilities
-      apt:
-        name: "{{ common_packages }}"
-        state: present
-        update_cache: true
-      register: common_install_result
-      
-    - name: Verify key utilities are installed
-      command: "{{ item }} --version"
-      register: utility_versions
-      changed_when: false
-      failed_when: false
-      loop:
-        - wget
-        - curl
-        - git
-        - vim
-        
-    - name: Display installed utilities
-      debug:
-        msg: "✅ Common utilities installed successfully"
-        
-    - name: Show utility versions
-      debug:
-        msg: "{{ item.item }}: {{ item.stdout | default('Not available') }}"
-      loop: "{{ utility_versions.results }}"
-      when: item.stdout is defined
+- name: Display installed utilities
+  debug:
+    msg: "✅ Common utilities installed successfully"
+    
+- name: Show utility versions
+  debug:
+    msg: "{{ item.item }}: {{ item.stdout | default('Not available') }}"
+  loop: "{{ utility_versions.results }}"
+  when: item.stdout is defined

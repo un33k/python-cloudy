@@ -3,49 +3,33 @@
 # Usage: ansible-playbook tasks/sys/user/add-user.yml -e "username=john"
 
 ---
-- name: Add system user
-  hosts: "{{ target_hosts | default('all') }}"
-  gather_facts: false
-  become: true
+- name: Validate username is not root
+  fail:
+    msg: "Cannot manage root user with this task"
+  when: username == "root"
   
-  vars:
-    # Required variables
-    username: "{{ username | mandatory }}"
-    # Optional variables
+- name: Kill existing processes for user (if exists)
+  shell: "pkill -KILL -u {{ username }}"
+  failed_when: false
+  when: force_recreate | default(true) | bool
+  
+- name: Remove existing user (if force recreate)
+  user:
+    name: "{{ username }}"
+    state: absent
+    remove: true
+    force: true
+  when: force_recreate | default(true) | bool
+  
+- name: Add user {{ username }}
+  user:
+    name: "{{ username }}"
     shell: "{{ user_shell | default('/bin/bash') }}"
     create_home: "{{ user_create_home | default(true) }}"
-    force_recreate: "{{ user_force_recreate | default(true) }}"
-    
-  tasks:
-    - name: Validate username is not root
-      fail:
-        msg: "Cannot manage root user with this task"
-      when: username == "root"
-      
-    - name: Kill existing processes for user (if exists)
-      shell: "pkill -KILL -u {{ username }}"
-      failed_when: false
-      when: force_recreate | bool
-      
-    - name: Remove existing user (if force recreate)
-      user:
-        name: "{{ username }}"
-        state: absent
-        remove: true
-        force: true
-      when: force_recreate | bool
-      
-    - name: Add user {{ username }}
-      user:
-        name: "{{ username }}"
-        shell: "{{ shell }}"
-        create_home: "{{ create_home }}"
-        state: present
-      register: user_add_result
-      
-
-      
-    - name: Display success message
-      debug:
-        msg: "✅ User successfully added: {{ username }}"
-      when: user_add_result.changed
+    state: present
+  register: user_add_result
+  
+- name: Display success message
+  debug:
+    msg: "✅ User successfully added: {{ username }}"
+  when: user_add_result.changed

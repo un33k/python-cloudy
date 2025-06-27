@@ -3,57 +3,48 @@
 # Usage: ansible-playbook tasks/sys/firewall/secure-server.yml -e "ssh_port=22"
 
 ---
-- name: Secure server with basic firewall rules
-  hosts: "{{ target_hosts | default('all') }}"
-  gather_facts: false
-  become: true
+- name: Enable UFW logging
+  ufw:
+    logging: 'on'
+  register: ufw_logging
   
-  vars:
-    ssh_port: "{{ ssh_port | default('22') }}"
-    
-  tasks:
-    - name: Enable UFW logging
-      ufw:
-        logging: 'on'
-      register: ufw_logging
+- name: Set default policy - deny incoming
+  ufw:
+    direction: incoming
+    policy: deny
+  register: ufw_deny_incoming
+  
+- name: Set default policy - allow outgoing
+  ufw:
+    direction: outgoing
+    policy: allow
+  register: ufw_allow_outgoing
+  
+- name: Allow SSH on specified port
+  ufw:
+    rule: allow
+    port: "{{ ssh_port }}"
+    proto: tcp
+  register: ufw_allow_ssh
+  
+- name: Enable UFW
+  ufw:
+    state: enabled
+  register: ufw_enable
+  
+- name: Get UFW status
+  command: ufw status verbose
+  register: ufw_status
+  changed_when: false
+  
+- name: Display server security status
+  debug:
+    msg: |
+      ✅ Server secured with UFW firewall
+      SSH port allowed: {{ ssh_port }}
+      Default incoming: DENY
+      Default outgoing: ALLOW
+      Logging: ENABLED
       
-    - name: Set default policy - deny incoming
-      ufw:
-        direction: incoming
-        policy: deny
-      register: ufw_deny_incoming
-      
-    - name: Set default policy - allow outgoing
-      ufw:
-        direction: outgoing
-        policy: allow
-      register: ufw_allow_outgoing
-      
-    - name: Allow SSH on specified port
-      ufw:
-        rule: allow
-        port: "{{ ssh_port }}"
-        proto: tcp
-      register: ufw_allow_ssh
-      
-    - name: Enable UFW
-      ufw:
-        state: enabled
-      register: ufw_enable
-      
-    - name: Get UFW status
-      command: ufw status verbose
-      register: ufw_status
-      changed_when: false
-      
-    - name: Display server security status
-      debug:
-        msg: |
-          ✅ Server secured with UFW firewall
-          SSH port allowed: {{ ssh_port }}
-          Default incoming: DENY
-          Default outgoing: ALLOW
-          Logging: ENABLED
-          
-          Current UFW Status:
-          {{ ufw_status.stdout }}
+      Current UFW Status:
+      {{ ufw_status.stdout }}

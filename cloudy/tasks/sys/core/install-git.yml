@@ -3,27 +3,21 @@
 # Usage: ansible-playbook tasks/sys/core/install-git.yml
 
 ---
-- name: Install Git
-  hosts: "{{ target_hosts | default('all') }}"
-  gather_facts: false
-  become: true
+- name: Update package cache
+  apt:
+    update_cache: true
+    
+- name: Install git package
+  apt:
+    name: git
+    state: present
+  register: git_install_result
   
-  tasks:
-    - name: Update package cache
-      apt:
-        update_cache: true
-        
-    - name: Install git package
-      apt:
-        name: git
-        state: present
-      register: git_install_result
-      
-    - name: Verify git installation
-      command: git --version
-      register: git_version
-      changed_when: false
-      
-    - name: Display git version
-      debug:
-        msg: "✅ Git installed successfully: {{ git_version.stdout }}"
+- name: Verify git installation
+  command: git --version
+  register: git_version
+  changed_when: false
+  
+- name: Display git version
+  debug:
+    msg: "✅ Git installed successfully: {{ git_version.stdout }}"

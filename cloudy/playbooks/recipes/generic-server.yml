@@ -104,25 +104,36 @@
       vars:
         target_user: "{{ admin_user }}"
         pub_key_path: "{{ ansible_ssh_private_key_file }}.pub"
-      when: setup_admin_user | bool and setup_ssh_security | bool
+      when: setup_admin_user | bool and setup_ssh_security | bool and ansible_ssh_private_key_file is defined
       tags: [ssh, keys, admin]
       
-    # SSH Security
+    # SSH Security - Allow new SSH port in firewall BEFORE changing port
+    - name: Install UFW firewall (before SSH port change)
+      include_tasks: ../../tasks/sys/firewall/install.yml
+      when: setup_ssh_security | bool
+      tags: [firewall, ssh, security]
+      
+    - name: Allow new SSH port in UFW firewall
+      ufw:
+        rule: allow
+        port: "{{ ssh_port }}"
+        proto: tcp
+      when: setup_ssh_security | bool and ssh_port != 22
+      tags: [firewall, ssh, security]
+      
     - name: Configure SSH port
       include_tasks: ../../tasks/sys/ssh/set-port.yml
-      vars:
-        ssh_port: "{{ ssh_port }}"
       when: setup_ssh_security | bool
       tags: [ssh, security]
       
-    # Test admin user SSH access BEFORE disabling root
+    # Test admin user SSH access BEFORE disabling root (only for key-based auth)
     - name: Test admin user SSH access with new port
       include_tasks: ../../tasks/sys/ssh/test-user-access.yml
       vars:
         test_user: "{{ admin_user }}"
         test_port: "{{ ssh_port }}"
         user_password: "{{ admin_password }}"
-      when: setup_admin_user | bool and setup_ssh_security | bool and ssh_disable_root | bool
+      when: setup_admin_user | bool and setup_ssh_security | bool and ssh_disable_root | bool and ansible_ssh_private_key_file is defined
       tags: [ssh, security, test]
       
     # Update Ansible connection settings for remaining tasks

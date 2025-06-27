@@ -1,41 +1,29 @@
 # Granular Task: Configure System Hostname
 # Equivalent to: cloudy-old/sys/core.py::sys_hostname_configure()
-# Usage: ansible-playbook tasks/sys/core/hostname.yml -e "target_hostname=myserver.example.com"
+# Usage: include_tasks: tasks/sys/core/hostname.yml
 
 ---
-- name: Configure system hostname
-  hosts: "{{ target_hosts | default('all') }}"
-  gather_facts: false
-  become: true
+- name: Set hostname in /etc/hostname
+  hostname:
+    name: "{{ hostname }}"
+  register: hostname_result
   
-  vars:
-    # Required variable
-    target_hostname: "{{ target_hostname | mandatory }}"
-    
-  tasks:
-    - name: Set hostname in /etc/hostname
-      hostname:
-        name: "{{ target_hostname }}"
-      register: hostname_result
-      
-    - name: Update /etc/hosts with new hostname
-      lineinfile:
-        path: /etc/hosts
-        regexp: '^127\.0\.1\.1'
-        line: "127.0.1.1 {{ target_hostname }}"
-        backup: true
-      register: hosts_result
-      
-
-      
-    - name: Verify hostname configuration
-      command: hostname -f
-      register: current_hostname
-      changed_when: false
-      
-    - name: Display hostname status
-      debug:
-        msg: |
-          ✅ Hostname configured successfully
-          Target: {{ target_hostname }}
-          Current: {{ current_hostname.stdout }}
+- name: Update /etc/hosts with new hostname
+  lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1'
+    line: "127.0.1.1 {{ hostname }}"
+    backup: true
+  register: hosts_result
+  
+- name: Verify hostname configuration
+  command: hostname -f
+  register: current_hostname
+  changed_when: false
+  
+- name: Display hostname status
+  debug:
+    msg: |
+      ✅ Hostname configured successfully
+      Target: {{ hostname }}
+      Current: {{ current_hostname.stdout }}
