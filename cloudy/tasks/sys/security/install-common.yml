@@ -3,42 +3,36 @@
 # Usage: ansible-playbook tasks/sys/security/install-common.yml
 
 ---
-- name: Install common security packages
-  hosts: "{{ target_hosts | default('all') }}"
-  gather_facts: false
-  become: true
+- name: Install security packages
+  apt:
+    name:
+      - fail2ban
+      - logcheck
+      - logcheck-database
+    state: present
+    update_cache: true
+  register: security_install_result
   
-  tasks:
-    - name: Install security packages
-      apt:
-        name:
-          - fail2ban
-          - logcheck
-          - logcheck-database
-        state: present
-        update_cache: true
-      register: security_install_result
+- name: Start and enable fail2ban service
+  systemd:
+    name: fail2ban
+    state: started
+    enabled: true
+  register: fail2ban_service
+  
+- name: Get fail2ban status
+  command: fail2ban-client status
+  register: fail2ban_status
+  changed_when: false
+  failed_when: false
+  
+- name: Display security installation status
+  debug:
+    msg: |
+      ✅ Common security packages installed
+      Packages: fail2ban, logcheck, logcheck-database
+      Installation: {{ 'New packages installed' if security_install_result.changed else 'Already installed' }}
+      Fail2ban service: {{ 'Started' if fail2ban_service.changed else 'Already running' }}
       
-    - name: Start and enable fail2ban service
-      systemd:
-        name: fail2ban
-        state: started
-        enabled: true
-      register: fail2ban_service
-      
-    - name: Get fail2ban status
-      command: fail2ban-client status
-      register: fail2ban_status
-      changed_when: false
-      failed_when: false
-      
-    - name: Display security installation status
-      debug:
-        msg: |
-          ✅ Common security packages installed
-          Packages: fail2ban, logcheck, logcheck-database
-          Installation: {{ 'New packages installed' if security_install_result.changed else 'Already installed' }}
-          Fail2ban service: {{ 'Started' if fail2ban_service.changed else 'Already running' }}
-          
-          Fail2ban Status:
-          {{ fail2ban_status.stdout if fail2ban_status.rc == 0 else 'Fail2ban not yet configured' }}
+      Fail2ban Status:
+      {{ fail2ban_status.stdout if fail2ban_status.rc == 0 else 'Fail2ban not yet configured' }}

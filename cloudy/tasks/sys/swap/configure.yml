@@ -22,7 +22,7 @@
 - name: Create swap file if it doesn't exist
   block:
     - name: Allocate swap file
-      command: "fallocate -l {{ swap_size }}m {{ swap_file }}"
+      command: "fallocate -l {{ swap_size | default('2048') }}M {{ swap_file }}"
       register: swap_allocation
       
     - name: Set swap file permissions

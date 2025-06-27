@@ -25,12 +25,50 @@ cd cloudy/
 
 **⚠️ IMPORTANT**: After running the generic server recipe, root login is disabled for security.
 
+**⚠️ CRITICAL - Sudo Password Requirements**:
+
+Ansible requires sudo password configuration for privileged operations after switching from root to admin user. There are two ways to provide this:
+
+#### Method 1: Inventory Configuration (Recommended)
+Add the sudo password directly in your inventory file:
+
+```yaml
+generic_servers:
+  hosts:
+    test-generic:
+      admin_password: secure123        # Login password  
+      ansible_become_pass: secure123   # Sudo password
+```
+
+Then run commands normally:
+```bash
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml
+```
+
+#### Method 2: Environment Variable
+Set the sudo password via environment variable:
+
+```bash
+# Set sudo password for the session
+export ANSIBLE_BECOME_PASS=secure123
+
+# Or provide it directly with the command
+ANSIBLE_BECOME_PASS=secure123 ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml
+```
+
+**Why This is Needed**:
+- Initial connection uses `root` with password authentication
+- After admin user creation and SSH key installation, connection switches to admin user
+- Admin user requires sudo password for privileged operations (firewall, system config, etc.)
+- The `admin_password` is for SSH login, `ansible_become_pass` is for sudo operations
+- They're often the same value but serve different purposes
+
 **Complete Secure Workflow Example**:
 ```bash
 # 1. Setup secure server (disables root, creates admin user with SSH keys)
 ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml
 
-# 2. Deploy additional services (update inventory to use admin user first)
+# 2. Deploy additional services (uses admin user authentication)
 ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/web-server.yml
 ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/database-server.yml
 ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/cache-server.yml
