@@ -1,0 +1,15 @@
+---
+- name: Fix Admin User Sudo Access
+  hosts: generic_servers
+  gather_facts: false
+  become: false
+  
+  tasks:
+    - name: Add admin user to sudo group
+      shell: |
+        # Connect as root via SSH key and add admin to sudo group
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/id_rsa root@{{ ansible_host }} \
+        "usermod -aG sudo {{ admin_user }} && echo '{{ admin_user }} ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers"
+      delegate_to: localhost
+      become: false
+      when: ansible_user == admin_user

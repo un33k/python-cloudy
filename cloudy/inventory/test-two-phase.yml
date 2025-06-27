@@ -42,7 +42,7 @@ all:
         ansible_port: 22022  # New SSH port after hardening
         ansible_host_key_checking: false
         ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-        ansible_become_pass: secure123  # Sudo password for admin user
+        ansible_become_pass: changeme  # Sudo password for admin user
         # SSH key authentication (no password needed for SSH)
       hosts:
         test-generic:
@@ -51,7 +51,10 @@ all:
           ansible_ssh_private_key_file: ~/.ssh/id_rsa  # SSH key for admin user
           swap_size: 512
           setup_swap: false
-          
+        test-hardening:
+          ansible_host: 10.10.10.198
+          hostname: test-hardening.example.com
+          ansible_ssh_private_key_file: ~/.ssh/id_rsa  # SSH key for admin user          
     # VPN Servers (inherit from generic_servers after setup)
     vpn_servers:
       vars:
