@@ -1,0 +1,30 @@
+# OpenVPN List Clients
+# Based on: cloudy-old/sys/openvpn.py::sys_openvpn_docker_show_client_list()
+# Show the list of OpenVPN clients
+
+---
+- name: Set OpenVPN Docker variables
+  set_fact:
+    docker_name: "{{ proto | default('udp') }}-{{ port | default('1194') }}.{{ domain }}"
+    docker_data: "{{ datadir | default('/docker/openvpn') }}/{{ proto | default('udp') }}-{{ port | default('1194') }}.{{ domain }}"
+    docker_repo: "{{ repo | default('kylemanna/openvpn') }}"
+
+- name: List OpenVPN clients
+  docker_container:
+    name: "openvpn-listclients-{{ docker_name }}"
+    image: "{{ docker_repo }}"
+    state: started
+    detach: false
+    auto_remove: true
+    volumes:
+      - "{{ docker_data }}:/etc/openvpn"
+    command: "ovpn_listclients"
+    interactive: true
+    tty: true
+  register: client_list
+
+- name: Display client list
+  debug:
+    msg: |
+      📋 OpenVPN Client List for {{ docker_name }}:
+      {{ client_list.ansible_facts.docker_container.Output | default('No clients found') }}

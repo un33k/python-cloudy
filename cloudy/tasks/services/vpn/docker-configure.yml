@@ -1,0 +1,39 @@
+# OpenVPN Docker systemd Service Configuration
+# Based on: cloudy-old/sys/openvpn.py::sys_openvpn_docker_conf()
+# Configure OpenVPN Docker container as systemd service
+
+---
+- name: Set OpenVPN Docker variables
+  set_fact:
+    docker_name: "{{ proto | default('udp') }}-{{ port | default('1194') }}.{{ domain }}"
+    service_name: "docker-{{ proto | default('udp') }}-{{ port | default('1194') }}.{{ domain }}"
+
+- name: Create systemd service file from template
+  template:
+    src: openvpn-docker-systemd.service.j2
+    dest: "/etc/systemd/system/{{ service_name }}.service"
+    owner: root
+    group: root
+    mode: '0644'
+  notify:
+    - reload systemd
+    - restart openvpn docker service
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: true
+
+- name: Enable OpenVPN Docker service
+  systemd:
+    name: "{{ service_name }}.service"
+    enabled: true
+    state: started
+
+- name: Display OpenVPN service status
+  debug:
+    msg: |
+      ✅ OpenVPN Docker systemd service configured
+      Service: {{ service_name }}.service
+      Status: Enabled and started
+      Container: {{ docker_name }}
+      Port: {{ port | default('1194') }}/{{ proto | default('udp') }}

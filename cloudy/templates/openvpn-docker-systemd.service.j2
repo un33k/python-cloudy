@@ -1,0 +1,12 @@
+[Unit]
+Description=Docker OpenVPN container - {{ domain }} {{ proto | default('udp') }} {{ port | default('1194') }}
+Requires=docker.service
+After=docker.service
+
+[Service]
+Restart=always
+ExecStart=/usr/bin/docker start -a {{ proto | default('udp') }}-{{ port | default('1194') }}.{{ domain }}
+ExecStop=/usr/bin/docker stop -t 2 {{ proto | default('udp') }}-{{ port | default('1194') }}.{{ domain }}
+
+[Install]
+WantedBy=default.target

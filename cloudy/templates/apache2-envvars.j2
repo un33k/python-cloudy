@@ -1,0 +1,14 @@
+# Apache environment variables (/etc/apache2/envvars)
+# Based on: cloudy-old/cfg/apache2/envvars.conf
+
+unset HOME
+export APACHE_RUN_USER=www-data
+export APACHE_RUN_GROUP=www-data
+export APACHE_PID_FILE=/var/run/apache2$SUFFIX.pid
+export APACHE_RUN_DIR=/var/run/apache2$SUFFIX
+export APACHE_LOCK_DIR=/var/lock/apache2$SUFFIX
+export APACHE_LOG_DIR=/var/log/apache2$SUFFIX
+export APACHE_MODS_DIR=/usr/lib/apache2/modules
+APACHE_ULIMIT_MAX_FILES='ulimit -c unlimited'
+export LANG="{{ apache_lang | default('en_US.UTF-8') }}"
+export LC_ALL="{{ apache_lc_all | default('en_US.UTF-8') }}"

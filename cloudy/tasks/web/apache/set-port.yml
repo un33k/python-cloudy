@@ -1,0 +1,40 @@
+# Apache2 Port Configuration
+# Based on: cloudy-old/web/apache.py::web_apache2_set_port()
+
+---
+- name: Find next available port if not specified
+  include_tasks: ../../sys/ports/find-available-port.yml
+  vars:
+    start_port: "{{ port | default('8080') }}"
+  when: port is not defined or port == ""
+
+- name: Use specified port
+  set_fact:
+    apache_port: "{{ port }}"
+  when: port is defined and port != ""
+
+- name: Use found available port
+  set_fact:
+    apache_port: "{{ available_port }}"
+  when: port is not defined or port == ""
+
+- name: Add listen directive to ports.conf
+  lineinfile:
+    path: /etc/apache2/ports.conf
+    line: "Listen 127.0.0.1:{{ apache_port }}"
+    create: yes
+    state: present
+  notify: reload apache2
+
+- name: Reload Apache2 to apply port configuration
+  systemd:
+    name: apache2
+    state: reloaded
+
+- name: Display port configuration success
+  debug:
+    msg: |
+      ✅ Apache2 port configured successfully
+      Port: {{ apache_port }}
+      Listen: 127.0.0.1:{{ apache_port }}
+      Configuration: /etc/apache2/ports.conf

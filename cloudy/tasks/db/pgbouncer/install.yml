@@ -1,0 +1,20 @@
+# PgBouncer Installation
+# Based on: cloudy-old/db/pgbouncer.py::db_pgbouncer_install()
+
+---
+- name: Install PgBouncer connection pooler
+  package:
+    name: pgbouncer
+    state: present
+
+- name: Stop pgbouncer service for configuration
+  systemd:
+    name: pgbouncer
+    state: stopped
+
+- name: Display PgBouncer installation success
+  debug:
+    msg: |
+      ✅ PgBouncer installed successfully
+      Status: Stopped (ready for configuration)
+      Next: Configure with db/pgbouncer/configure.yml

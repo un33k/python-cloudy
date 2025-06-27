@@ -1,0 +1,75 @@
+# OpenVPN Docker Installation
+# Based on: cloudy-old/sys/openvpn.py::sys_openvpn_docker_install()
+# Install and initialize OpenVPN in Docker container
+
+---
+- name: Set OpenVPN Docker variables
+  set_fact:
+    docker_name: "{{ proto | default('udp') }}-{{ port | default('1194') }}.{{ domain }}"
+    docker_data: "{{ datadir | default('/docker/openvpn') }}/{{ proto | default('udp') }}-{{ port | default('1194') }}.{{ domain }}"
+    docker_repo: "{{ repo | default('kylemanna/openvpn') }}"
+
+- name: Create OpenVPN data directory
+  file:
+    path: "{{ docker_data }}"
+    state: directory
+    mode: '0755'
+
+- name: Generate OpenVPN configuration
+  docker_container:
+    name: "openvpn-genconfig-{{ docker_name }}"
+    image: "{{ docker_repo }}"
+    state: started
+    detach: false
+    auto_remove: true
+    volumes:
+      - "{{ docker_data }}:/etc/openvpn"
+    command: "ovpn_genconfig -u {{ proto | default('udp') }}://{{ domain }}:{{ port | default('1194') }}"
+
+- name: Initialize PKI (no passphrase)
+  docker_container:
+    name: "openvpn-initpki-{{ docker_name }}"
+    image: "{{ docker_repo }}"
+    state: started
+    detach: false
+    auto_remove: true
+    volumes:
+      - "{{ docker_data }}:/etc/openvpn"
+    command: "ovpn_initpki nopass"
+  when: passphrase | default('nopass') == 'nopass'
+
+- name: Initialize PKI (with passphrase)
+  docker_container:
+    name: "openvpn-initpki-{{ docker_name }}"
+    image: "{{ docker_repo }}"
+    state: started
+    detach: false
+    auto_remove: true
+    volumes:
+      - "{{ docker_data }}:/etc/openvpn"
+    command: "ovpn_initpki"
+    interactive: true
+    tty: true
+  when: passphrase | default('nopass') != 'nopass'
+
+- name: Start OpenVPN Docker container
+  docker_container:
+    name: "{{ docker_name }}"
+    image: "{{ docker_repo }}"
+    state: started
+    restart_policy: always
+    published_ports:
+      - "{{ port | default('1194') }}:1194/{{ proto | default('udp') }}"
+    capabilities:
+      - NET_ADMIN
+    volumes:
+      - "{{ docker_data }}:/etc/openvpn"
+
+- name: Display OpenVPN container status
+  debug:
+    msg: |
+      ✅ OpenVPN Docker container installed successfully
+      Container: {{ docker_name }}
+      Port: {{ port | default('1194') }}/{{ proto | default('udp') }}
+      Data Directory: {{ docker_data }}
+      Status: Started with restart=always

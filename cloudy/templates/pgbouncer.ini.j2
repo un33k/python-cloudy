@@ -1,0 +1,25 @@
+# PgBouncer configuration (/etc/pgbouncer/pgbouncer.ini)
+# Based on: cloudy-old/cfg/pgbouncer/pgbouncer.ini
+
+[databases]
+* = host={{ pgb_dbhost }} port={{ pgb_dbport }}
+
+[pgbouncer]
+logfile = /var/log/postgresql/pgbouncer.log
+pidfile = /var/run/postgresql/pgbouncer.pid
+listen_addr = {{ pgb_listen_addr | default('*') }}
+listen_port = {{ pgb_listen_port | default(5432) }}
+unix_socket_dir = /var/run/postgresql
+auth_type = {{ pgb_auth_type | default('md5') }}
+auth_file = /etc/pgbouncer/userlist.txt
+admin_users = {{ pgb_admin_users | default('postgres') }}
+stats_users = {{ pgb_stats_users | default('postgres') }}
+pool_mode = {{ pgb_pool_mode | default('transaction') }}
+server_reset_query = {{ pgb_server_reset_query | default('DISCARD ALL;') }}
+server_check_query = {{ pgb_server_check_query | default('select 1') }}
+server_check_delay = {{ pgb_server_check_delay | default(10) }}
+max_client_conn = {{ pgb_max_client_conn | default(200) }}
+default_pool_size = {{ pgb_default_pool_size | default(20) }}
+log_connections = {{ pgb_log_connections | default(1) }}
+log_disconnections = {{ pgb_log_disconnections | default(1) }}
+log_pooler_errors = {{ pgb_log_pooler_errors | default(1) }}

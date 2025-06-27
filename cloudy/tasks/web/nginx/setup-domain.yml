@@ -1,0 +1,82 @@
+# Nginx Domain Configuration Setup
+# Based on: cloudy-old/web/nginx.py::web_nginx_setup_domain()
+
+---
+- name: Set protocol to https if ssl is requested
+  set_fact:
+    final_proto: "{{ 'https' if (proto | default('http')) in ['https', 'ssl'] else (proto | default('http')) }}"
+
+- name: Check SSL certificate files exist (for HTTPS)
+  stat:
+    path: "{{ item }}"
+  register: ssl_files_check
+  loop:
+    - "/etc/ssl/nginx/crt/{{ domain }}.combo.crt"
+    - "/etc/ssl/nginx/key/{{ domain }}.key"
+  when: final_proto == 'https'
+
+- name: Fail if SSL files missing for HTTPS
+  fail:
+    msg: |
+      ⚠️ SSL certificate and key not found for HTTPS setup:
+      - /etc/ssl/nginx/crt/{{ domain }}.combo.crt
+      - /etc/ssl/nginx/key/{{ domain }}.key
+      
+      Please run the copy-ssl task first or use proto=http
+  when: 
+    - final_proto == 'https'
+    - ssl_files_check.results | selectattr('stat.exists', 'equalto', false) | list | length > 0
+
+- name: Create nginx site configuration (HTTP)
+  template:
+    src: nginx-site-http.conf.j2
+    dest: "/etc/nginx/sites-available/{{ domain }}.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  vars:
+    site_domain: "{{ domain }}"
+    site_interface: "{{ interface | default('*') }}"
+    site_upstream_address: "{{ upstream_address | default('127.0.0.1') }}"
+    site_upstream_port: "{{ upstream_port | default('8000') }}"
+  when: final_proto == 'http'
+  notify: reload nginx
+
+- name: Create nginx site configuration (HTTPS)
+  template:
+    src: nginx-site-https.conf.j2
+    dest: "/etc/nginx/sites-available/{{ domain }}.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  vars:
+    site_domain: "{{ domain }}"
+    site_interface: "{{ interface | default('*') }}"
+    site_upstream_address: "{{ upstream_address | default('127.0.0.1') }}"
+    site_upstream_port: "{{ upstream_port | default('8000') }}"
+  when: final_proto == 'https'
+  notify: reload nginx
+
+- name: Enable nginx site
+  file:
+    src: "/etc/nginx/sites-available/{{ domain }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ domain }}.conf"
+    state: link
+  notify: reload nginx
+
+- name: Test nginx configuration
+  command: nginx -t
+  register: nginx_test
+  failed_when: nginx_test.rc != 0
+  changed_when: false
+
+- name: Display domain setup success
+  debug:
+    msg: |
+      ✅ Nginx domain configured successfully
+      Domain: {{ domain }}
+      Protocol: {{ final_proto }}
+      Interface: {{ interface | default('*') }}
+      Upstream: {{ upstream_address | default('127.0.0.1') }}:{{ upstream_port | default('8000') }}
+      Config: /etc/nginx/sites-available/{{ domain }}.conf
+      Enabled: /etc/nginx/sites-enabled/{{ domain }}.conf

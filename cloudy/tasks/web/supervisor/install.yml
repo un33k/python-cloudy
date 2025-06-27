@@ -1,0 +1,77 @@
+# Supervisor Installation and Bootstrap
+# Based on: cloudy-old/web/supervisor.py::web_supervisor_install() and web_supervisor_bootstrap()
+
+---
+- name: Install Supervisor process manager
+  package:
+    name: supervisor
+    state: present
+
+- name: Stop supervisor service for configuration
+  systemd:
+    name: supervisor
+    state: stopped
+
+- name: Remove default supervisor configuration
+  file:
+    path: /etc/supervisor
+    state: absent
+
+- name: Recreate supervisor configuration directory
+  file:
+    path: /etc/supervisor
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Install main supervisor configuration
+  template:
+    src: supervisord.conf.j2
+    dest: /etc/supervisor/supervisord.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart supervisor
+
+- name: Create sites-available directory
+  file:
+    path: /etc/supervisor/sites-available
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create sites-enabled directory
+  file:
+    path: /etc/supervisor/sites-enabled
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Set proper ownership for supervisor directories
+  file:
+    path: /etc/supervisor
+    owner: root
+    group: root
+    mode: '0644'
+    recurse: yes
+
+- name: Enable supervisor service for startup
+  systemd:
+    name: supervisor
+    enabled: true
+
+- name: Start supervisor service
+  systemd:
+    name: supervisor
+    state: started
+
+- name: Display supervisor installation success
+  debug:
+    msg: |
+      ✅ Supervisor installed and configured successfully
+      Status: Running and enabled
+      Config: /etc/supervisor/supervisord.conf
+      Sites: /etc/supervisor/sites-available/ and /etc/supervisor/sites-enabled/

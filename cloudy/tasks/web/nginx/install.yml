@@ -1,0 +1,74 @@
+# Nginx Installation and Bootstrap
+# Based on: cloudy-old/web/nginx.py::web_nginx_install() and web_nginx_bootstrap()
+
+---
+- name: Install Nginx web server
+  package:
+    name: nginx
+    state: present
+
+- name: Stop nginx service for configuration
+  systemd:
+    name: nginx
+    state: stopped
+
+- name: Remove default nginx configuration
+  file:
+    path: /etc/nginx
+    state: absent
+
+- name: Recreate nginx configuration directory
+  file:
+    path: /etc/nginx
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Install main nginx configuration
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart nginx
+
+- name: Install nginx mime types configuration
+  template:
+    src: nginx-mime.types.j2
+    dest: /etc/nginx/mime.types
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart nginx
+
+- name: Create sites-available directory
+  file:
+    path: /etc/nginx/sites-available
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Create sites-enabled directory
+  file:
+    path: /etc/nginx/sites-enabled
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Start and enable nginx service
+  systemd:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Display nginx installation success
+  debug:
+    msg: |
+      ✅ Nginx installed and configured successfully
+      Status: Running and enabled
+      Config: /etc/nginx/nginx.conf
+      Sites: /etc/nginx/sites-available/ and /etc/nginx/sites-enabled/

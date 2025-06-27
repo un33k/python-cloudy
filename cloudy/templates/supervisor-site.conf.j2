@@ -1,0 +1,16 @@
+# Supervisor program configuration for {{ site_domain }}
+# Based on: cloudy-old/cfg/supervisor/site.conf
+
+[program:{{ site_domain }}]
+command=/srv/www/{{ site_domain }}/pri/venv/bin/gunicorn --workers={{ site_workers }} --bind={{ site_interface }}:{{ site_port }} www.wsgi.production:application
+directory=/srv/www/{{ site_domain }}/pri/venv/webroot
+stdout_logfile=/srv/www/{{ site_domain }}/log/supervisord.log
+user={{ supervisor_user | default('www-data') }}
+group={{ supervisor_group | default('www-data') }}
+autostart={{ supervisor_autostart | default('true') }}
+autorestart={{ supervisor_autorestart | default('true') }}
+redirect_stderr={{ supervisor_redirect_stderr | default('true') }}
+startsecs={{ supervisor_startsecs | default(5) }}
+startretries={{ supervisor_startretries | default(10) }}
+stopsignal={{ supervisor_stopsignal | default('TERM') }}
+stopwaitsecs={{ supervisor_stopwaitsecs | default(8) }}

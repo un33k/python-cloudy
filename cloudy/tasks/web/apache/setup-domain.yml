@@ -1,0 +1,70 @@
+# Apache2 Domain Configuration Setup
+# Based on: cloudy-old/web/apache.py::web_apache2_setup_domain()
+
+---
+- name: Find next available port if not specified
+  include_tasks: ../../sys/ports/find-available-port.yml
+  vars:
+    start_port: "{{ port | default('8080') }}"
+  when: port is not defined or port == ""
+
+- name: Use specified port
+  set_fact:
+    apache_port: "{{ port }}"
+  when: port is defined and port != ""
+
+- name: Use found available port
+  set_fact:
+    apache_port: "{{ available_port }}"
+  when: port is not defined or port == ""
+
+- name: Remove existing site configuration
+  file:
+    path: "/etc/apache2/sites-available/{{ domain }}"
+    state: absent
+
+- name: Create Apache2 site configuration from template
+  template:
+    src: apache2-site.conf.j2
+    dest: "/etc/apache2/sites-available/{{ domain }}"
+    owner: root
+    group: root
+    mode: '0644'
+  vars:
+    site_port: "{{ apache_port }}"
+    site_domain: "{{ domain }}"
+  notify: reload apache2
+
+- name: Set proper ownership for sites-available directory
+  file:
+    path: /etc/apache2/sites-available
+    owner: root
+    group: root
+    mode: '0755'
+    recurse: yes
+
+- name: Enable Apache2 site
+  apache2_module:
+    name: "{{ domain }}"
+    state: present
+  notify: reload apache2
+
+- name: Add port to Apache2 configuration
+  include_tasks: set-port.yml
+  vars:
+    port: "{{ apache_port }}"
+
+- name: Test Apache2 configuration
+  command: apache2ctl configtest
+  register: apache_test
+  failed_when: apache_test.rc != 0
+  changed_when: false
+
+- name: Display domain setup success
+  debug:
+    msg: |
+      ✅ Apache2 domain configured successfully
+      Domain: {{ domain }}
+      Port: {{ apache_port }}
+      Config: /etc/apache2/sites-available/{{ domain }}
+      Site enabled and Apache2 reloaded

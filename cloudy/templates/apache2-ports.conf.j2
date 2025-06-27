@@ -1,0 +1,8 @@
+# Apache ports configuration (/etc/apache2/ports.conf)
+# Based on: cloudy-old/cfg/apache2/ports.conf
+
+{% if apache_default_port is defined %}
+Listen {{ apache_interface | default('127.0.0.1') }}:{{ apache_default_port }}
+{% else %}
+Listen 127.0.0.1:8181
+{% endif %}

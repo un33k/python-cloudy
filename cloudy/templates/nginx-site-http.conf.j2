@@ -1,0 +1,87 @@
+# HTTP configuration for {{ site_domain }}
+# Based on: cloudy-old/cfg/nginx/http.conf
+
+# Redirect www to non-www
+server {
+    listen {{ site_interface }}:80;
+    server_name www.{{ site_domain }};
+    rewrite ^(.*) http://{{ site_domain }}$1 permanent;
+}
+
+# Upstream backend configuration
+upstream upstream-{{ site_domain }} {
+    server {{ site_upstream_address }}:{{ site_upstream_port }} fail_timeout=1;
+}
+
+# Main server block
+server {
+    listen {{ site_interface }}:80;
+    server_name {{ site_domain }};
+    
+    location = /favicon.ico { 
+        access_log off; 
+        log_not_found off; 
+    }
+
+    # Upload directory
+    location /m/ {
+        alias /srv/www/{{ site_domain }}/pub/;
+        autoindex on;
+        if ($request_filename ~ "^.*/(.+)$"){
+            set $fname $1;
+            add_header Content-Disposition 'attachment; filename="$fname"';
+        }
+    }
+
+    # Static directory
+    location /s/ {
+        alias /srv/www/{{ site_domain }}/pri/venv/webroot/asset/collect/;
+        autoindex on;
+        expires 30d;
+        if ($request_filename ~ "^.*/(.+)$"){
+            set $fname $1;
+            add_header Content-Disposition 'attachment; filename="$fname"';
+        }
+    }
+
+    # Proxy everything else to the backend
+    location / {
+        proxy_pass http://upstream-{{ site_domain }};
+
+        proxy_redirect          off;
+        proxy_pass_header       Server;
+        proxy_connect_timeout   10;
+        proxy_send_timeout      90;
+        proxy_read_timeout      10;
+        proxy_buffers           32 4k;
+        client_max_body_size    10m;
+        client_body_buffer_size 128k;
+
+        proxy_set_header        X-Forwarded-Proto       http;
+        proxy_set_header        Host                    $host;
+        proxy_set_header        X-Real-IP               $remote_addr;
+        proxy_set_header        X-Forwarded-For         $proxy_add_x_forwarded_for;
+        proxy_set_header        X-Scheme                $scheme;
+        add_header              X-Handled-By            $upstream_addr;
+
+        proxy_next_upstream error timeout invalid_header http_500 http_502 http_503;
+
+        # System Maintenance (Service Unavailable)
+        if (-f /srv/www/{{ site_domain }}/pri/offline.html ) {
+            return 503;
+        }
+    }
+
+    # Error 503 redirect to offline.html page
+    error_page 503 @maintenance;
+    location @maintenance {
+        root /srv/www/{{ site_domain }}/pri/;
+        rewrite ^(.*)$ /offline.html break;
+    }
+
+    # Redirect server error pages to the static page /50x.html
+    error_page  500 502 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/www;
+    }
+}

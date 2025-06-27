@@ -1,0 +1,47 @@
+# Apache configuration (/etc/apache2/apache2.conf)
+# Based on: cloudy-old/cfg/apache2/apache2.conf
+
+# Security - don't tell the world who we are
+ServerSignature Off
+ServerTokens ProductOnly
+
+# Basic server setup
+ServerRoot "/etc/apache2"
+PidFile ${APACHE_PID_FILE}
+User ${APACHE_RUN_USER}
+Group ${APACHE_RUN_GROUP}
+ServerName {{ apache_server_name | default('localhost') }}
+
+# Virtual Host Ports
+Include ports.conf
+
+# Worker MPM features
+Timeout {{ apache_timeout | default(45) }}
+KeepAlive {{ apache_keepalive | default('Off') }}
+StartServers {{ apache_start_servers | default(2) }}
+ServerLimit {{ apache_server_limit | default(5) }}
+MinSpareThreads {{ apache_min_spare_threads | default(2) }}
+MaxSpareThreads {{ apache_max_spare_threads | default(4) }}
+ThreadLimit {{ apache_thread_limit | default(10) }}
+ThreadsPerChild {{ apache_threads_per_child | default(10) }}
+MaxRequestWorkers {{ apache_max_clients | default(50) }}
+MaxRequestsPerChild {{ apache_max_requests_per_child | default(500000) }}
+
+# Modules
+LoadModule mime_module ${APACHE_MODS_DIR}/mod_mime.so
+LoadModule alias_module ${APACHE_MODS_DIR}/mod_alias.so
+LoadModule rpaf_module ${APACHE_MODS_DIR}/mod_rpaf.so
+LoadModule wsgi_module ${APACHE_MODS_DIR}/mod_wsgi.so
+
+# Logging
+LogFormat "%h %l %u %t \"%r\" %>s %b \"%{Referer}i\" \"%{User-agent}i\"" combined
+ErrorLog ${APACHE_LOG_DIR}/error.log
+CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+# Default HTTP features
+AddDefaultCharset utf-8
+DefaultType text/plain
+TypesConfig /etc/mime.types
+
+# Enabled Virtual Sites
+Include sites-enabled/

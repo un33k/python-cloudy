@@ -1,0 +1,58 @@
+# PgBouncer Configuration
+# Based on: cloudy-old/db/pgbouncer.py::db_pgbouncer_configure()
+
+---
+- name: Remove existing PgBouncer configuration
+  file:
+    path: /etc/pgbouncer/pgbouncer.ini
+    state: absent
+
+- name: Create PgBouncer configuration from template
+  template:
+    src: pgbouncer.ini.j2
+    dest: /etc/pgbouncer/pgbouncer.ini
+    owner: postgres
+    group: postgres
+    mode: '0644'
+  vars:
+    pgb_dbhost: "{{ dbhost | default('localhost') }}"
+    pgb_dbport: "{{ dbport | default(5432) }}"
+  notify: restart pgbouncer
+
+- name: Remove existing PgBouncer defaults
+  file:
+    path: /etc/default/pgbouncer
+    state: absent
+
+- name: Create PgBouncer defaults from template
+  template:
+    src: pgbouncer-default.j2
+    dest: /etc/default/pgbouncer
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart pgbouncer
+
+- name: Create userlist file if it doesn't exist
+  file:
+    path: /etc/pgbouncer/userlist.txt
+    state: touch
+    owner: postgres
+    group: postgres
+    mode: '0600'
+
+- name: Start and enable PgBouncer service
+  systemd:
+    name: pgbouncer
+    state: started
+    enabled: true
+
+- name: Display PgBouncer configuration success
+  debug:
+    msg: |
+      ✅ PgBouncer configured successfully
+      Database Host: {{ dbhost | default('localhost') }}
+      Database Port: {{ dbport | default(5432) }}
+      Listen Port: 5432
+      Config: /etc/pgbouncer/pgbouncer.ini
+      Status: Running and enabled

@@ -1,0 +1,16 @@
+# Apache2 Virtual Host for {{ site_domain }}
+# Based on: cloudy-old/cfg/apache2/site.conf
+
+<VirtualHost 127.0.0.1:{{ site_port }}>
+    ServerAdmin admin@{{ site_domain }}
+    ServerName {{ site_domain }}
+    ServerAlias www.{{ site_domain }}
+
+    WSGIProcessGroup {{ site_domain }}
+    WSGIDaemonProcess {{ site_domain }} user=www-data group=www-data processes={{ wsgi_processes | default(2) }} threads={{ wsgi_threads | default(10) }} maximum-requests={{ wsgi_max_requests | default(1000) }} inactivity-timeout={{ wsgi_inactivity_timeout | default(20) }}
+    WSGIScriptAlias / /srv/www/{{ site_domain }}/pri/venv/webroot/www/wsgi.py
+
+    LogLevel {{ apache_log_level | default('warn') }}
+    CustomLog /srv/www/{{ site_domain }}/log/apache2.{{ site_domain }}.access.log combined
+    ErrorLog /srv/www/{{ site_domain }}/log/apache2.{{ site_domain }}.error.log
+</VirtualHost>

@@ -1,0 +1,80 @@
+# Supervisor Domain Configuration Setup
+# Based on: cloudy-old/web/supervisor.py::web_supervisor_setup_domain()
+
+---
+- name: Find next available port if not specified
+  include_tasks: ../../sys/ports/find-available-port.yml
+  vars:
+    start_port: "{{ port | default('8000') }}"
+  when: port is not defined or port == ""
+
+- name: Use specified port
+  set_fact:
+    supervisor_port: "{{ port }}"
+  when: port is defined and port != ""
+
+- name: Use found available port
+  set_fact:
+    supervisor_port: "{{ available_port }}"
+  when: port is not defined or port == ""
+
+- name: Remove existing supervisor site configuration
+  file:
+    path: "/etc/supervisor/sites-available/{{ domain }}.conf"
+    state: absent
+
+- name: Create supervisor site configuration from template
+  template:
+    src: supervisor-site.conf.j2
+    dest: "/etc/supervisor/sites-available/{{ domain }}.conf"
+    owner: root
+    group: root
+    mode: '0755'
+  vars:
+    site_domain: "{{ domain }}"
+    site_port: "{{ supervisor_port }}"
+    site_interface: "{{ interface | default('0.0.0.0') }}"
+    site_workers: "{{ worker_num | default(3) }}"
+  notify: restart supervisor
+
+- name: Set proper ownership for sites-available directory
+  file:
+    path: /etc/supervisor/sites-available
+    owner: root
+    group: root
+    mode: '0755'
+    recurse: yes
+
+- name: Enable supervisor site by creating symlink
+  file:
+    src: "/etc/supervisor/sites-available/{{ domain }}.conf"
+    dest: "/etc/supervisor/sites-enabled/{{ domain }}.conf"
+    state: link
+  notify: restart supervisor
+
+- name: Restart supervisor to load new configuration
+  systemd:
+    name: supervisor
+    state: restarted
+
+- name: Wait for supervisor to reload configuration
+  pause:
+    seconds: 2
+
+- name: Restart specific supervised process
+  command: "supervisorctl restart {{ domain }}"
+  register: supervisorctl_result
+  failed_when: supervisorctl_result.rc != 0
+  changed_when: supervisorctl_result.rc == 0
+
+- name: Display domain setup success
+  debug:
+    msg: |
+      ✅ Supervisor domain configured successfully
+      Domain: {{ domain }}
+      Port: {{ supervisor_port }}
+      Interface: {{ interface | default('0.0.0.0') }}
+      Workers: {{ worker_num | default(3) }}
+      Config: /etc/supervisor/sites-available/{{ domain }}.conf
+      Enabled: /etc/supervisor/sites-enabled/{{ domain }}.conf
+      Process: {{ domain }} restarted

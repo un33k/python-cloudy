@@ -1,0 +1,102 @@
+# Recipe: VPN Server Setup with OpenVPN
+# Based on: cloudy-old/srv/recipe_vpn_server.py
+# Usage: ansible-playbook playbooks/recipes/vpn-server.yml -i inventory/hosts.yml
+
+---
+- name: VPN Server Setup Recipe
+  hosts: vpn_servers
+  gather_facts: true
+  become: true
+  
+  vars:
+    # OpenVPN Configuration
+    vpn_domain: "{{ domain | default(inventory_hostname) }}"
+    vpn_port: "{{ port | default('1194') }}"
+    vpn_proto: "{{ proto | default('udp') }}"
+    vpn_passphrase: "{{ passphrase | default('nopass') }}"
+    vpn_datadir: "{{ datadir | default('/docker/openvpn') }}"
+    vpn_repo: "{{ repo | default('kylemanna/openvpn') }}"
+    
+    # Setup flags
+    setup_docker: true
+    setup_firewall: true
+    
+  pre_tasks:
+    - name: Display VPN server setup information
+      debug:
+        msg: |
+          🚀 Starting VPN Server Setup
+          Target: {{ inventory_hostname }} ({{ ansible_host }})
+          Domain: {{ vpn_domain }}
+          Port: {{ vpn_port }}/{{ vpn_proto }}
+          
+  tasks:
+    # Docker Installation
+    - name: Install Docker
+      include_tasks: ../../tasks/sys/docker/install.yml
+      when: setup_docker | bool
+      tags: [docker, install]
+      
+    - name: Configure Docker
+      include_tasks: ../../tasks/sys/docker/configure.yml
+      when: setup_docker | bool
+      tags: [docker, configure]
+      
+    # Firewall Setup
+    - name: Install UFW firewall
+      include_tasks: ../../tasks/sys/firewall/install.yml
+      when: setup_firewall | bool
+      tags: [firewall, security]
+      
+    - name: Allow VPN port through firewall
+      include_tasks: ../../tasks/sys/firewall/allow-port.yml
+      vars:
+        port: "{{ vpn_port }}"
+        proto: "{{ vpn_proto }}"
+      when: setup_firewall | bool
+      tags: [firewall, vpn]
+      
+    # OpenVPN Installation
+    - name: Install OpenVPN Docker container
+      include_tasks: ../../tasks/services/vpn/docker-install.yml
+      vars:
+        domain: "{{ vpn_domain }}"
+        port: "{{ vpn_port }}"
+        proto: "{{ vpn_proto }}"
+        passphrase: "{{ vpn_passphrase }}"
+        datadir: "{{ vpn_datadir }}"
+        repo: "{{ vpn_repo }}"
+      tags: [openvpn, install]
+      
+    - name: Configure OpenVPN systemd service
+      include_tasks: ../../tasks/services/vpn/docker-configure.yml
+      vars:
+        domain: "{{ vpn_domain }}"
+        port: "{{ vpn_port }}"
+        proto: "{{ vpn_proto }}"
+      tags: [openvpn, configure]
+      
+  post_tasks:
+    - name: Display VPN server completion summary
+      debug:
+        msg: |
+          🎉 ✅ VPN SERVER SETUP COMPLETED SUCCESSFULLY!
+          📋 Configuration Summary:
+             ├── Domain: {{ vpn_domain }}
+             ├── Port: {{ vpn_port }}/{{ vpn_proto }}
+             ├── Container: {{ vpn_proto }}-{{ vpn_port }}.{{ vpn_domain }}
+             ├── Data Directory: {{ vpn_datadir }}/{{ vpn_proto }}-{{ vpn_port }}.{{ vpn_domain }}
+             ├── Docker Status: {{ 'Installed and configured' if setup_docker else 'Skipped' }}
+             └── Firewall: {{ 'Port allowed through UFW' if setup_firewall else 'Not configured' }}
+          
+          🚀 VPN server is ready for client connections!
+          
+          📖 Next Steps:
+          1. Create client certificates:
+             ansible-playbook -i inventory/hosts.yml --extra-vars="client_name=myclient domain={{ vpn_domain }}" --tags=create-client tasks/services/vpn/create-client.yml
+          
+          2. List clients:
+             ansible-playbook -i inventory/hosts.yml --extra-vars="domain={{ vpn_domain }}" --tags=list-clients tasks/services/vpn/list-clients.yml
+          
+          3. Connect with client:
+             Use the downloaded .ovpn file with your OpenVPN client

@@ -1,0 +1,35 @@
+# Find Next Available Port
+# Based on: cloudy-old/sys/ports.py::sys_show_next_available_port()
+
+---
+- name: Set default values for port search
+  set_fact:
+    search_start_port: "{{ start_port | default('8181') }}"
+    search_max_tries: "{{ max_tries | default(50) }}"
+
+- name: Find next available port
+  shell: |
+    port={{ search_start_port }}
+    for i in $(seq 1 {{ search_max_tries }}); do
+      if ! netstat -lt | grep -q ":$port "; then
+        echo $port
+        exit 0
+      fi
+      port=$((port + 1))
+    done
+    echo "-1"
+    exit 1
+  register: port_search_result
+  failed_when: port_search_result.stdout == "-1"
+  changed_when: false
+
+- name: Set available port fact
+  set_fact:
+    available_port: "{{ port_search_result.stdout.strip() }}"
+
+- name: Display found port
+  debug:
+    msg: |
+      ✅ Available port found
+      Port: {{ available_port }}
+      Search started from: {{ search_start_port }}
