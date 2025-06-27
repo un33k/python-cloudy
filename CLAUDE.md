@@ -56,12 +56,35 @@ export ANSIBLE_BECOME_PASS=secure123
 ANSIBLE_BECOME_PASS=secure123 ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml
 ```
 
+**SSH Key Configuration**:
+
+For secure authentication, configure SSH keys in your inventory:
+
+```yaml
+all:
+  vars:
+    ansible_ssh_private_key_file: ~/.ssh/id_rsa  # SSH key for initial root connection
+    
+generic_servers:
+  hosts:
+    test-generic:
+      admin_password: secure123        # Login password  
+      ansible_become_pass: secure123   # Sudo password
+```
+
+**How SSH Key Installation Works**:
+1. **Initial connection**: Uses `root` + SSH key (if available) or password fallback
+2. **Create admin user**: Sets up admin user with password
+3. **Install SSH key**: Copies the public key (`~/.ssh/id_rsa.pub`) to admin user's `~/.ssh/authorized_keys`
+4. **Switch connection**: Changes to admin user with SSH key authentication
+5. **Secure server**: Disables root login and password authentication
+
 **Why This is Needed**:
-- Initial connection uses `root` with password authentication
+- Initial connection uses `root` with SSH key authentication (preferred) or password fallback
 - After admin user creation and SSH key installation, connection switches to admin user
 - Admin user requires sudo password for privileged operations (firewall, system config, etc.)
 - The `admin_password` is for SSH login, `ansible_become_pass` is for sudo operations
-- They're often the same value but serve different purposes
+- SSH keys provide secure, passwordless authentication after setup
 
 **Complete Secure Workflow Example**:
 ```bash
