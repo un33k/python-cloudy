@@ -1,0 +1,48 @@
+# Test SSH Access for User
+# Verify that a user can connect with SSH keys before switching connections
+
+---
+- name: Validate required parameters
+  fail:
+    msg: "Parameters 'test_user' and 'test_port' are required"
+  when: test_user is not defined or test_port is not defined
+
+- name: Test SSH connection as target user
+  shell: |
+    ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
+        -p {{ test_port }} {{ test_user }}@{{ ansible_host }} \
+        "echo 'SSH connection successful' && id"
+  register: ssh_test_result
+  delegate_to: localhost
+  become: false
+  failed_when: false
+  changed_when: false
+
+- name: Test sudo access for target user
+  shell: |
+    ssh -o BatchMode=yes -o ConnectTimeout=10 -o StrictHostKeyChecking=no \
+        -p {{ test_port }} {{ test_user }}@{{ ansible_host }} \
+        "echo '{{ user_password }}' | sudo -S whoami"
+  register: sudo_test_result
+  delegate_to: localhost
+  become: false
+  failed_when: false
+  changed_when: false
+  when: user_password is defined
+  no_log: true
+
+- name: Display SSH test results
+  debug:
+    msg: |
+      🔐 SSH Access Test Results for {{ test_user }}@{{ ansible_host }}:{{ test_port }}
+      SSH Connection: {{ 'SUCCESS' if ssh_test_result.rc == 0 else 'FAILED' }}
+      Sudo Access: {{ 'SUCCESS' if sudo_test_result.rc == 0 else 'FAILED' if user_password is defined else 'NOT TESTED' }}
+      {{ ssh_test_result.stdout if ssh_test_result.rc == 0 else 'Error: ' + (ssh_test_result.stderr | default('Unknown error')) }}
+
+- name: Fail if SSH test failed
+  fail:
+    msg: |
+      ❌ SSH access test failed for {{ test_user }}@{{ ansible_host }}:{{ test_port }}
+      This would result in server lockout. Aborting before disabling root access.
+      Error: {{ ssh_test_result.stderr | default('Unknown error') }}
+  when: ssh_test_result.rc != 0

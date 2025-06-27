@@ -98,6 +98,15 @@
       when: setup_admin_user | bool
       tags: [users, admin, git]
       
+    # SSH Key Installation (BEFORE port change and root disable)
+    - name: Install SSH public key for admin user
+      include_tasks: ../../tasks/sys/ssh/install-public-key.yml
+      vars:
+        target_user: "{{ admin_user }}"
+        pub_key_path: "{{ ansible_ssh_private_key_file }}.pub"
+      when: setup_admin_user | bool and setup_ssh_security | bool
+      tags: [ssh, keys, admin]
+      
     # SSH Security
     - name: Configure SSH port
       include_tasks: ../../tasks/sys/ssh/set-port.yml
@@ -105,6 +114,30 @@
         ssh_port: "{{ ssh_port }}"
       when: setup_ssh_security | bool
       tags: [ssh, security]
+      
+    # Test admin user SSH access BEFORE disabling root
+    - name: Test admin user SSH access with new port
+      include_tasks: ../../tasks/sys/ssh/test-user-access.yml
+      vars:
+        test_user: "{{ admin_user }}"
+        test_port: "{{ ssh_port }}"
+        user_password: "{{ admin_password }}"
+      when: setup_admin_user | bool and setup_ssh_security | bool and ssh_disable_root | bool
+      tags: [ssh, security, test]
+      
+    # Update Ansible connection settings for remaining tasks
+    - name: Update Ansible connection to use admin user and new port
+      set_fact:
+        ansible_user: "{{ admin_user }}"
+        ansible_port: "{{ ssh_port }}"
+        ansible_ssh_pass: "{{ admin_password }}"
+      when: setup_admin_user | bool and setup_ssh_security | bool and ssh_disable_root | bool
+      tags: [ssh, connection]
+      
+    - name: Reset SSH connection to use new settings
+      meta: reset_connection
+      when: setup_admin_user | bool and setup_ssh_security | bool and ssh_disable_root | bool
+      tags: [ssh, connection]
       
     - name: Disable root login
       include_tasks: ../../tasks/sys/ssh/disable-root-login.yml
@@ -149,6 +182,14 @@
       when: setup_security | default(true) | bool
       tags: [security, packages]
       
+    # Final Validation (only if we switched to admin user)
+    - name: Validate admin user access and configuration
+      include_tasks: ../../tasks/sys/core/validate-admin-access.yml
+      vars:
+        admin_password: "{{ admin_password }}"
+      when: setup_admin_user | bool and setup_ssh_security | bool and ssh_disable_root | bool
+      tags: [validation, admin]
+      
   post_tasks:
     - name: Display completion summary
       debug:
@@ -164,4 +205,13 @@
              └── Firewall: {{ 'UFW enabled and configured' if setup_firewall else 'Not configured' }}
           
           🚀 Generic server foundation is ready for specialized deployments!
-             └── SSH Access: {{ admin_user }}@{{ ansible_host }}:{{ ssh_port }} (key-based authentication)
+          
+          🔐 SSH Access Information:
+             {% if ssh_disable_root | default(false) %}
+             └── Connect as: {{ admin_user }}@{{ ansible_host }}:{{ ssh_port }}
+             └── Authentication: SSH key + sudo password for privileged operations
+             └── Root login: DISABLED (security hardened)
+             {% else %}
+             └── Connect as: root@{{ ansible_host }}:{{ ssh_port }}
+             └── Admin user available: {{ admin_user }}@{{ ansible_host }}:{{ ssh_port }}
+             {% endif %}

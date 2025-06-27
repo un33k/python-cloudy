@@ -1,0 +1,52 @@
+# Install SSH Public Key for User (Task Only)
+# Based on: cloudy-old/sys/ssh.py::sys_ssh_push_public_key()
+
+---
+- name: Validate required parameters
+  fail:
+    msg: "Both 'target_user' and 'pub_key_path' parameters are required"
+  when: target_user is not defined or pub_key_path is not defined
+
+- name: Expand public key path
+  set_fact:
+    expanded_pub_key_path: "{{ pub_key_path | expanduser }}"
+  delegate_to: localhost
+  become: false
+
+- name: Check if public key file exists locally
+  stat:
+    path: "{{ expanded_pub_key_path }}"
+  register: pub_key_check
+  delegate_to: localhost
+  become: false
+
+- name: Fail if public key not found
+  fail:
+    msg: "Public key not found: {{ expanded_pub_key_path }}"
+  when: not pub_key_check.stat.exists
+
+- name: Determine user home directory
+  set_fact:
+    user_home: "{{ '/root' if target_user == 'root' else '/home/' + target_user }}"
+
+- name: Create .ssh directory for user
+  file:
+    path: "{{ user_home }}/.ssh"
+    state: directory
+    owner: "{{ target_user }}"
+    group: "{{ target_user }}"
+    mode: '0700'
+
+- name: Install public key in authorized_keys
+  authorized_key:
+    user: "{{ target_user }}"
+    key: "{{ lookup('file', expanded_pub_key_path) }}"
+    state: present
+  register: key_install_result
+
+- name: Display key installation status
+  debug:
+    msg: |
+      ✅ SSH public key installed for user: {{ target_user }}
+      Key source: {{ expanded_pub_key_path }}
+      Status: {{ 'Added new key' if key_install_result.changed else 'Key already present' }}

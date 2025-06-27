@@ -1,33 +1,19 @@
-# Granular Task: Update Package Repositories
+# Update Package Repositories Tasks
 # Equivalent to: cloudy-old/sys/core.py::sys_update()
-# Usage: ansible-playbook tasks/sys/core/update.yml
 
 ---
-- name: Update package repositories
-  hosts: "{{ target_hosts | default('all') }}"
-  gather_facts: false
-  become: true
+- name: Update apt package cache
+  apt:
+    update_cache: true
+    cache_valid_time: 0
+  register: apt_update_result
   
-  tasks:
-    - name: Update apt package cache
-      apt:
-        update_cache: true
-        cache_valid_time: 0
-      register: apt_update_result
-      
-    - name: List upgradable packages
-      shell: apt list --upgradable
-      register: upgradable_packages
-      changed_when: false
-      failed_when: false
-      
-    - name: Display upgradable packages
-      debug:
-        var: upgradable_packages.stdout_lines
-      when: upgradable_packages.stdout_lines | length > 1
-      
-
-      
-    - name: Display update status
-      debug:
-        msg: "✅ Package repositories updated successfully"
+- name: List upgradable packages
+  shell: apt list --upgradable
+  register: upgradable_packages
+  changed_when: false
+  failed_when: false
+  
+- name: Display update status
+  debug:
+    msg: "✅ Package repositories updated successfully"

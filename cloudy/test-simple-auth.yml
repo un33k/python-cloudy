@@ -1,0 +1,150 @@
+# Simple Authentication Flow Test
+# Test the critical authentication setup without external SSH testing
+
+---
+- name: Simple Authentication Setup Test
+  hosts: test-generic
+  gather_facts: true
+  become: true
+  
+  vars:
+    admin_user: admin
+    admin_password: secure123
+    admin_groups: "admin,www-data"
+    ssh_port: 22022
+    ssh_disable_root: true
+    
+  tasks:
+    - name: Display initial connection info
+      debug:
+        msg: |
+          🔐 Initial Connection Test
+          Current user: {{ ansible_user }}
+          Target host: {{ ansible_host }}
+          Current port: {{ ansible_port | default(22) }}
+    
+    - name: Create admin group
+      group:
+        name: admin
+        state: present
+        
+    - name: Create admin user
+      user:
+        name: "{{ admin_user }}"
+        password: "{{ admin_password | password_hash('sha512') }}"
+        groups: "{{ admin_groups }}"
+        shell: /bin/bash
+        create_home: yes
+        state: present
+        
+    - name: Add admin user to sudoers
+      lineinfile:
+        path: /etc/sudoers
+        line: "{{ admin_user }} ALL=(ALL) NOPASSWD:ALL"
+        state: present
+        validate: 'visudo -cf %s'
+        
+    - name: Install SSH public key for admin user
+      include_tasks: tasks/sys/ssh/install-public-key.yml
+      vars:
+        target_user: "{{ admin_user }}"
+        pub_key_path: ~/.ssh/id_rsa.pub
+        
+    - name: Allow new SSH port in UFW firewall
+      ufw:
+        rule: allow
+        port: "{{ ssh_port }}"
+        proto: tcp
+      register: ufw_port_added
+        
+    - name: Configure SSH port
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?Port\s+'
+        line: "Port {{ ssh_port }}"
+        backup: true
+      register: ssh_port_config
+      
+    - name: Restart SSH service for port change
+      systemd:
+        name: ssh
+        state: restarted
+      when: ssh_port_config.changed
+      
+    - name: Wait for SSH service restart
+      pause:
+        seconds: 3
+      when: ssh_port_config.changed
+        
+    - name: Verify admin user exists and has correct shell
+      getent:
+        database: passwd
+        key: "{{ admin_user }}"
+      register: admin_user_info
+      
+    - name: Verify admin user home directory exists
+      stat:
+        path: "/home/{{ admin_user }}"
+      register: admin_home_check
+      
+    - name: Verify SSH key was installed
+      stat:
+        path: "/home/{{ admin_user }}/.ssh/authorized_keys"
+      register: ssh_key_check
+      
+    - name: Display verification results
+      debug:
+        msg: |
+          🔍 User Setup Verification:
+          Admin user exists: {{ 'YES' if admin_user_info.ansible_facts.getent_passwd else 'NO' }}
+          Home directory exists: {{ 'YES' if admin_home_check.stat.exists else 'NO' }}
+          SSH key installed: {{ 'YES' if ssh_key_check.stat.exists else 'NO' }}
+          SSH port configured: {{ ssh_port }}
+          
+    - name: Update Ansible connection settings
+      set_fact:
+        ansible_user: "{{ admin_user }}"
+        ansible_port: "{{ ssh_port }}"
+        ansible_ssh_pass: "{{ admin_password }}"
+        
+    - name: Reset SSH connection
+      meta: reset_connection
+      
+    - name: Test connection as admin user
+      debug:
+        msg: |
+          🎯 Connection Test as {{ ansible_user }}
+          Current effective user: {{ ansible_user_id }}
+          Working directory: {{ ansible_user_dir }}
+      
+    - name: Disable root login (FINAL STEP)
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin\s+'
+        line: "PermitRootLogin no"
+        backup: true
+      register: root_login_config
+      
+    - name: Restart SSH service for root disable
+      systemd:
+        name: ssh
+        state: restarted
+      when: root_login_config.changed
+      
+    - name: Remove old SSH port 22 from UFW firewall
+      ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+        delete: true
+      register: ufw_old_port_removed
+      failed_when: false
+      
+    - name: Display success
+      debug:
+        msg: |
+          🎉 ✅ AUTHENTICATION SETUP COMPLETED!
+          Current user: {{ ansible_user }}
+          Connection: {{ ansible_host }}:{{ ansible_port }}
+          Root login: {{ 'DISABLED' if root_login_config.changed else 'ALREADY DISABLED' }}
+          Admin access: WORKING

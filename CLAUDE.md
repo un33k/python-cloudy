@@ -6,85 +6,34 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Environment Setup
 
-**⚠️ CRITICAL**: Always use `.venv` (not `venv`) for the virtual environment!
-
 ```bash
-# Automated setup (recommended)
-./bootstrap.sh
+# Install Ansible
+pip install ansible
 
-# OR manual setup
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .
-```
-
-**Before any Python/Fabric commands, ALWAYS activate:**
-```bash
-source .venv/bin/activate
+# Navigate to project directory
+cd cloudy/
 ```
 
 ### Core Development Commands
-- **List all Fabric tasks**: `fab -l`
-- **Run tests**: `./test.sh` (minimal test suite from `tests/` directory)
-- **Run linting**: `./lint.sh` (Black, isort, flake8, mypy)
-- **Verbose output**: `CLOUDY_VERBOSE=1 fab [command]` (shows all command output)
-- **Debug mode**: `fab --debug [command]` (Fabric debug + all output)
+
+- **Run recipe playbooks**: `ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/[recipe-name].yml`
+- **Test authentication flow**: `ansible-playbook -i inventory/test-recipes.yml test-simple-auth.yml`
+- **Clean output**: Configured in `ansible.cfg` with `display_skipped_hosts = no`
 - **Spell checking**: Configured via `.cspell.json` and `.vscode/settings.json`
-- **Publish package**: `python setup.py publish`
 
 ### Secure Server Management
 
-**⚠️ IMPORTANT**: After running `recipe.gen-install`, root login is disabled for security.
-
-**⚠️ CRITICAL - Sudo Password Requirements**:
-
-Due to underlying issues with Fabric, Python Cloudy does NOT support interactive password prompts. For any sudo operations, you MUST export the password as an environment variable:
-
-```bash
-# REQUIRED: Set sudo password via environment variable
-export INVOKE_SUDO_PASSWORD=admin_user_password
-
-# Then run commands normally
-fab -H admin@server:port command
-```
-
-This applies to ALL non-root operations including:
-- System administration (`sys.*`)
-- Database management (`db.*`)
-- Web server operations (`web.*`)
-- Service management (`services.*`)
-- Firewall configuration (`fw.*`)
-
-**Alternative: Fabric Built-in Password Prompts**:
-Fabric provides command-line options for password prompting, though these may not work reliably with Python Cloudy:
-
-```bash
-# SSH authentication password prompt
-fab --prompt-for-login-password -H user@server command
-
-# Sudo password prompt  
-fab --prompt-for-sudo-password -H user@server command
-```
-
-**⚠️ WARNING**: These Fabric options may not work consistently due to underlying Fabric issues. The environment variable approach (`INVOKE_SUDO_PASSWORD`) is the recommended and reliable method.
+**⚠️ IMPORTANT**: After running the generic server recipe, root login is disabled for security.
 
 **Complete Secure Workflow Example**:
 ```bash
-# 1. Setup secure server (disables root, creates admin user with SSH keys) 
-source .venv/bin/activate
-fab -H root@10.10.10.198 recipe.gen-install --cfg-file=./.cloudy.generic
+# 1. Setup secure server (disables root, creates admin user with SSH keys)
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml
 
-# 2. After setup, connect as admin user with sudo access
-export INVOKE_SUDO_PASSWORD=pass4admin
-fab -H admin@10.10.10.198:22022 web.nginx.install
-fab -H admin@10.10.10.198:22022 db.pg.install
-fab -H admin@10.10.10.198:22022 fw.allow-http
-
-# 3. Use verbose/debug flags to control output
-CLOUDY_VERBOSE=1 fab -H admin@10.10.10.198:22022 db.pg.status  # Show all output
-fab -H admin@10.10.10.198:22022 --debug fw.status             # Show debug info + all output
-fab -H admin@10.10.10.198:22022 --echo sys.services           # Echo commands + smart output
-fab -H admin@10.10.10.198:22022 sys.services                  # Smart output (hides install noise)
+# 2. Deploy additional services (update inventory to use admin user first)
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/web-server.yml
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/database-server.yml
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/cache-server.yml
 ```
 
 **Security Features**:
@@ -92,179 +41,191 @@ fab -H admin@10.10.10.198:22022 sys.services                  # Smart output (hi
 - ✅ Admin user with SSH key authentication
 - ✅ Custom SSH port (default: 22022)
 - ✅ UFW firewall configured
-- ✅ Password + sudo access for privileged operations
+- ✅ Sudo access for privileged operations
 
-**Smart Output System**:
-- ✅ **Default**: Hides noisy installation commands, shows status/informational commands
-- ✅ **CLOUDY_VERBOSE=1**: Shows all command output (environment variable)
-- ✅ **--debug/-d**: Shows debug information and all output (Fabric built-in)
-- ✅ **--echo/-e**: Echo commands before running (Fabric built-in)
-- ✅ **Always Shown**: `ufw status`, `df`, `ps`, `systemctl status`, `pg_lsclusters`, etc.
-- ✅ **Hidden by Default**: `apt install`, `wget`, `make`, `pip install`, `pg_createcluster`, `createdb`, etc.
+**Output Control System**:
+- ✅ **Default**: Shows only changes and failures (clean output)
+- ✅ **Minimal**: `ANSIBLE_STDOUT_CALLBACK=minimal` (compact format)
+- ✅ **One-line**: `ANSIBLE_STDOUT_CALLBACK=oneline` (single line per task)
+- ✅ **Verbose**: `ansible-playbook ... -v` (detailed debugging)
+- ✅ **Always Shown**: Changed tasks, failed tasks, unreachable hosts
+- ✅ **Hidden by Default**: Successful unchanged tasks, skipped tasks
 
-**Recipe Success Messages**:
-- ✅ **Comprehensive Summaries**: All recipes show detailed configuration summaries upon completion
-- ✅ **Visual Indicators**: 🎉 ✅ success icons and 🚀 ready-to-use messages
-- ✅ **Configuration Details**: Ports, addresses, users, versions, firewall rules
-- ✅ **Next Steps**: Connection information and usage guidance
-- ✅ **Consistent Format**: Standardized success output across all recipe types
-
-### Fabric Command Patterns
+### Ansible Recipe Examples
 
 ```bash
 # High-level server deployment (one command setups)
-fab recipe.gen-install --cfg-file=./.cloudy.production
-fab recipe.psql-install --cfg-file=./.cloudy.production
-fab recipe.web-install --cfg-file=./.cloudy.production
-fab recipe.redis-install --cfg-file=./.cloudy.production
-fab recipe.lb-install --cfg-file=./.cloudy.production
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/database-server.yml
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/web-server.yml
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/cache-server.yml
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/load-balancer.yml
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/vpn-server.yml
 
-# Database operations
-fab db.pg.create-user --username=webapp --password=secure123
-fab db.pg.create-db --database=myapp --owner=webapp
-fab db.pg.dump --database=myapp
-fab db.my.create-user --username=webapp --password=secure123
+# Individual task execution
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml --tags ssh
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml --tags firewall
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/web-server.yml --tags nginx
 
-# System administration  
-fab sys.hostname --hostname=myserver.com
-fab sys.add-user --username=admin
-fab sys.ssh-port --port=2222
-fab sys.timezone --timezone=America/New_York
-
-# Security & Firewall
-fab fw.install
-fab fw.secure-server --ssh-port=2222
-fab fw.allow-http
-fab fw.allow-https
-fab security.install-common
-
-# Services
-fab services.cache.install
-fab services.cache.configure
-fab services.docker.install
-fab services.docker.add-user --username=myuser
-
-# Get help
-fab help                    # Show all command categories with examples
+# Testing and validation
+ansible-playbook -i inventory/test-recipes.yml test-simple-auth.yml
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml --check
 ```
 
-#### Command Categories
-- **recipe.***: One-command server deployment recipes (7 commands)
-- **sys.***: System configuration (hostname, users, SSH, timezone) (31 commands)
-- **db.pg.***: PostgreSQL operations (create, backup, users) (17 commands)
-- **db.my.***: MySQL operations (create, backup, users) (7 commands)
-- **db.pgb.***: PgBouncer connection pooling (3 commands)
-- **db.pgp.***: PgPool load balancing (2 commands)
-- **db.gis.***: PostGIS spatial database extensions (4 commands)
-- **fw.***: Firewall configuration (9 commands)
-- **security.***: Security hardening (1 command)
-- **services.***: Service management (Docker, Redis, Memcached, VPN) (17 commands)
-- **web.***: Web server management (Apache, Nginx, Supervisor) (13 commands)
-- **aws.***: Cloud management (EC2) (16 commands)
+#### Recipe Categories
+- **generic-server.yml**: Foundation server setup (SSH, firewall, users)
+- **database-server.yml**: PostgreSQL with PostGIS and PgBouncer
+- **web-server.yml**: Nginx, Apache, Supervisor stack
+- **cache-server.yml**: Redis cache server
+- **load-balancer.yml**: Nginx load balancer with SSL
+- **vpn-server.yml**: OpenVPN with Docker
 
 ## Architecture Overview
 
-### Module Structure
-- **`cloudy/sys/`** - Low-level system operations (core, docker, ssh, firewall, security, etc.)
-- **`cloudy/db/`** - Database automation (PostgreSQL, MySQL, PgBouncer, PgPool, PostGIS)
-- **`cloudy/web/`** - Web server automation (Apache, Nginx, Supervisor, GeoIP)
-- **`cloudy/srv/`** - High-level deployment recipes that orchestrate other modules
-- **`cloudy/util/`** - Configuration management and enhanced Fabric context
-- **`cloudy/aws/`** - AWS-specific automation (EC2)
+### Directory Structure
+```
+cloudy/
+├── playbooks/recipes/     # High-level deployment recipes
+├── tasks/                 # Modular task files
+│   ├── sys/              # System operations (SSH, firewall, users)
+│   ├── db/               # Database automation (PostgreSQL, MySQL)
+│   ├── web/              # Web server management
+│   └── services/         # Service management (Docker, Redis, VPN)
+├── templates/            # Configuration file templates
+├── inventory/            # Server inventory configurations
+└── ansible.cfg          # Ansible configuration
+```
 
 ### Configuration System
-The configuration system uses INI-style files with **hierarchical precedence** (lowest to highest):
-1. `cloudy/cfg/defaults.cfg` - Built-in defaults
-2. `~/.cloudy` - User home directory config
-3. `./.cloudy` - Current working directory config
-4. Explicitly passed files via `--cfg-file`
+Server configurations are defined in YAML inventory files:
 
-### Configuration File Structure
-```ini
-[COMMON]
-git-user-full-name = John Doe
-git-user-email = john@example.com
-timezone = America/New_York
-admin-user = admin
-hostname = my-server
-python-version = 3.11
-
-[WEBSERVER]
-webserver = gunicorn
-webserver-port = 8181
-domain-name = example.com
-
-[DBSERVER]
-pg-version = 17
-db-host = localhost
-db-port = 5432
+**inventory/test-recipes.yml:**
+```yaml
+all:
+  vars:
+    ansible_user: admin
+    ansible_ssh_pass: secure123
+    ansible_port: 22022
+    
+  children:
+    generic_servers:
+      hosts:
+        production-web:
+          ansible_host: 10.10.10.100
+          hostname: web.example.com
+          admin_user: admin
+          admin_password: secure123
+          ssh_port: 22022
 ```
 
 ### Recipe Pattern
-Recipes are high-level deployment patterns that:
-- Use `@task` and `@Context.wrap_context` decorators
-- Accept comma-separated `cfg_file` parameters
-- Orchestrate multiple system modules
-- Follow the pattern: `CloudyConfig(cfg_file.split(','))` → `cfg.get_variable(section, key)`
+Recipes are high-level Ansible playbooks that:
+- Include multiple task files in logical order
+- Use inventory variables for configuration
+- Provide idempotent server deployment
+- Include error handling and validation
 
 Example recipe structure:
-```python
-@task
-@Context.wrap_context
-def setup_server(c: Context, cfg_file=None):
-    cfg = CloudyConfig(cfg_file.split(',') if cfg_file else None)
-    hostname = cfg.get_variable('common', 'hostname')
-    # Use cfg values to call sys/* modules
+```yaml
+---
+- name: Deploy Generic Server
+  hosts: generic_servers
+  become: true
+  
+  tasks:
+    - include_tasks: ../tasks/sys/core/update.yml
+    - include_tasks: ../tasks/sys/user/add-user.yml
+    - include_tasks: ../tasks/sys/ssh/install-public-key.yml
+    - include_tasks: ../tasks/sys/firewall/install.yml
 ```
 
 ## Development Requirements
 
-- **Python**: ≥3.8
-- **Key Dependencies** (defined in `pyproject.toml` and `requirements.txt`):
-  - Fabric ≥3.2.2 (SSH automation)
-  - apache-libcloud ≥3.8.0 (cloud provider abstraction)
-  - colorama ≥0.4.6 (colored terminal output)
-  - s3cmd ≥2.4.0 (S3 management)
-  - Development tools: Black, isort, flake8, mypy
+- **Ansible**: ≥2.9
+- **Python**: ≥3.8 (for Ansible)
+- **SSH Access**: To target servers
+- **Development tools**: VS Code with Ansible extension recommended
 
-## Working with Configurations
+## Ansible Migration Commands
 
-### Configuration Variables
-- Use dash-separated naming: `git-user-full-name`, `ssh-port`, `python-version`
-- Section names: `COMMON`, `WEBSERVER`, `DBSERVER`, `CACHESERVER`
-- Access via: `cfg.get_variable('section', 'variable', fallback='')`
-
-### Multiple Configuration Files
-Multiple configs can be combined with comma separation:
+### Environment Setup for Ansible
 ```bash
-fab recipe-generic-server.setup-server --cfg-file=./.cloudy.generic,./.cloudy.admin
+# Ensure Ansible is installed
+pip install ansible
+
+# Navigate to Ansible implementation
+cd cloudy/
 ```
 
-## Code Patterns
+### Core Ansible Commands
+- **Run recipe playbooks**: `ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/[recipe-name].yml`
+- **Test authentication flow**: `ansible-playbook -i inventory/test-recipes.yml test-simple-auth.yml`
+- **Clean output (changes only)**: Configured in `ansible.cfg` with `display_skipped_hosts = no`
+- **Alternative output formats**:
+  - `ANSIBLE_STDOUT_CALLBACK=minimal ansible-playbook ...` (compact format)
+  - `ANSIBLE_STDOUT_CALLBACK=oneline ansible-playbook ...` (one line per task)
+  - Standard verbose: `ansible-playbook ... -v` (detailed debugging)
 
-### Context Wrapper
-All tasks use the enhanced Context wrapper from `cloudy.util.context`:
-- Provides colored command output
-- Handles SSH reconnection after port changes
-- Required decorator: `@Context.wrap_context`
+### Ansible Recipe Examples
+```bash
+# Generic server setup (secure SSH, user management, firewall)
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/generic-server.yml
 
-### Fabric Task Definition
-```python
-from fabric import task
-from cloudy.util.context import Context
-from cloudy.util.conf import CloudyConfig
+# VPN server setup (OpenVPN with Docker)
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/vpn-server.yml
 
-@task
-@Context.wrap_context
-def my_task(c: Context, cfg_file=None):
-    cfg = CloudyConfig(cfg_file.split(',') if cfg_file else None)
-    # Task implementation
+# Web server setup (Nginx, Apache, Supervisor)
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/web-server.yml
+
+# Database server setup (PostgreSQL, PostGIS, PgBouncer)
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/database-server.yml
+
+# Cache server setup (Redis)
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/cache-server.yml
+
+# Load balancer setup (Nginx with SSL)
+ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/load-balancer.yml
 ```
 
-### Module Import Patterns
-```python
-from cloudy.sys import core, python, firewall
-from cloudy.web import apache, supervisor
-from cloudy.db import psql, pgis
-from cloudy.srv import recipe_generic_server
+### Ansible Security Features
+- ✅ **Safe Authentication Flow**: UFW firewall configured before SSH port changes
+- ✅ **SSH Key Management**: Automated public key installation and validation
+- ✅ **Connection Transition**: Seamless root-to-admin user switching
+- ✅ **Firewall Integration**: Port 22022 opened before SSH service restart
+- ✅ **Sudo Configuration**: NOPASSWD sudo access for admin operations
+- ✅ **Root Login Disable**: Safely disabled after admin user verification
+
+### Ansible Inventory Configuration
+The `inventory/test-recipes.yml` file configures connection parameters:
+```yaml
+all:
+  vars:
+    ansible_user: admin          # Connect as admin user (after setup)
+    ansible_ssh_pass: secure123  # Admin password
+    ansible_port: 22022          # Custom SSH port
+    ansible_host_key_checking: false
+    
+  children:
+    generic_servers:
+      hosts:
+        test-generic:
+          ansible_host: 10.10.10.198
+          hostname: test-generic.example.com
+          admin_user: admin
+          admin_password: secure123
+          ssh_port: 22022
 ```
+
+### Ansible Output Control
+The `ansible.cfg` file is configured for clean output:
+```ini
+[defaults]
+host_key_checking = False
+display_skipped_hosts = no    # Hide successful/unchanged tasks
+display_ok_hosts = no         # Show only changes and failures
+```
+
+This shows only:
+- ✅ **CHANGED** tasks (what modified the server)
+- ❌ **FAILED** tasks (what went wrong)  
+- ⏭️ **UNREACHABLE** hosts (connection issues)

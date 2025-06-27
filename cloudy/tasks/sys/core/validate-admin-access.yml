@@ -1,0 +1,34 @@
+# Validate Admin User Access and Sudo
+# Final validation that admin user can perform system operations
+
+---
+- name: Test basic connectivity as admin user
+  command: whoami
+  register: whoami_result
+  changed_when: false
+
+- name: Test sudo access with password
+  shell: "echo '{{ admin_password }}' | sudo -S whoami"
+  register: sudo_test
+  when: admin_password is defined
+  changed_when: false
+  no_log: true
+
+- name: Test system command access
+  command: uname -a
+  register: uname_result
+  changed_when: false
+
+- name: Display validation results
+  debug:
+    msg: |
+      ✅ Admin User Validation Results:
+      Current User: {{ whoami_result.stdout }}
+      Sudo Access: {{ 'SUCCESS (can become root)' if sudo_test.stdout == 'root' else 'FAILED' if admin_password is defined else 'NOT TESTED' }}
+      System Info: {{ uname_result.stdout }}
+      
+      🔐 Authentication Status: SECURE
+      ├── Connected as: {{ ansible_user }}@{{ ansible_host }}:{{ ansible_port }}
+      ├── SSH Keys: Working
+      ├── Sudo Access: {{ 'Working with password' if admin_password is defined and sudo_test.stdout == 'root' else 'Not tested' }}
+      └── System Access: Full

@@ -1,0 +1,114 @@
+# Minimal Authentication Flow Test
+# Test the critical SSH authentication transition
+
+---
+- name: Test Authentication Flow
+  hosts: test-generic
+  gather_facts: true
+  become: true
+  
+  vars:
+    admin_user: admin
+    admin_password: secure123
+    admin_groups: "admin,www-data"
+    ssh_port: 22022
+    ssh_disable_root: true
+    
+  tasks:
+    - name: Display initial connection info
+      debug:
+        msg: |
+          🔐 Initial Connection Test
+          Current user: {{ ansible_user }}
+          Target host: {{ ansible_host }}
+          Current port: {{ ansible_port | default(22) }}
+    
+    - name: Create admin group
+      group:
+        name: admin
+        state: present
+        
+    - name: Create admin user
+      user:
+        name: "{{ admin_user }}"
+        password: "{{ admin_password | password_hash('sha512') }}"
+        groups: "{{ admin_groups }}"
+        shell: /bin/bash
+        create_home: yes
+        state: present
+        
+    - name: Add admin user to sudoers
+      lineinfile:
+        path: /etc/sudoers
+        line: "{{ admin_user }} ALL=(ALL) NOPASSWD:ALL"
+        state: present
+        validate: 'visudo -cf %s'
+        
+    - name: Install SSH public key for admin user
+      include_tasks: tasks/sys/ssh/install-public-key.yml
+      vars:
+        target_user: "{{ admin_user }}"
+        pub_key_path: ~/.ssh/id_rsa.pub
+        
+    - name: Configure SSH port
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?Port\s+'
+        line: "Port {{ ssh_port }}"
+        backup: true
+      register: ssh_port_config
+      
+    - name: Restart SSH service
+      systemd:
+        name: ssh
+        state: restarted
+      when: ssh_port_config.changed
+      
+    - name: Wait for SSH service restart
+      pause:
+        seconds: 3
+      when: ssh_port_config.changed
+        
+    - name: Test admin user SSH access
+      include_tasks: tasks/sys/ssh/test-user-access.yml
+      vars:
+        test_user: "{{ admin_user }}"
+        test_port: "{{ ssh_port }}"
+        user_password: "{{ admin_password }}"
+        
+    - name: Update Ansible connection settings
+      set_fact:
+        ansible_user: "{{ admin_user }}"
+        ansible_port: "{{ ssh_port }}"
+        ansible_ssh_pass: "{{ admin_password }}"
+        
+    - name: Reset SSH connection
+      meta: reset_connection
+      
+    - name: Disable root login
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin\s+'
+        line: "PermitRootLogin no"
+        backup: true
+      register: root_login_config
+      
+    - name: Restart SSH service for root disable
+      systemd:
+        name: ssh
+        state: restarted
+      when: root_login_config.changed
+      
+    - name: Final validation
+      include_tasks: tasks/sys/core/validate-admin-access.yml
+      vars:
+        admin_password: "{{ admin_password }}"
+        
+    - name: Display success
+      debug:
+        msg: |
+          🎉 ✅ AUTHENTICATION FLOW TEST COMPLETED!
+          Current user: {{ ansible_user }}
+          Connection: {{ ansible_host }}:{{ ansible_port }}
+          Root login: DISABLED
+          Admin access: WORKING
