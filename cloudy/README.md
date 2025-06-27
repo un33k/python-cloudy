@@ -1,10 +1,10 @@
 # Cloudy Ansible - Granular Infrastructure Automation
 
-**Migrated from Python Cloudy (Fabric) to Ansible while maintaining granular task philosophy**
+**Modern Ansible-based infrastructure automation with granular task philosophy**
 
 ## Philosophy: Granular Tasks + Composable Recipes
 
-This project maintains the excellent granular approach from the original Python Cloudy:
+This project provides granular, reusable infrastructure automation:
 - **One task = One function** (e.g., change password, add user, set SSH port)
 - **Composable recipes** that combine granular tasks
 - **Flexible usage** - run individual tasks or complete deployments
@@ -94,37 +94,25 @@ ansible-playbook playbooks/recipes/generic-server.yml --skip-tags firewall
 ansible-playbook playbooks/recipes/generic-server.yml --tags ssh,security
 ```
 
-## Migration from Python Cloudy
+## Configuration Management
 
-### Command Mapping
-
-| Python Cloudy (Fabric) | New Ansible Equivalent |
-|------------------------|-------------------------|
-| `fab sys.add-user --username=john` | `ansible-playbook tasks/sys/user/add-user.yml -e "username=john"` |
-| `fab sys.change-password --username=john --password=pass` | `ansible-playbook tasks/sys/user/change-password.yml -e "username=john password=pass"` |
-| `fab recipe.gen-install --cfg-file=./.cloudy.generic` | `ansible-playbook playbooks/recipes/generic-server.yml -i inventory/hosts.yml` |
-| `fab db.pg.create-user --username=app --password=secret` | `ansible-playbook tasks/db/postgresql/create-user.yml -e "username=app password=secret"` |
-
-### Configuration Migration
-
-Old `.cloudy` files → New `inventory/group_vars/` files:
-
-```ini
-# Old: .cloudy.generic
-[COMMON]
-hostname = myserver
-admin-user = admin
-ssh-port = 22022
-```
+Variables are managed through Ansible inventory files:
 
 ```yaml
-# New: inventory/group_vars/all.yml
+# inventory/group_vars/all.yml - Global defaults
 hostname: myserver
 admin_user: admin
 ssh_port: 22022
+
+# inventory/group_vars/database_servers.yml - Database-specific
+postgresql_version: 15
+postgis_version: 3.3
+
+# inventory/host_vars/myserver.yml - Host-specific overrides
+admin_user: custom_admin
 ```
 
-## Key Features Preserved
+## Key Features
 
 ✅ **Granular Operations** - Every function is a separate, reusable task  
 ✅ **Composable Recipes** - Combine tasks into deployment workflows  
@@ -132,6 +120,7 @@ ssh_port: 22022
 ✅ **Configuration Management** - Hierarchical variable system  
 ✅ **Error Handling** - Proper validation and rollback  
 ✅ **Git Integration** - Automatic /etc commits (where applicable)  
+✅ **Idempotency** - Safe to run multiple times  
 
 ## Getting Started
 
@@ -156,10 +145,24 @@ ssh_port: 22022
    ansible-playbook playbooks/recipes/generic-server.yml -i inventory/hosts.yml
    ```
 
-## Next Steps
+## Testing
 
-- [ ] Port remaining tasks from `cloudy-old/`
-- [ ] Add custom modules for complex operations
-- [ ] Create Ansible Galaxy collection
-- [ ] Add comprehensive testing
-- [ ] Document all granular tasks
+Run the comprehensive test suite:
+
+```bash
+./test-runner.sh
+```
+
+This validates:
+- Playbook syntax
+- Task file structure  
+- Template integrity
+- Inventory configuration
+
+## Contributing
+
+1. Follow the granular task philosophy
+2. One task per file, one function per task
+3. Use descriptive task names
+4. Add proper error handling
+5. Include tags for selective execution

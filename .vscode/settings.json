@@ -1,11 +1,19 @@
 {
-  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.defaultInterpreterPath": "python",
   "python.analysis.typeCheckingMode": "basic",
+  "ansible.python.interpreterPath": "python",
+  "ansible.validation.enabled": true,
+  "ansible.validation.lint.enabled": true,
+  "files.associations": {
+    "*.yml": "ansible",
+    "*.yaml": "ansible"
+  },
   "cSpell.words": [
     "pgbouncer",
     "pgpool",
     "pgis",
-    "fabfile",
+    "playbook",
+    "playbooks",
     "memcached",
     "redis",
     "nginx",
@@ -350,23 +358,20 @@
     "neekware"
   ],
   "cSpell.enableFiletypes": [
-    "python",
+    "ansible",
+    "yaml", 
+    "yml",
     "bash",
     "shellscript",
     "markdown",
-    "yaml",
-    "json",
-    "dockerfile"
+    "json"
   ],
   "cSpell.ignorePaths": [
-    ".venv/**",
+    "cloudy-old/**",
     "node_modules/**",
     "dist/**",
     "build/**",
-    "*.egg-info/**",
-    "__pycache__/**",
-    "*.pyc",
-    "*.pyo",
-    "*.log"
+    "*.log",
+    ".git/**"
   ]
 }

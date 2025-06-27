@@ -1,8 +1,8 @@
-name: Test
+name: Test Ansible Cloudy
 
 on:
   push:
-    branches: [ main, dev, "feat/*" ]
+    branches: [ main, dev, "feat/*", ansible-ify ]
   pull_request:
     branches: [ main, dev ]
 
@@ -21,15 +21,27 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     
-    - name: Create virtual environment
+    - name: Install Ansible
       run: |
-        python -m venv .venv
-        source .venv/bin/activate
         pip install --upgrade pip
-        pip install -e .
+        pip install ansible
     
-    - name: Run tests
-      run: ./test.sh
+    - name: Navigate to Ansible implementation
+      run: cd cloudy
     
-    - name: Run linting
-      run: ./lint.sh
+    - name: Run Ansible syntax checks
+      run: |
+        cd cloudy
+        # Test all recipe playbooks syntax
+        find playbooks/recipes/ -name "*.yml" -exec ansible-playbook --syntax-check {} \;
+        
+        # Test main authentication flow
+        ansible-playbook --syntax-check test-simple-auth.yml
+        
+        # Test inventory validation
+        ansible-inventory -i inventory/test-recipes.yml --list > /dev/null
+    
+    - name: Run comprehensive test suite
+      run: |
+        cd cloudy
+        ./test-runner.sh
