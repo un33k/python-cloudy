@@ -16,15 +16,22 @@ cd ansible-cloudy/
 
 ### Core Development Commands
 
-#### Simplified Server Setup (Recommended)
-- **Step 1 - Security**: `ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/core/security.yml` (creates admin user, SSH keys, firewall, disables root)
-- **Step 2 - Core**: `ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/core/base.yml` (hostname, git, timezone, swap, etc.)
-- **Step 3 - Services**: `ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/[category]/[service].yml` (www/django, db/psql, cache/redis, etc.)
+#### Simplified Server Setup (Recommended) - Using Ali CLI
+- **Step 1 - Security**: `./ali security` (creates admin user, SSH keys, firewall, disables root)
+- **Step 2 - Core**: `./ali base` (hostname, git, timezone, swap, etc.)
+- **Step 3 - Services**: `./ali django`, `./ali redis`, `./ali nginx` (deploy specific services)
+
+#### Traditional Commands (if preferred)
+- **Step 1 - Security**: `ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/core/security.yml`
+- **Step 2 - Core**: `ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/core/base.yml`
+- **Step 3 - Services**: `ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/[category]/[service].yml`
 
 #### Production Setup
-- **Production servers**: `ansible-playbook -i cloudy/inventory/production.yml cloudy/playbooks/recipes/[category]/[service].yml`
+- **Ali CLI**: `./ali security --prod`, `./ali django --prod`, `./ali redis --prod`
+- **Traditional**: `ansible-playbook -i cloudy/inventory/production.yml cloudy/playbooks/recipes/[category]/[service].yml`
 
 #### Development Tools
+- **Ali CLI**: `./ali security` - Simplified Ansible commands (90% shorter)
 - **Comprehensive validation**: `./dev/validate.py` - Full validation suite for all components
 - **Quick syntax check**: `./dev/syntax-check.sh` - Fast syntax validation only
 - **Authentication test**: `ansible-playbook -i cloudy/inventory/test.yml dev/test-auth.yml --check`
@@ -145,19 +152,41 @@ ansible-playbook -i inventory/test-recipes.yml playbooks/recipes/cache-server.ym
 ### Ansible Recipe Examples
 
 ```bash
-# Simplified server setup (3 steps)
+# Ali CLI - Simplified Commands (Recommended)
+# Step 1: Security setup
+./ali security
+
+# Step 2: Core setup  
+./ali base
+
+# Step 3: Service deployment
+./ali psql
+./ali django
+./ali redis
+./ali nginx
+./ali openvpn
+
+# Production deployment
+./ali security --prod
+./ali django --prod
+
+# Dry runs and testing
+./ali redis --check
+./ali nginx -- --tags ssl
+
+# Traditional Commands (if preferred)
 # Step 1: Security (run as root on port 22)
-ansible-playbook -i inventory/test.yml playbooks/recipes/core/security.yml
+ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/core/security.yml
 
 # Step 2: Core setup (run as admin on port 22022)  
-ansible-playbook -i inventory/test.yml playbooks/recipes/core/base.yml
+ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/core/base.yml
 
 # Step 3: Service deployment (run as admin)
-ansible-playbook -i inventory/test.yml playbooks/recipes/db/psql.yml
-ansible-playbook -i inventory/test.yml playbooks/recipes/www/django.yml
-ansible-playbook -i inventory/test.yml playbooks/recipes/cache/redis.yml
-ansible-playbook -i inventory/test.yml playbooks/recipes/lb/nginx.yml
-ansible-playbook -i inventory/test.yml playbooks/recipes/vpn/openvpn.yml
+ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/db/psql.yml
+ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/www/django.yml
+ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/cache/redis.yml
+ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/lb/nginx.yml
+ansible-playbook -i cloudy/inventory/test.yml cloudy/playbooks/recipes/vpn/openvpn.yml
 
 # Individual task execution
 ansible-playbook -i inventory/test.yml playbooks/recipes/core/base.yml --tags ssh
