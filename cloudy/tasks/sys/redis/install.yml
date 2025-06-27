@@ -1,0 +1,22 @@
+# Redis Installation
+# Based on: cloudy-old/sys/redis.py::sys_redis_install()
+
+---
+- name: Install Redis server
+  package:
+    name: redis-server
+    state: present
+
+- name: Start and enable Redis service
+  systemd:
+    name: redis-server
+    state: started
+    enabled: true
+
+- name: Display Redis installation success
+  debug:
+    msg: |
+      ✅ Redis server installed successfully
+      Status: Running and enabled
+      Config: /etc/redis/redis.conf
+      Default Port: 6379

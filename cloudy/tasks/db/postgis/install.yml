@@ -1,0 +1,62 @@
+# PostGIS Installation
+# Based on: cloudy-old/db/pgis.py::db_pgis_install()
+
+---
+- name: Get PostgreSQL installed version if not specified
+  include_tasks: ../postgresql/get-installed-version.yml
+  when: psql_version is not defined
+
+- name: Set PostgreSQL version
+  set_fact:
+    pg_version: "{{ psql_version | default(postgresql_installed_version) }}"
+
+- name: Get latest PostGIS version if not specified
+  include_tasks: get-latest-version.yml
+  vars:
+    pg_version: "{{ pg_version }}"
+  when: pgis_version is not defined
+
+- name: Set PostGIS version
+  set_fact:
+    postgis_version: "{{ pgis_version | default(latest_postgis_version) }}"
+
+- name: Remove existing PostGIS installation
+  package:
+    name: postgis
+    state: absent
+
+- name: Install PostGIS and dependencies
+  package:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - "postgresql-{{ pg_version }}-postgis-{{ postgis_version }}"
+    - postgis
+    - libproj-dev
+    - gdal-bin
+    - binutils
+    - libgeos-c1v5
+    - libgeos-dev
+    - libgdal-dev
+    - libgeoip-dev
+    - libpq-dev
+    - libxml2
+    - libxml2-dev
+    - libxml2-utils
+    - libjson-c-dev
+    - xsltproc
+    - docbook-xsl
+    - docbook-mathml
+
+- name: Start PostgreSQL service
+  systemd:
+    name: postgresql
+    state: started
+
+- name: Display PostGIS installation success
+  debug:
+    msg: |
+      ✅ PostGIS installed successfully
+      PostgreSQL Version: {{ pg_version }}
+      PostGIS Version: {{ postgis_version }}
+      Status: Ready for configuration

@@ -1,0 +1,38 @@
+# Redis Memory Configuration
+# Based on: cloudy-old/sys/redis.py::sys_redis_configure_memory()
+
+---
+- name: Get total system memory if memory not specified
+  shell: "free -m | awk '/^Mem:/{print $2}'"
+  register: system_memory
+  when: memory is not defined or memory == 0
+  changed_when: false
+
+- name: Calculate Redis memory allocation
+  set_fact:
+    redis_memory_mb: "{{ memory if (memory is defined and memory > 0) else ((system_memory.stdout | int) // (divider | default(8))) }}"
+
+- name: Convert memory to bytes
+  set_fact:
+    redis_memory_bytes: "{{ (redis_memory_mb | int) * 1024 * 1024 }}"
+
+- name: Update Redis memory configuration
+  lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^maxmemory .*'
+    line: "maxmemory {{ redis_memory_bytes }}"
+    state: present
+  notify: restart redis
+
+- name: Restart Redis service to apply memory configuration
+  systemd:
+    name: redis-server
+    state: restarted
+
+- name: Display Redis memory configuration success
+  debug:
+    msg: |
+      ✅ Redis memory configured successfully
+      Memory: {{ redis_memory_mb }}MB ({{ redis_memory_bytes }} bytes)
+      Calculation: {{ 'User specified' if (memory is defined and memory > 0) else 'System memory ÷ ' + (divider | default(8) | string) }}
+      Config: /etc/redis/redis.conf

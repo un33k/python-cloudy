@@ -1,0 +1,23 @@
+# Redis Interface Configuration
+# Based on: cloudy-old/sys/redis.py::sys_redis_configure_interface()
+
+---
+- name: Update Redis bind interface configuration
+  lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^bind .*'
+    line: "bind {{ interface | default('0.0.0.0') }}"
+    state: present
+  notify: restart redis
+
+- name: Restart Redis service to apply interface configuration
+  systemd:
+    name: redis-server
+    state: restarted
+
+- name: Display Redis interface configuration success
+  debug:
+    msg: |
+      ✅ Redis interface configured successfully
+      Interface: {{ interface | default('0.0.0.0') }}
+      Config: /etc/redis/redis.conf

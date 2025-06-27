@@ -1,0 +1,90 @@
+# Nginx Load Balancer configuration for {{ lb_domain }}
+# Multiple backend servers configuration
+
+{% if lb_protocol == 'https' %}
+# Redirect HTTP to HTTPS
+server {
+    listen {{ lb_interface }}:80;
+    server_name {{ lb_domain }};
+    rewrite ^(.*) https://{{ lb_domain }}$1 permanent;
+}
+{% endif %}
+
+# Upstream backend servers
+upstream backend-{{ lb_domain }} {
+{% for backend in lb_backends %}
+    server {{ backend }} fail_timeout=5s max_fails=3;
+{% endfor %}
+    
+    # Load balancing method (default is round-robin)
+    # least_conn;  # Use least connections
+    # ip_hash;     # Use client IP for session persistence
+}
+
+# Main server block
+server {
+{% if lb_protocol == 'https' %}
+    listen {{ lb_interface }}:443 ssl;
+    
+    # SSL Configuration
+    ssl_certificate /etc/ssl/nginx/crt/{{ lb_domain }}.combo.crt;
+    ssl_certificate_key /etc/ssl/nginx/key/{{ lb_domain }}.key;
+    ssl_session_timeout 5m;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384;
+    ssl_prefer_server_ciphers on;
+{% else %}
+    listen {{ lb_interface }}:80;
+{% endif %}
+    
+    server_name {{ lb_domain }};
+    
+    location = /favicon.ico { 
+        access_log off; 
+        log_not_found off; 
+    }
+
+    # Health check endpoint
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+
+    # Main proxy location
+    location / {
+        proxy_pass http://backend-{{ lb_domain }};
+        
+        # Proxy headers
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto {{ '$scheme' if lb_protocol == 'https' else 'http' }};
+        
+        # Proxy timeouts
+        proxy_connect_timeout 30s;
+        proxy_send_timeout 90s;
+        proxy_read_timeout 90s;
+        
+        # Proxy buffering
+        proxy_buffering on;
+        proxy_buffer_size 4k;
+        proxy_buffers 32 4k;
+        proxy_busy_buffers_size 64k;
+        
+        # Client settings
+        client_max_body_size 50m;
+        client_body_buffer_size 128k;
+        
+        # Backend failure handling
+        proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+        proxy_next_upstream_tries 3;
+        proxy_next_upstream_timeout 30s;
+    }
+
+    # Error pages
+    error_page 500 502 503 504 /50x.html;
+    location = /50x.html {
+        root /usr/share/nginx/html;
+    }
+}

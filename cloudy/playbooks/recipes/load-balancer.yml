@@ -1,0 +1,121 @@
+# Recipe: Nginx Load Balancer Setup
+# Based on: cloudy-old/srv/recipe_loadbalancer_nginx.py
+# Usage: ansible-playbook playbooks/recipes/load-balancer.yml -i inventory/hosts.yml
+
+---
+- name: Nginx Load Balancer Setup Recipe
+  hosts: load_balancers
+  gather_facts: true
+  become: true
+  
+  vars:
+    # Load Balancer Configuration
+    domain_name: "{{ domain | default(inventory_hostname) }}"
+    protocol: "{{ proto | default('https') }}"  # http or https
+    interface: "{{ interface | default('*') }}"
+    upstream_servers: "{{ backends | default([]) }}"  # List of backend servers
+    ssl_cert_dir: "{{ ssl_cert_dir | default('~/.ssh/certificates/') }}"
+    
+    # Setup flags
+    run_generic_setup: "{{ generic | default(true) }}"
+    setup_ssl: "{{ protocol == 'https' }}"
+    setup_firewall: true
+    
+  pre_tasks:
+    - name: Display load balancer setup information
+      debug:
+        msg: |
+          🚀 Starting Nginx Load Balancer Setup
+          Target: {{ inventory_hostname }} ({{ ansible_host }})
+          Domain: {{ domain_name }}
+          Protocol: {{ protocol }}
+          Backend Servers: {{ upstream_servers | length }} configured
+          SSL: {{ 'Enabled' if setup_ssl else 'Disabled' }}
+          
+  tasks:
+    # Generic Server Setup
+    - name: Run generic server setup
+      include: generic-server.yml
+      when: run_generic_setup | bool
+      tags: [generic, foundation]
+      
+    # Nginx Installation
+    - name: Install Nginx web server
+      include_tasks: ../../tasks/web/nginx/install.yml
+      tags: [nginx, install]
+      
+    # SSL Configuration (if HTTPS)
+    - name: Copy SSL certificates
+      include_tasks: ../../tasks/web/nginx/copy-ssl.yml
+      vars:
+        domain: "{{ domain_name }}"
+        ssl_cert_dir: "{{ ssl_cert_dir }}"
+      when: setup_ssl | bool
+      tags: [nginx, ssl]
+      
+    # Domain Configuration
+    - name: Setup Nginx domain configuration
+      include_tasks: ../../tasks/web/nginx/setup-domain.yml
+      vars:
+        domain: "{{ domain_name }}"
+        proto: "{{ protocol }}"
+        interface: "{{ interface }}"
+        upstream_address: "{{ upstream_servers[0].split(':')[0] if upstream_servers else '127.0.0.1' }}"
+        upstream_port: "{{ upstream_servers[0].split(':')[1] if upstream_servers and ':' in upstream_servers[0] else '8000' }}"
+      tags: [nginx, domain]
+      
+    # Custom Load Balancer Configuration (if multiple backends)
+    - name: Create load balancer configuration with multiple backends
+      template:
+        src: nginx-loadbalancer.conf.j2
+        dest: "/etc/nginx/sites-available/{{ domain_name }}.conf"
+        owner: root
+        group: root
+        mode: '0644'
+      vars:
+        lb_domain: "{{ domain_name }}"
+        lb_protocol: "{{ protocol }}"
+        lb_interface: "{{ interface }}"
+        lb_backends: "{{ upstream_servers }}"
+      when: upstream_servers | length > 1
+      notify: reload nginx
+      tags: [nginx, loadbalancer]
+      
+    # Firewall Configuration
+    - name: Allow HTTP through firewall
+      include_tasks: ../../tasks/sys/firewall/allow-http.yml
+      when: setup_firewall | bool
+      tags: [firewall, http]
+      
+    - name: Allow HTTPS through firewall
+      include_tasks: ../../tasks/sys/firewall/allow-https.yml
+      when: setup_firewall | bool and setup_ssl
+      tags: [firewall, https]
+      
+  post_tasks:
+    - name: Display load balancer completion summary
+      debug:
+        msg: |
+          🎉 ✅ NGINX LOAD BALANCER SETUP COMPLETED SUCCESSFULLY!
+          📋 Configuration Summary:
+             ├── Domain: {{ domain_name }}
+             ├── Protocol: {{ protocol }}
+             ├── Interface: {{ interface }}
+             ├── SSL/TLS: {{ 'Enabled with certificates' if setup_ssl else 'Disabled (HTTP only)' }}
+             ├── Backend Servers: {{ upstream_servers | join(', ') if upstream_servers else 'Default (127.0.0.1:8000)' }}
+             ├── Load Balancing: {{ 'Multi-backend' if upstream_servers | length > 1 else 'Single backend/reverse proxy' }}
+             ├── Firewall: {{ 'HTTP/HTTPS ports allowed' if setup_firewall else 'Not configured' }}
+             └── Status: Ready for traffic distribution
+          
+          🚀 Nginx load balancer is ready to serve traffic!
+          
+          📖 Access Information:
+          - URL: {{ protocol }}://{{ domain_name }}
+          - Config: /etc/nginx/sites-available/{{ domain_name }}.conf
+          - Logs: /var/log/nginx/
+          
+          📖 Next Steps:
+          1. Test load balancer: curl {{ protocol }}://{{ domain_name }}
+          2. Configure health checks for backend servers
+          3. Set up monitoring and logging
+          4. Configure SSL renewal if using Let's Encrypt

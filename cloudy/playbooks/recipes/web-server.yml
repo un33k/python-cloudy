@@ -1,0 +1,167 @@
+# Recipe: Django Web Server Setup
+# Based on: cloudy-old/srv/recipe_webserver_django.py::setup_web()
+# Usage: ansible-playbook playbooks/recipes/web-server.yml -i inventory/hosts.yml
+
+---
+- name: Django Web Server Setup Recipe
+  hosts: web_servers
+  gather_facts: true
+  become: true
+  
+  vars:
+    # Web Server Configuration
+    webserver_type: "{{ webserver | default('gunicorn') }}"  # apache or gunicorn
+    webserver_port: "{{ webserver_port | default('8181') }}"
+    domain_name: "{{ domain_name | default(inventory_hostname) }}"
+    
+    # Setup flags
+    run_generic_setup: "{{ generic | default(true) }}"
+    setup_database: true
+    setup_python: true
+    setup_web_dirs: true
+    setup_firewall: true
+    
+  pre_tasks:
+    - name: Display web server setup information
+      debug:
+        msg: |
+          🚀 Starting Django Web Server Setup
+          Target: {{ inventory_hostname }} ({{ ansible_host }})
+          Web Server: {{ webserver_type }}
+          Domain: {{ domain_name }}
+          Port: {{ webserver_port }}
+          
+  tasks:
+    # Generic Server Setup
+    - name: Run generic server setup
+      include: generic-server.yml
+      when: run_generic_setup | bool
+      tags: [generic, foundation]
+      
+    # Hostname Configuration
+    - name: Configure hostname
+      include_tasks: ../../tasks/sys/core/hostname.yml
+      vars:
+        target_hostname: "{{ hostname }}"
+      when: hostname is defined
+      tags: [system, hostname]
+      
+    - name: Add hostname to hosts file
+      include_tasks: ../../tasks/sys/core/add-hosts.yml
+      vars:
+        hostname: "{{ hostname }}"
+        ip_address: "127.0.0.1"
+      when: hostname is defined
+      tags: [system, hostname]
+      
+    # Python Environment
+    - name: Install Python common packages
+      include_tasks: ../../tasks/sys/python/install-common.yml
+      vars:
+        python_version: "{{ python_version | default('3') }}"
+      when: setup_python | bool
+      tags: [python, packages]
+      
+    - name: Install Python image libraries
+      include_tasks: ../../tasks/sys/python/install-image-libs.yml
+      when: setup_python | bool
+      tags: [python, packages]
+      
+    - name: Install Python PostgreSQL adapter
+      include_tasks: ../../tasks/sys/python/install-psycopg2.yml
+      when: setup_python | bool and setup_database | bool
+      tags: [python, database]
+      
+    # Web Server Installation
+    - name: Install Apache web server
+      include_tasks: ../../tasks/web/apache/install.yml
+      when: webserver_type == 'apache'
+      tags: [webserver, apache]
+      
+    - name: Setup Apache domain configuration
+      include_tasks: ../../tasks/web/apache/setup-domain.yml
+      vars:
+        domain: "{{ domain_name }}"
+        port: "{{ webserver_port }}"
+      when: webserver_type == 'apache'
+      tags: [webserver, apache, domain]
+      
+    - name: Install Supervisor (for Gunicorn)
+      include_tasks: ../../tasks/web/supervisor/install.yml
+      when: webserver_type == 'gunicorn'
+      tags: [webserver, supervisor]
+      
+    - name: Setup Supervisor domain configuration
+      include_tasks: ../../tasks/web/supervisor/setup-domain.yml
+      vars:
+        domain: "{{ domain_name }}"
+        port: "{{ webserver_port }}"
+        interface: "{{ interface | default('0.0.0.0') }}"
+        worker_num: "{{ worker_num | default(3) }}"
+      when: webserver_type == 'gunicorn'
+      tags: [webserver, supervisor, domain]
+      
+    # Database Setup
+    - name: Install PostgreSQL
+      include_tasks: ../../tasks/db/postgresql/install.yml
+      vars:
+        pg_version: "{{ pg_version | default('15') }}"
+      when: setup_database | bool
+      tags: [database, postgresql]
+      
+    - name: Install PostGIS
+      include_tasks: ../../tasks/db/postgis/install.yml
+      vars:
+        psql_version: "{{ pg_version | default('15') }}"
+        pgis_version: "{{ pgis_version | default('') }}"
+      when: setup_database | bool
+      tags: [database, postgis]
+      
+    - name: Configure PostGIS
+      include_tasks: ../../tasks/db/postgis/configure.yml
+      vars:
+        pg_version: "{{ pg_version | default('15') }}"
+        pgis_version: "{{ pgis_version | default('') }}"
+      when: setup_database | bool
+      tags: [database, postgis, configure]
+      
+    # Firewall Configuration
+    - name: Allow HTTP through firewall
+      include_tasks: ../../tasks/sys/firewall/allow-http.yml
+      when: setup_firewall | bool
+      tags: [firewall, http]
+      
+    - name: Allow HTTPS through firewall
+      include_tasks: ../../tasks/sys/firewall/allow-https.yml
+      when: setup_firewall | bool
+      tags: [firewall, https]
+      
+    - name: Allow custom web server port
+      include_tasks: ../../tasks/sys/firewall/allow-port.yml
+      vars:
+        port: "{{ webserver_port }}"
+        proto: tcp
+      when: setup_firewall | bool and webserver_port != "80" and webserver_port != "443"
+      tags: [firewall, custom-port]
+      
+  post_tasks:
+    - name: Display web server completion summary
+      debug:
+        msg: |
+          🎉 ✅ DJANGO WEB SERVER SETUP COMPLETED SUCCESSFULLY!
+          📋 Configuration Summary:
+             ├── Domain: {{ domain_name }}
+             ├── Web Server: {{ webserver_type }}
+             ├── Port: {{ webserver_port }}
+             ├── Python: {{ 'Installed with common packages' if setup_python else 'Skipped' }}
+             ├── Database: {{ 'PostgreSQL + PostGIS installed' if setup_database else 'Skipped' }}
+             ├── Firewall: {{ 'HTTP/HTTPS + custom ports allowed' if setup_firewall else 'Not configured' }}
+             └── Status: Ready for Django deployment
+          
+          🚀 Web server is ready for Django applications!
+          
+          📖 Next Steps:
+          1. Deploy your Django application to /srv/www/{{ domain_name }}/
+          2. Configure database connections in Django settings
+          3. Set up SSL certificates if using HTTPS
+          4. Configure reverse proxy (Nginx) if needed

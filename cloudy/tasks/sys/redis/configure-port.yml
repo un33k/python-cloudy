@@ -1,0 +1,23 @@
+# Redis Port Configuration
+# Based on: cloudy-old/sys/redis.py::sys_redis_configure_port()
+
+---
+- name: Update Redis port configuration
+  lineinfile:
+    path: /etc/redis/redis.conf
+    regexp: '^port .*'
+    line: "port {{ port | default('6379') }}"
+    state: present
+  notify: restart redis
+
+- name: Restart Redis service to apply port configuration
+  systemd:
+    name: redis-server
+    state: restarted
+
+- name: Display Redis port configuration success
+  debug:
+    msg: |
+      ✅ Redis port configured successfully
+      Port: {{ port | default('6379') }}
+      Config: /etc/redis/redis.conf

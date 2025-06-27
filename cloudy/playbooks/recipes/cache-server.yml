@@ -1,0 +1,104 @@
+# Recipe: Redis Cache Server Setup
+# Based on: cloudy-old/srv/recipe_cache_redis.py::setup_redis()
+# Usage: ansible-playbook playbooks/recipes/cache-server.yml -i inventory/hosts.yml
+
+---
+- name: Redis Cache Server Setup Recipe
+  hosts: cache_servers
+  gather_facts: true
+  become: true
+  
+  vars:
+    # Redis Configuration
+    redis_port: "{{ port | default('6379') }}"
+    redis_interface: "{{ interface | default('0.0.0.0') }}"
+    redis_memory: "{{ memory | default(0) }}"  # 0 = auto-calculate
+    redis_memory_divider: "{{ memory_divider | default(8) }}"
+    redis_password: "{{ password | default('') }}"
+    
+    # Setup flags
+    run_generic_setup: "{{ generic | default(true) }}"
+    setup_firewall: true
+    
+  pre_tasks:
+    - name: Display cache server setup information
+      debug:
+        msg: |
+          🚀 Starting Redis Cache Server Setup
+          Target: {{ inventory_hostname }} ({{ ansible_host }})
+          Port: {{ redis_port }}
+          Interface: {{ redis_interface }}
+          Memory: {{ 'Auto-calculate' if redis_memory == 0 else redis_memory + 'MB' }}
+          
+  tasks:
+    # Generic Server Setup
+    - name: Run generic server setup
+      include: generic-server.yml
+      when: run_generic_setup | bool
+      tags: [generic, foundation]
+      
+    # Redis Installation and Configuration
+    - name: Install Redis server
+      include_tasks: ../../tasks/sys/redis/install.yml
+      tags: [redis, install]
+      
+    - name: Configure Redis memory
+      include_tasks: ../../tasks/sys/redis/configure-memory.yml
+      vars:
+        memory: "{{ redis_memory }}"
+        divider: "{{ redis_memory_divider }}"
+      tags: [redis, memory]
+      
+    - name: Configure Redis port
+      include_tasks: ../../tasks/sys/redis/configure-port.yml
+      vars:
+        port: "{{ redis_port }}"
+      tags: [redis, port]
+      
+    - name: Configure Redis interface
+      include_tasks: ../../tasks/sys/redis/configure-interface.yml
+      vars:
+        interface: "{{ redis_interface }}"
+      tags: [redis, interface]
+      
+    - name: Configure Redis password
+      include_tasks: ../../tasks/sys/redis/configure-password.yml
+      vars:
+        password: "{{ redis_password }}"
+      when: redis_password != ""
+      tags: [redis, password]
+      
+    # Firewall Configuration
+    - name: Allow Redis port through firewall
+      include_tasks: ../../tasks/sys/firewall/allow-port.yml
+      vars:
+        port: "{{ redis_port }}"
+        proto: tcp
+      when: setup_firewall | bool
+      tags: [firewall, redis]
+      
+  post_tasks:
+    - name: Display cache server completion summary
+      debug:
+        msg: |
+          🎉 ✅ REDIS CACHE SERVER SETUP COMPLETED SUCCESSFULLY!
+          📋 Configuration Summary:
+             ├── Port: {{ redis_port }}
+             ├── Interface: {{ redis_interface }}
+             ├── Memory: {{ 'Auto-calculated from system memory' if redis_memory == 0 else redis_memory + 'MB' }}
+             ├── Password: {{ 'Set' if redis_password != '' else 'None' }}
+             ├── Firewall: {{ 'Port ' + redis_port + ' allowed' if setup_firewall else 'Not configured' }}
+             └── Status: Running and ready for connections
+          
+          🚀 Redis cache server is ready for use!
+          
+          📖 Connection Information:
+          - Host: {{ ansible_host }}
+          - Port: {{ redis_port }}
+          - Auth: {{ 'Required (password set)' if redis_password != '' else 'None' }}
+          - Interface: {{ redis_interface }}
+          
+          📖 Next Steps:
+          1. Test connection: redis-cli -h {{ ansible_host }} -p {{ redis_port }}
+          2. Configure your applications to use this Redis instance
+          3. Set up monitoring and backup if needed

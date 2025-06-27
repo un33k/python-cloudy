@@ -1,0 +1,125 @@
+# Recipe: PostgreSQL + PostGIS Database Server Setup
+# Based on: cloudy-old/srv/recipe_database_psql_gis.py
+# Usage: ansible-playbook playbooks/recipes/database-postgis-server.yml -i inventory/hosts.yml
+
+---
+- name: PostgreSQL + PostGIS Database Server Setup Recipe
+  hosts: database_servers
+  gather_facts: true
+  become: true
+  
+  vars:
+    # Database Configuration
+    pg_version: "{{ postgresql_version | default('15') }}"
+    pgis_version: "{{ postgis_version | default('') }}"
+    db_port: "{{ database_port | default(5432) }}"
+    setup_pgbouncer: "{{ pgbouncer | default(false) }}"
+    
+    # Setup flags
+    run_generic_setup: "{{ generic | default(true) }}"
+    setup_firewall: true
+    
+  pre_tasks:
+    - name: Display database server setup information
+      debug:
+        msg: |
+          🚀 Starting PostgreSQL + PostGIS Database Server Setup
+          Target: {{ inventory_hostname }} ({{ ansible_host }})
+          PostgreSQL Version: {{ pg_version }}
+          PostGIS Version: {{ 'Latest available' if pgis_version == '' else pgis_version }}
+          Port: {{ db_port }}
+          PgBouncer: {{ 'Yes' if setup_pgbouncer else 'No' }}
+          
+  tasks:
+    # Generic Server Setup
+    - name: Run generic server setup
+      include: generic-server.yml
+      when: run_generic_setup | bool
+      tags: [generic, foundation]
+      
+    # PostgreSQL Installation
+    - name: Install PostgreSQL server
+      include_tasks: ../../tasks/db/postgresql/install.yml
+      vars:
+        pg_version: "{{ pg_version }}"
+      tags: [database, postgresql, install]
+      
+    # PostGIS Installation and Configuration
+    - name: Install PostGIS
+      include_tasks: ../../tasks/db/postgis/install.yml
+      vars:
+        psql_version: "{{ pg_version }}"
+        pgis_version: "{{ pgis_version }}"
+      tags: [database, postgis, install]
+      
+    - name: Configure PostGIS template
+      include_tasks: ../../tasks/db/postgis/configure.yml
+      vars:
+        pg_version: "{{ pg_version }}"
+        pgis_version: "{{ pgis_version }}"
+        legacy: "{{ legacy_postgis | default(false) }}"
+      tags: [database, postgis, configure]
+      
+    # PgBouncer Connection Pooling (Optional)
+    - name: Install PgBouncer
+      include_tasks: ../../tasks/db/pgbouncer/install.yml
+      when: setup_pgbouncer | bool
+      tags: [database, pgbouncer, install]
+      
+    - name: Configure PgBouncer
+      include_tasks: ../../tasks/db/pgbouncer/configure.yml
+      vars:
+        dbhost: "localhost"
+        dbport: "{{ db_port }}"
+      when: setup_pgbouncer | bool
+      tags: [database, pgbouncer, configure]
+      
+    # Firewall Configuration
+    - name: Allow PostgreSQL through firewall
+      include_tasks: ../../tasks/sys/firewall/allow-postgresql.yml
+      when: setup_firewall | bool and not setup_pgbouncer
+      tags: [firewall, postgresql]
+      
+    - name: Allow PgBouncer through firewall
+      include_tasks: ../../tasks/sys/firewall/allow-port.yml
+      vars:
+        port: "5432"
+        proto: tcp
+      when: setup_firewall | bool and setup_pgbouncer
+      tags: [firewall, pgbouncer]
+      
+    - name: Allow PostgreSQL backend through firewall (with PgBouncer)
+      include_tasks: ../../tasks/sys/firewall/allow-port.yml
+      vars:
+        port: "{{ db_port }}"
+        proto: tcp
+      when: setup_firewall | bool and setup_pgbouncer and db_port != "5432"
+      tags: [firewall, postgresql-backend]
+      
+  post_tasks:
+    - name: Display database server completion summary
+      debug:
+        msg: |
+          🎉 ✅ POSTGRESQL + POSTGIS DATABASE SERVER SETUP COMPLETED SUCCESSFULLY!
+          📋 Configuration Summary:
+             ├── PostgreSQL Version: {{ pg_version }}
+             ├── PostGIS Version: {{ pgis_version if pgis_version != '' else 'Latest available' }}
+             ├── Template Database: template_postgis (ready for spatial databases)
+             ├── Connection Pooling: {{ 'PgBouncer enabled on port 5432' if setup_pgbouncer else 'Direct PostgreSQL connection' }}
+             ├── Backend Port: {{ db_port }}
+             ├── Firewall: {{ 'Database ports allowed' if setup_firewall else 'Not configured' }}
+             └── Status: Ready for spatial database applications
+          
+          🚀 PostgreSQL + PostGIS database server is ready!
+          
+          📖 Connection Information:
+          - Host: {{ ansible_host }}
+          - Port: {{ '5432 (PgBouncer) → ' + db_port + ' (PostgreSQL)' if setup_pgbouncer else db_port }}
+          - Template: template_postgis (for new spatial databases)
+          
+          📖 Next Steps:
+          1. Create spatial databases: 
+             createdb -T template_postgis mydatabase
+          2. Create database users and set permissions
+          3. Configure client applications to connect
+          4. Set up backup and monitoring

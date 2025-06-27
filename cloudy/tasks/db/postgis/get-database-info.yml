@@ -1,0 +1,24 @@
+# Get PostGIS Database Information
+# Based on: cloudy-old/db/pgis.py::db_pgis_get_database_gis_info()
+
+---
+- name: Validate database name parameter
+  fail:
+    msg: "Database name 'dbname' parameter is required"
+  when: dbname is not defined
+
+- name: Get PostGIS version information from database
+  postgresql_query:
+    db: "{{ dbname }}"
+    query: "SELECT PostGIS_Version();"
+  become_user: postgres
+  register: postgis_info
+
+- name: Display PostGIS database information
+  debug:
+    msg: |
+      📋 PostGIS Database Information
+      Database: {{ dbname }}
+      PostGIS Version: {{ postgis_info.query_result[0].postgis_version if postgis_info.query_result else 'Not available' }}
+      
+  when: postgis_info.query_result is defined

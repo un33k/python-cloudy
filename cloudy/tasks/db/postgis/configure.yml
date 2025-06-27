@@ -1,0 +1,99 @@
+# PostGIS Configuration and Template Setup
+# Based on: cloudy-old/db/pgis.py::db_pgis_configure()
+
+---
+- name: Get PostgreSQL installed version if not specified
+  include_tasks: ../postgresql/get-installed-version.yml
+  when: pg_version is not defined
+
+- name: Set PostgreSQL version
+  set_fact:
+    postgresql_version: "{{ pg_version | default(postgresql_installed_version) }}"
+
+- name: Get latest PostGIS version if not specified
+  include_tasks: get-latest-version.yml
+  vars:
+    pg_version: "{{ postgresql_version }}"
+  when: pgis_version is not defined
+
+- name: Set PostGIS version
+  set_fact:
+    postgis_version: "{{ pgis_version | default(latest_postgis_version) }}"
+
+- name: Remove template status from existing template_postgis
+  postgresql_query:
+    db: postgres
+    query: "UPDATE pg_database SET datistemplate='false' WHERE datname='template_postgis';"
+  become_user: postgres
+  ignore_errors: true
+
+- name: Drop existing template_postgis database
+  postgresql_db:
+    name: template_postgis
+    state: absent
+  become_user: postgres
+  ignore_errors: true
+
+- name: Create template_postgis database
+  postgresql_db:
+    name: template_postgis
+    encoding: UTF8
+    state: present
+  become_user: postgres
+
+- name: Create PostGIS extension
+  postgresql_ext:
+    name: postgis
+    db: template_postgis
+    state: present
+  become_user: postgres
+
+- name: Create PostGIS topology extension
+  postgresql_ext:
+    name: postgis_topology
+    db: template_postgis
+    state: present
+  become_user: postgres
+  ignore_errors: true
+
+- name: Add legacy PostGIS support if requested
+  postgresql_query:
+    db: template_postgis
+    path_to_script: "/usr/share/postgresql/{{ postgresql_version }}/contrib/postgis-{{ postgis_version }}/legacy.sql"
+  become_user: postgres
+  when: legacy | default(false) | bool
+  ignore_errors: true
+
+- name: Grant permissions on geometry_columns to PUBLIC
+  postgresql_query:
+    db: template_postgis
+    query: "GRANT ALL ON geometry_columns TO PUBLIC;"
+  become_user: postgres
+
+- name: Grant permissions on spatial_ref_sys to PUBLIC
+  postgresql_query:
+    db: template_postgis
+    query: "GRANT ALL ON spatial_ref_sys TO PUBLIC;"
+  become_user: postgres
+
+- name: Grant permissions on geography_columns to PUBLIC
+  postgresql_query:
+    db: template_postgis
+    query: "GRANT ALL ON geography_columns TO PUBLIC;"
+  become_user: postgres
+
+- name: Set template_postgis as template database
+  postgresql_query:
+    db: postgres
+    query: "UPDATE pg_database SET datistemplate='true' WHERE datname='template_postgis';"
+  become_user: postgres
+
+- name: Display PostGIS configuration success
+  debug:
+    msg: |
+      ✅ PostGIS configured successfully
+      PostgreSQL Version: {{ postgresql_version }}
+      PostGIS Version: {{ postgis_version }}
+      Template Database: template_postgis
+      Legacy Support: {{ 'Enabled' if legacy | default(false) else 'Disabled' }}
+      Status: Ready for spatial databases

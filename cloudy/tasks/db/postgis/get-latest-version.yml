@@ -1,0 +1,24 @@
+# Get Latest PostGIS Version
+# Based on: cloudy-old/db/pgis.py::db_pgis_get_latest_version()
+
+---
+- name: Search for available PostGIS packages
+  shell: apt-cache search --names-only postgis
+  register: postgis_packages
+  changed_when: false
+
+- name: Extract PostGIS versions from package list
+  set_fact:
+    postgis_versions: "{{ postgis_packages.stdout | regex_findall('postgresql-[0-9.]+-postgis-([0-9.]+)\\s-') | sort(reverse=true) }}"
+
+- name: Set latest PostGIS version
+  set_fact:
+    latest_postgis_version: "{{ postgis_versions[0] if postgis_versions else '3.3' }}"
+
+- name: Display found PostGIS version
+  debug:
+    msg: |
+      📋 PostGIS Version Discovery
+      Available versions: {{ postgis_versions }}
+      Latest version: {{ latest_postgis_version }}
+      PostgreSQL version: {{ pg_version }}

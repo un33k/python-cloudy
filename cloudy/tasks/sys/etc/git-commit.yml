@@ -1,0 +1,47 @@
+# Commit Changes to /etc Git Repository
+# Based on: cloudy-old/sys/etc.py::sys_etc_git_commit()
+
+---
+- name: Validate commit message parameter
+  fail:
+    msg: "Commit message 'msg' parameter is required"
+  when: msg is not defined
+
+- name: Check if git is installed
+  command: which git
+  register: git_check
+  failed_when: false
+  changed_when: false
+
+- name: Print message if git not available or print_only mode
+  debug:
+    msg: "{{ msg }}"
+  when: git_check.rc != 0 or (print_only | default(true) | bool)
+
+- name: Initialize /etc git repository if needed
+  include_tasks: git-init.yml
+  when: 
+    - git_check.rc == 0
+    - not (print_only | default(true) | bool)
+
+- name: Commit changes to /etc git repository
+  shell: |
+    cd /etc
+    git add .
+    git commit -a -m "{{ msg }}"
+  register: git_commit_result
+  failed_when: false
+  when: 
+    - git_check.rc == 0
+    - not (print_only | default(true) | bool)
+
+- name: Display git commit result
+  debug:
+    msg: |
+      ✅ /etc changes committed to git
+      Message: {{ msg }}
+      Status: {{ 'Success' if git_commit_result.rc == 0 else 'No changes to commit' }}
+  when: 
+    - git_check.rc == 0
+    - not (print_only | default(true) | bool)
+    - git_commit_result is defined
