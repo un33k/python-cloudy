@@ -1,0 +1,144 @@
+# Comprehensive Example Inventory
+# Based on legacy Fabric configuration patterns
+# Copy and customize for your environment
+
+---
+all:
+  vars:
+    # Connection Settings (adjust after initial setup)
+    ansible_user: admin
+    ansible_ssh_pass: secure_admin_password
+    ansible_port: 22022
+    ansible_host_key_checking: false
+    
+    # Global Settings
+    git_user_full_name: "John Doe"
+    git_user_email: "jdoe@example.com"
+    timezone: "America/New_York"
+    locale: "en_US.UTF-8"
+    
+  children:
+    # Generic Foundation Servers
+    generic_servers:
+      vars:
+        admin_user: admin
+        admin_password: secure_admin_password
+        admin_groups: "admin,www-data"
+        ssh_port: 22022
+        ssh_disable_root: true
+        ssh_enable_password_auth: false
+        python_version: "3.11"
+        
+      hosts:
+        generic-prod:
+          ansible_host: 10.0.1.10
+          hostname: generic-prod.example.com
+          
+        generic-staging:
+          ansible_host: 10.0.1.11
+          hostname: generic-staging.example.com
+
+    # Web Application Servers
+    web_servers:
+      vars:
+        admin_user: admin
+        admin_password: secure_admin_password
+        admin_groups: "admin,www-data"
+        ssh_port: 22022
+        webserver: gunicorn
+        webserver_port: 8181
+        python_version: "3.11"
+        geo_ip_enabled: true
+        
+      hosts:
+        web-prod:
+          ansible_host: 10.0.2.10
+          hostname: web-prod.example.com
+          domain_name: app.example.com
+          
+        web-staging:
+          ansible_host: 10.0.2.11
+          hostname: web-staging.example.com
+          domain_name: staging.example.com
+
+    # Database Servers
+    database_servers:
+      vars:
+        admin_user: admin
+        admin_password: secure_admin_password
+        admin_groups: "admin,www-data"
+        ssh_port: 22022
+        postgresql_version: "15"
+        postgis_version: "3.3"
+        pgbouncer_enabled: true
+        listen_address: "*"
+        
+      hosts:
+        db-master:
+          ansible_host: 10.0.3.10
+          hostname: db-master.example.com
+          database_port: 5432
+          postgres_password: secure_db_password
+          
+        db-replica:
+          ansible_host: 10.0.3.11
+          hostname: db-replica.example.com
+          database_port: 5432
+
+    # Cache Servers  
+    cache_servers:
+      vars:
+        admin_user: admin
+        admin_password: secure_admin_password
+        admin_groups: "admin,www-data"
+        ssh_port: 22022
+        redis_memory: 512  # MB
+        redis_interface: "0.0.0.0"
+        
+      hosts:
+        cache-prod:
+          ansible_host: 10.0.4.10
+          hostname: cache-prod.example.com
+          port: 6379
+          password: "redis_secret_password"
+
+    # VPN Servers
+    vpn_servers:
+      vars:
+        admin_user: admin
+        admin_password: secure_admin_password
+        admin_groups: "admin,www-data,docker"
+        ssh_port: 22022
+        
+      hosts:
+        vpn-server:
+          ansible_host: 10.0.5.10
+          hostname: vpn.example.com
+          domain: vpn.example.com
+          vpn_passphrase: "secure_vpn_passphrase"
+          # Primary VPN (UDP, faster)
+          primary_port: 1194
+          primary_proto: udp
+          # Secondary VPN (TCP, reliable through firewalls)  
+          secondary_port: 443
+          secondary_proto: tcp
+
+    # Load Balancers
+    load_balancers:
+      vars:
+        admin_user: admin
+        admin_password: secure_admin_password
+        admin_groups: "admin,www-data"
+        ssh_port: 22022
+        
+      hosts:
+        lb-prod:
+          ansible_host: 10.0.6.10
+          hostname: lb-prod.example.com
+          domain: app.example.com
+          proto: https
+          backends:
+            - "10.0.2.10:8181"  # web-prod
+            - "10.0.2.11:8181"  # web-staging
+          ssl_cert_dir: "~/.ssh/certificates/"
+          ssl_cert_email: "ssl@example.com"

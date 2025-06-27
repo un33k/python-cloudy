@@ -1,0 +1,85 @@
+# Ansible Playbook Testing Framework
+# Adapted from legacy Fabric test patterns
+# Tests playbook syntax and task discovery
+
+---
+- name: Test Playbook Syntax and Structure
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    test_results: []
+    playbook_dir: "{{ playbook_dir }}"
+    
+  tasks:
+    - name: Find all recipe playbooks
+      find:
+        paths: "{{ playbook_dir }}/playbooks/recipes/"
+        patterns: "*.yml"
+        file_type: file
+      register: recipe_playbooks
+      
+    - name: Test recipe playbook syntax
+      ansible.builtin.shell: |
+        ansible-playbook --syntax-check "{{ item.path }}"
+      loop: "{{ recipe_playbooks.files }}"
+      register: syntax_results
+      failed_when: false
+      
+    - name: Find all task files
+      find:
+        paths: "{{ playbook_dir }}/tasks/"
+        patterns: "*.yml"
+        file_type: file
+        recurse: true
+      register: task_files
+      
+    - name: Count task files by category
+      set_fact:
+        sys_tasks: "{{ task_files.files | selectattr('path', 'match', '.*tasks/sys/.*') | list | length }}"
+        db_tasks: "{{ task_files.files | selectattr('path', 'match', '.*tasks/db/.*') | list | length }}"
+        web_tasks: "{{ task_files.files | selectattr('path', 'match', '.*tasks/web/.*') | list | length }}"
+        services_tasks: "{{ task_files.files | selectattr('path', 'match', '.*tasks/services/.*') | list | length }}"
+        
+    - name: Verify minimum task coverage
+      assert:
+        that:
+          - sys_tasks | int > 10
+          - db_tasks | int > 5
+          - web_tasks | int > 3
+          - services_tasks | int > 3
+        fail_msg: "Insufficient task coverage detected"
+        success_msg: "Task coverage looks good"
+        
+    - name: Find template files
+      find:
+        paths: "{{ playbook_dir }}/templates/"
+        patterns: "*.j2"
+        file_type: file
+      register: template_files
+      
+    - name: Display test summary
+      debug:
+        msg: |
+          🧪 Ansible Cloudy Test Results:
+          ================================
+          ✅ Recipe playbooks found: {{ recipe_playbooks.files | length }}
+          ✅ Total task files: {{ task_files.files | length }}
+          ✅ System tasks: {{ sys_tasks }}
+          ✅ Database tasks: {{ db_tasks }}  
+          ✅ Web tasks: {{ web_tasks }}
+          ✅ Service tasks: {{ services_tasks }}
+          ✅ Template files: {{ template_files.files | length }}
+          ✅ Syntax check results: {{ syntax_results.results | selectattr('rc', 'equalto', 0) | list | length }}/{{ syntax_results.results | length }} passed
+          
+    - name: List any syntax failures
+      debug:
+        msg: "❌ Syntax check failed for: {{ item.item.path }}"
+      loop: "{{ syntax_results.results }}"
+      when: item.rc != 0
+      
+    - name: Fail if syntax errors found
+      fail:
+        msg: "One or more playbooks have syntax errors"
+      when: syntax_results.results | selectattr('rc', 'ne', 0) | list | length > 0
