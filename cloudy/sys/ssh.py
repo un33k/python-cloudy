@@ -33,6 +33,16 @@ def sys_ssh_disable_root_login(c: Context) -> None:
 
 @task
 @Context.wrap_context
+def sys_ssh_disable_root_pass_login(c: Context) -> None:
+    """Disable root password login but allow SSH key authentication."""
+    sshd_config = "/etc/ssh/sshd_config"
+    c.sudo(f"sed -i 's/^#*PermitRootLogin .*/PermitRootLogin prohibit-password/' {sshd_config}")
+    sys_etc_git_commit(c, "Disabled root password login (SSH keys still allowed)")
+    sys_reload_service(c, "ssh")
+
+
+@task
+@Context.wrap_context
 def sys_ssh_enable_root_login(c: Context) -> None:
     """Enable root login."""
     sshd_config = "/etc/ssh/sshd_config"

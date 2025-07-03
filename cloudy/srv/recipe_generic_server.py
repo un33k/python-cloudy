@@ -128,7 +128,7 @@ def setup_server(c: Context, cfg_paths: Optional[str] = None) -> Context:
 
     # Disable root login if configured and admin user exists with SSH key
     if admin_user and disable_root and pub_key:
-        ssh.sys_ssh_disable_root_login(c)
+        ssh.sys_ssh_disable_root_pass_login(c)
         c = c.reconnect(new_port=ssh_port, new_user=admin_user)
 
         # Verify the new admin user connection and sudo access
